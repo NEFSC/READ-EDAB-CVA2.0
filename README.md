@@ -1,6 +1,6 @@
 # Climate Vulnerability Assessment (CVA) 2.0 
 
-This project seeks to update the existing [Climate Vulnerability Assessments] (https://www.fisheries.noaa.gov/national/climate/climate-vulnerability-assessments) for stocks occupying the Northeast US Shelf managed by the Northeast Fisheries Science Center, in partnership with the Mid Atlantic and New England Fisheries Councils and the Atlantic States Marine Fisheries Commission. 
+This project seeks to update the existing [Climate Vulnerability Assessments](https://www.fisheries.noaa.gov/national/climate/climate-vulnerability-assessments) for stocks occupying the Northeast US Shelf managed by the Northeast Fisheries Science Center, in partnership with the Mid Atlantic and New England Fisheries Councils and the Atlantic States Marine Fisheries Commission. 
 
 The new CVAs will be spatially explicit, following the works of Boyce et al [2022](https://www.nature.com/articles/s41558-022-01437-y) and [2024](https://www.nature.com/articles/s44183-024-00067-5). 
 
