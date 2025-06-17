@@ -25,6 +25,7 @@ library(terra)
 library(meteo)
 library(dismo)
 library(gbm3)
+library(gamm4)
 
 
 ####### BUILD DIRECTORY ######
@@ -200,10 +201,20 @@ if(hGuild == 'Pelagic' | hGuild == 'Pelagic Migratory'){
 
 ####### RUN MODELS #######
 #### EFHSDM - GAM ####
-#formula
-gam.form <- formula("value ~ s(x,y, bs = 'ds', k=10) + s(botTemp, k=4) + s(bathy, k=4) + s(rugosity, k=4) + s(month.num, k = 4) + s(year, k = 4) ")
+
+#formula - write out static variables that will be consistent across all feeding and habitat guilds
+form <- "value ~ s(x,y, bs = 'ds', k=20) + s(bathy, k=5) + s(rugosity, k=5) +  s(month.num, k = 5) + s(year, k = 5)"
+#add feeding guild covariates
+for(x in 1:length(fInd)){
+  form <- paste(form, ' + s(', colnames(sppDF2)[fInd[x]], ', k = 5) ', sep = '')
+}
+#add habitat guild covariates
+for(x in 1:length(hInd)){
+  form <- paste(form, ' + s(', colnames(sppDF2)[hInd[x]], ', k = 5) ', sep = '')
+}
+
 #run model
-bi.model <- FitGAM(gam.formula = gam.form, data = sppDF2, family.gam = "binomial", select = T, reduce = T)
+bi.model <- FitGAM(gam.formula = form, data = sppDF2, family.gam = "binomial", select = T, reduce = T)
 
 #cross validation to get RMSE
 ###get RMSE
