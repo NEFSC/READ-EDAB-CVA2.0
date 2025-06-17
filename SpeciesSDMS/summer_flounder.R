@@ -29,13 +29,13 @@ library(gamm4)
 
 
 ####### BUILD DIRECTORY ######
-setwd("C:/Users/katherine.gallagher/Documents/SpeciesModels")
+setwd("~/READ-EDAB-CVA2.0/SpeciesSDMS")
 
 #name directory - use common name for species in camel case
 dirName <- 'SummerFlounder'
 
 #make directory 
-dir.create(file.path(getwd(),dirName), showWarnings = F)
+dir.create(file.path(getwd(),dirName), showWarnings = T) #warning will show up if directory already exists but nothing bad will happen
 
 #set working directory to new folder 
 setwd(file.path(getwd(),dirName))
@@ -67,24 +67,6 @@ save(sppRast, file = 'rasters.RData')
 ##load normalized MOM6 output 
 load("~/MOM6/data/variable_normalized_list_1993_2019.RData")
 #'surfaceT', 'bottomT', 'surfaceS', 'bottomS', 'bottomO2', 'surfacepH', 'NPP', 'MLD', 'zoops',  'argSol', 'daizPP', 'smPP', 'mdPP', 'lgPP', 'smZoo', 'mdZoo', 'lgZoo', 'poc'
-surfaceT <- normVars[[1]]
-bottomT <- normVars[[2]]
-surfaceS <- normVars[[3]]
-bottomS <- normVars[[4]]
-bottomO2 <- normVars[[5]]
-surfacepH <- normVars[[6]]
-NPP <- normVars[[7]]
-MLD <- normVars[[8]]
-zooBio <- normVars[[9]]
-argSol <- normVars[[10]]
-daizPP <- normVars[[11]]
-smPP <- normVars[[12]]
-mdPP <- normVars[[13]]
-lgPP <- normVars[[14]]
-smZoo <- normVars[[15]]
-mdZoo <- normVars[[16]]
-lgZoo <- normVars[[17]]
-poc <- normVars[[18]]
 
 ##get bathy & rugosity
 #bathymetry
@@ -203,14 +185,14 @@ if(hGuild == 'Pelagic' | hGuild == 'Pelagic Migratory'){
 #### EFHSDM - GAM ####
 
 #formula - write out static variables that will be consistent across all feeding and habitat guilds
-form <- "value ~ s(x,y, bs = 'ds', k=20) + s(bathy, k=5) + s(rugosity, k=5) +  s(month.num, k = 5) + s(year, k = 5)"
+form <- "value ~ s(x,y, bs = 'ds', k=10) + s(bathy, k=6) + s(rugosity, k=6) + s(month.num, k = 6) + s(year, k = 6)"
 #add feeding guild covariates
 for(x in 1:length(fInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[fInd[x]], ', k = 5) ', sep = '')
+  form <- paste(form, ' + s(', colnames(sppDF2)[fInd[x]], ', k = 6) ', sep = '')
 }
 #add habitat guild covariates
 for(x in 1:length(hInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[hInd[x]], ', k = 5) ', sep = '')
+  form <- paste(form, ' + s(', colnames(sppDF2)[hInd[x]], ', k = 6) ', sep = '')
 }
 
 #run model
@@ -224,30 +206,38 @@ gam.rmse <- RMSE(obs = bigam.preds$abund, pred = bigam.preds$cvpred)
 
 #make abundance rasters for entire timeseries
 
-#get static vars (month/year) to rasters
-r <- subset(bottomT, 1)
+#make static vars (month/year) into rasters
+r <- subset(bathyC, 1)
 rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
-xy<-xyFromCell(r,1:length(r)) #matrix of logitudes (x) and latitudes(y)
+xy<-xyFromCell(r,1:length(r)) #matrix of longitudes (x) and latitudes(y)
 rlon[]<-xy[,1] #raster of longitudes
 rlat[]<-xy[,2] #raster of latitides
 rMonth <- rYear <- r
 
-abund <- vector(mode = 'list', length = dim(bottomT)[3])
-for(x in 1:dim(bottomT)[3]){
+abund <- vector(mode = 'list', length = nlayers(normVars[[1]]))
+for(x in 1:nlayers(normVars[[1]])){ #all the rasters in normVars have the same number of layers so it doesn't matter which one we call
   
-  mm.year <- strsplit(names(bottomT)[x], split = '[.]')
+  mm.year <- strsplit(names(normVars[[1]])[x], split = '[.]') #all the rasterbricks in normVars also have the same names so again, doesn't matter which one we call
   
   mm <- match(mm.year[[1]][1],month.abb) 
   rMonth[] <- mm
   yr <- as.numeric(mm.year[[1]][2])
   rYear[] <- yr
   
-  sr <- stack(rlon, rlat, rMonth, rYear, subset(bottomT, x), bathyC, rugC)
-  names(sr) <- c("x", "y", "month.num", "year", "botTemp", 'bathy', 'rugosity')
+  nStack <- vector(mode = 'list', length = length(normVars))
+  for(n in 1:length(normVars)){
+    nStack[[n]] <- subset(normVars[[n]], x)
+  }
+  nStack <- stack(nStack)
+  crs(nStack) <- crs(bathyC)
+  extent(nStack) <- extent(bathyC)
+  
+  sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, nStack)
+  names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', names(normVars))
   abund[[x]] <- MakeGAMAbundance(model = bi.model, r.stack = sr)
   print(x)
 }
-names(abund) <- names(bottomT)
+names(abund) <- names(normVars[[1]])
 
 ###save everything
 save(bi.model, bigam.cv, bigam.preds, gam.rmse, abund, file = "GAMoutputs.RData")
@@ -255,7 +245,7 @@ save(bi.model, bigam.cv, bigam.preds, gam.rmse, abund, file = "GAMoutputs.RData"
 
 #### EFHSDM - MAXENT ####
 #run model - no formula needed
-mxnt <- FitMaxnet(data = sppDF2, species = 'value', vars = c('x', 'y', 'month.num', 'year', 'botTemp', 'bathy', 'rugosity'), reduce = T)
+mxnt <- FitMaxnet(data = sppDF2, species = 'value', vars = c('x', 'y', 'month.num', 'year', 'bathy', 'rugosity', names(sppDF2)[fInd], names(sppDF2)[hInd]), reduce = T)
 
 #cross validate and get RMSE
 mxnt.cv <- CrossValidateModel(model = mxnt, data = sppDF2, folds = 10, model.type = "maxnet", species = 'value', scale.preds = F)
