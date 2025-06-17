@@ -23,6 +23,8 @@ library(akgfmaps)
 library(EFHSDM)
 library(terra)
 library(meteo)
+library(dismo)
+library(gbm3)
 
 
 ####### BUILD DIRECTORY ######
@@ -61,8 +63,27 @@ save(sppRast, file = 'rasters.RData')
 #######
 
 ####### GET ENVIRONMENTAL DATA ####
-##load MOM6 output 
-load('C:/Users/katherine.gallagher/Documents/MOM6/Data/regrid_NEsubset_MOM6output_May2025.RData')
+##load normalized MOM6 output 
+load("~/MOM6/data/variable_normalized_list_1993_2019.RData")
+#'surfaceT', 'bottomT', 'surfaceS', 'bottomS', 'bottomO2', 'surfacepH', 'NPP', 'MLD', 'zoops',  'argSol', 'daizPP', 'smPP', 'mdPP', 'lgPP', 'smZoo', 'mdZoo', 'lgZoo', 'poc'
+surfaceT <- normVars[[1]]
+bottomT <- normVars[[2]]
+surfaceS <- normVars[[3]]
+bottomS <- normVars[[4]]
+bottomO2 <- normVars[[5]]
+surfacepH <- normVars[[6]]
+NPP <- normVars[[7]]
+MLD <- normVars[[8]]
+zooBio <- normVars[[9]]
+argSol <- normVars[[10]]
+daizPP <- normVars[[11]]
+smPP <- normVars[[12]]
+mdPP <- normVars[[13]]
+lgPP <- normVars[[14]]
+smZoo <- normVars[[15]]
+mdZoo <- normVars[[16]]
+lgZoo <- normVars[[17]]
+poc <- normVars[[18]]
 
 ##get bathy & rugosity
 #bathymetry
@@ -89,21 +110,30 @@ rugC <- rasterize(x = rug.grid[,1:2], y = r, field = rug.grid[,3], fun = mean)
 ##get data frame 
 spDF <- summerFlounder[[2]]
 
-#match data to rasters
-#bottom temperature - needs to be done by layer
-spDF$botTemp <- NA #create blank column
-for(x in 1:dim(bottomT)[3]){
-  i <- which(spDF$variable == names(bottomT)[x])#match name of raster to variable (raster name from spp stack) 
-  spDF$botTemp[i] <- extract(subset(bottomT,x), spDF[i,c('x','y')], fun = mean)
+#match data to rasters - do for all covariates and then just use the ones that are important 
+for(x in 1:length(normVars)){
+  v <- normVars[[x]]
+  #nv <- names(normVars)[x]
+  
+  vc <- vector(length = nrow(spDF))
+  #matching by layer
+  for(y in 1:dim(v)[3]){
+    i <- which(spDF$variable == names(v)[y])#match name of raster to variable (raster name from spp stack) 
+    vc[i] <- extract(subset(v,y), spDF[i,c('x','y')], fun = mean) #extract value 
+    #print(x)
+  }
+  spDF <- cbind(spDF, vc)
   print(x)
 }
+colnames(spDF)[8:ncol(spDF)] <- names(normVars) #name columns 
 
+#match static variables 
 #bathymetry
-sppDF2$bathy <- raster::extract(bathy, sppDF2[,1:2]) #extract values 
+spDF$bathy <- raster::extract(bathy, spDF[,1:2]) #extract values 
 #rugosity
-sppDF2$rugosity <- terra::extract(rug, sppDF2[,1:2]) #extract values  
+spDF$rugosity <- terra::extract(rug, spDF[,1:2]) #extract values  
 
-#subset spDF by removing 0s (1 = surveyed but target spp not found, 2 = surveyed and species found)
+#subset spDF by removing 0s (0 = not surveyed, 1 = surveyed but target spp not found, 2 = surveyed and species found)
 sppDF2 <- spDF[spDF$value != 0,]
 #switch it back to 0/1 now that we only have grid cells that were sampled 
 sppDF2$value <- replace(sppDF2$value, sppDF2$value == 1, 0)
@@ -273,7 +303,7 @@ save(rfsi_model, rfsiCV, rf.rmse, abundRF, file = "RFoutputs.RData")
 ## WARNING - THIS IS THE LONG ONE - 2/12 deg mesh takes about an hour to run the Cross Validation and ~2 hours to predict the entire timeseries
 
 #make mesh
-mesh <- make_mesh(sppDF2, xy_cols = c('x', 'y'), cutoff = 3/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
+mesh <- make_mesh(sppDF2, xy_cols = c('x', 'y'), cutoff = 1/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
 #MOM6 resolution is 1/12 = ~8 km 
 
 fit <- sdmTMB(
@@ -288,7 +318,7 @@ fit <- sdmTMB(
 )
 
 #cross-validation
-plan(multisession)
+plan(multisession, workers = 5)
 fitCV <- sdmTMB_cv(
   value ~ s(botTemp) + s(bathy) + s(rugosity) + s(month.num, k = 4),
   data = sppDF2,
@@ -337,20 +367,76 @@ save(mesh, fit, fitCV, sdm.preds, sdm.rmse, abundSDM, file = "sdmTMBoutputs.RDat
 
 
 
+#### Boosted Regression Tree ####
+mod <- gbm.step(data = sppDF2, gbm.x = c(1:2,6:10), gbm.y = 4, 
+                family = 'bernoulli', tree.complexity = 5,
+                learning.rate = 0.01, bag.fraction = 0.75, n.folds = 10)
+
+##abundance 
+#get lat/lon from raster
+r <- subset(bottomT, 1)
+rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
+xy<-xyFromCell(r,1:length(r)) #matrix of logitudes (x) and latitudes(y)
+rlon[]<-xy[,1] #raster of longitudes
+rlat[]<-xy[,2] #raster of latitides
+par(mfrow=c(1,2))
+image(rlon,main="longitudes")
+image(rlat,main="latitudes")
+rMonth <- rYear <- r
+
+abundBRT <- vector(mode = 'list', length = dim(bottomT)[3])
+for(x in 1:dim(bottomT)[3]){
+  
+  mm.year <- strsplit(names(bottomT)[x], split = '[.]')
+  
+  mm <- match(mm.year[[1]][1],month.abb) 
+  rMonth[] <- mm
+  yr <- as.numeric(mm.year[[1]][2])
+  rYear[] <- yr
+  
+  sr <- stack(rlon, rlat, rMonth, rYear, subset(bottomT, x), bathyC, rugC)
+  names(sr) <- c("x", "y", "month.num", "year", "botTemp", 'bathy', 'rugosity')
+  p <- dismo::predict(object = mod, x = sr,type="response")
+  abundBRT[[x]] <- raster::rasterize(x = sppDF2[,c(1,2)], y = rYear, field = p)
+  print(x)
+}
+names(abundBRT) <- names(bottomT)
+
+###calculate RMSE/evaluate
+preds <- predict.gbm(mod, sppDF2,
+                     n.trees=mod$gbm.call$best.trees, type="response")
+calc.deviance(obs=sppDF2$value, pred=preds, calc.mean=TRUE)
+#0.1030495
+d <- cbind(sppDF2$value, preds)
+pres <- d[d[,1]==1, 2]
+abs <- d[d[,1]==0, 2]
+e <- evaluate(p=pres, a=abs, model = mod)
+
+#calculate RMSE
+(brt.rmse <- EFHSDM::RMSE(obs = sppDF2$value, pred = preds))
+
+##put obs and predicted together for ensemble 
+brt.preds <- data.frame(obs = sppDF2$value, preds = preds)
+
+###save everything
+save(mod, brt.rmse, brt.preds, abundBRT, file = "BRToutputs.RData")
+
+
 #######
 
 ####### CREATE ENSEMBLE #######
-enWeights <- MakeEnsemble(rmse = c(gam.rmse, mxnt.rmse, sdm.rmse, rf.rmse)) #make weights 
+enWeights <- MakeEnsemble(rmse = c(gam.rmse, mxnt.rmse, sdm.rmse, rf.rmse, brt.rmse)) #make weights 
 
-ens <- ValidateEnsemble(pred.list = list(bigam.preds, mxnt.preds, sdm.preds, rfsiCV), model.weights = enWeights, latlon = F)
+ens <- ValidateEnsemble(pred.list = list(bigam.preds, mxnt.preds, sdm.preds, rfsiCV, brt.preds), model.weights = enWeights, latlon = F)
 
 #make predictions 
 abundENS <- vector(mode = 'list', length = dim(bottomT)[3])
 for(x in 1:dim(bottomT)[3]){
-  #convert gam/MAXENT/RF to raster
+  #convert gam/MAXENT/RF/BRT to raster
   gamRast <- terra::rast(abund[[x]])
   mxntRast <- terra::rast(abundMXNT[[x]])
   rfRast <- terra::rast(abundRF[[x]])
+  brtRast <- terra::rast(abundBRT[[x]])
   
   #manipulate sdmTMB DF back to a raster 
   sdm <- abundSDM[[x]]
@@ -360,7 +446,7 @@ for(x in 1:dim(bottomT)[3]){
   sdmRast <- raster::rasterize(sdm, abund[[x]], 'prob')
   sdmRast <- terra::rast(sdmRast)
   
-  abundENS[[x]] <- raster(MakeEnsembleAbundance(model.weights = enWeights, abund.list = list(gamRast, mxntRast, sdmRast, rfRast)))
+  abundENS[[x]] <- raster(MakeEnsembleAbundance(model.weights = enWeights, abund.list = list(gamRast, mxntRast, sdmRast, rfRast, brtRast)))
   print(x)
 }
 names(abundENS) <- names(bottomT)

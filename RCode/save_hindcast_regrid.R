@@ -120,9 +120,195 @@ names(zoops) <- MD #set names to each layer as Mon.Year
 
 zoops <- crop(zoops, se) #takes ~30 minutes
 
+#### Bottom Aragonite Solubility ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/btm_co3_sol_arag.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+argSol <- stack(url)
+
+extent(argSol) <- e
+
+names(argSol) <- MD #set names to each layer as Mon.Year
+
+argSol <- crop(argSol, se) #takes ~30 minutes
+
+#### Diaz. Phyto PP ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/jprod_ndi_new_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+
+daizPP <- stack(url)
+
+extent(daizPP) <- e
+
+names(daizPP) <- MD #set names to each layer as Mon.Year
+
+daizPP <- crop(daizPP, se) #takes ~30 minutes
+
+#### Small Phyto PP ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/jprod_nsmp_new_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+smPP <- stack(url)
+
+extent(smPP) <- e
+
+names(smPP) <- MD #set names to each layer as Mon.Year
+
+smPP <- crop(smPP, se) #takes ~30 minutes
+
+#### Medium Phyto PP ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/jprod_nmdp_new_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+mdPP <- stack(url)
+
+extent(mdPP) <- e
+
+names(mdPP) <- MD #set names to each layer as Mon.Year
+
+mdPP <- crop(mdPP, se) #takes ~30 minutes
+
+#### Large Phyto PP ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/jprod_nlgp_new_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+lgPP <- stack(url)
+
+extent(lgPP) <- e
+
+names(lgPP) <- MD #set names to each layer as Mon.Year
+
+lgPP <- crop(lgPP, se) #takes ~30 minutes
+
+#### Small Zooplankton Nitrogen ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/nsmz_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+smZoo <- stack(url)
+
+extent(smZoo) <- e
+
+names(smZoo) <- MD #set names to each layer as Mon.Year
+
+smZoo <- crop(smZoo, se) #takes ~30 minutes
+
+
+#### Medium Zooplankton Nitrogen ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/nmdz_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+mdZoo <- stack(url)
+
+extent(mdZoo) <- e
+
+names(mdZoo) <- MD #set names to each layer as Mon.Year
+
+mdZoo <- crop(mdZoo, se) #takes ~30 minutes
+
+
+#### Large Zooplankton Nitrogen ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/nlgz_100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+lgZoo <- stack(url)
+
+extent(lgZoo) <- e
+
+names(lgZoo) <- MD #set names to each layer as Mon.Year
+
+lgZoo <- crop(lgZoo, se) #takes ~30 minutes
+
+#### Downward POC flux ####
+# Specify the OPeNDAP server URL (using regular grid output)
+url <- "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/regrid/r20230520/epc100.nwa.full.hcast.monthly.regrid.r20230520.199301-201912.nc"
+poc <- stack(url)
+
+extent(poc) <- e
+
+names(poc) <- MD #set names to each layer as Mon.Year
+
+poc <- crop(poc, se) #takes ~30 minutes
+
+
 ############
 
 ############ SAVE
-save(surfaceT, bottomT, surfaceS, bottomS, bottomO2, surfacepH, NPP, MLD, zoops, file = 'C:/Users/katherine.gallagher/Documents/MOM6/Data/regrid_NEsubset_MOM6output_May2025.RData')
+save(surfaceT, bottomT, surfaceS, bottomS, bottomO2, surfacepH, NPP, MLD, zoops, 
+     argSol, daizPP, smPP, mdPP, lgPP, 
+     smZoo, mdZoo, lgZoo, poc, file = 'C:/Users/katherine.gallagher/Documents/MOM6/Data/regrid_NEsubset_MOM6output_June2025.RData')
 
+##############
+##LOAD and CREATE MONTHLY AVERAGES 
+load('C:/Users/katherine.gallagher/Documents/MOM6/Data/regrid_NEsubset_MOM6output_June2025.RData')
 
+varList <- list(surfaceT, bottomT, surfaceS, bottomS, bottomO2, 
+                surfacepH, NPP, MLD, zoops, 
+                argSol, daizPP, smPP, mdPP, lgPP, 
+                smZoo, mdZoo, lgZoo, poc)
+
+##1993 - 2019 
+varAvg93_19 <- vector(mode = 'list', length = length(varList))
+for(v in 1:length(varList)){
+  #complete time series average for each variable
+  avg <- NULL
+  for(x in 1:12){
+    mn <- seq(x, nlayers(varList[[v]]), by = 12) #grab all month xs from timeseries by creating a sequence
+    MNS <- subset(varList[[v]], mn) #subset raster brick
+    mm <- mean(MNS) #average 
+    avg <- abind(as.array(mm), avg, along = 3) #make array and bind together
+    #print(x)
+  }
+  avg <- brick(avg) #turn it back into a rasterbrick
+  names(avg) <- month.abb #give names
+  extent(avg) <- extent(varList[[v]])
+  
+  varAvg93_19[[v]] <- avg
+  print(v)
+}
+
+names(varAvg93_19) <- c('surfaceT', 'bottomT', 'surfaceS', 'bottomS', 
+                        'bottomO2', 'surfacepH', 'NPP', 'MLD', 'zoops',  
+                        'argSol', 'daizPP', 'smPP', 'mdPP', 'lgPP', 
+                        'smZoo', 'mdZoo', 'lgZoo', 'poc')
+
+save(varAvg93_19, file = 'variable_average_list_1993_2019.RData')
+
+##normalize data 
+mth <- rep(1:12, times = 27) #27 is for the 27 years of the time series 
+normVars <- vector(mode = 'list', length = length(varList))
+for(v in 1:length(varList)){
+  #subset both lists to appropriate rasterbrick - they are in the same order so this will be the same variable 
+  vr <- varList[[v]]
+  av <- varAvg93_19[[v]]
+  
+  #normalize data in loop 
+  n <- NULL 
+  for(x in 1:nlayers(vr)){
+    #subset both rasterbricks 
+    subX <- subset(vr,x)
+    subA <- subset(av,mth[x])
+    
+    nm <- (subX - subA) / (subX@data@max - subX@data@min)
+    n <- abind(as.array(nm), n, along = 3)
+  }
+  n <- brick(n) #turn it back into a rasterbrick
+  names(n) <- names(varList[[v]]) #give names
+  extent(n) <- extent(varList[[v]])
+  
+  normVars[[v]] <- n
+  print(v)
+}
+
+names(normVars) <- c('surfaceT', 'bottomT', 'surfaceS', 'bottomS', 
+                     'bottomO2', 'surfacepH', 'NPP', 'MLD', 'zoops',  
+                     'argSol', 'daizPP', 'smPP', 'mdPP', 'lgPP', 
+                     'smZoo', 'mdZoo', 'lgZoo', 'poc')
+
+save(normVars, file = 'variable_normalized_list_1993_2019.RData')
+
+### make distance to shore 
+grid.pts <- as.data.frame(rasterToPoints(surfaceT)[,1:2])
+
+#load coastal shape file
+library(sf)
+coast <- sf::read_sf('C:/Users/katherine.gallagher/Documents/gshhg-shp-2.3.7/GSHHS_shp/f/GSHHS_f_L1.shp', crs = 4326)
+geo.box <- c(xmin = -78, xmax = -65, ymin = 35, ymax = 45)
+sf_use_s2(FALSE)
+coast2 <- st_crop(coast, geo.box)
+grid.pts$coast_dist <- dist2land(grid.pts, lon = 'x', lat = 'y', binary = F, bind = F, shapefile = coast)
+
+d2c <- rasterize(x = grid.pts[,1:2], y = surfaceT, field = grid.pts[,3], fun = mean)
+save(d2c, file = 'C:/Users/katherine.gallagher/Documents/MOM6/Data/dist_to_coast.RData')
