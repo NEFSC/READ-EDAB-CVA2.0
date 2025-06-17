@@ -214,7 +214,7 @@ rlon[]<-xy[,1] #raster of longitudes
 rlat[]<-xy[,2] #raster of latitides
 rMonth <- rYear <- r
 
-abund <- vector(mode = 'list', length = nlayers(normVars[[1]]))
+abundGAM <- vector(mode = 'list', length = nlayers(normVars[[1]]))
 for(x in 1:nlayers(normVars[[1]])){ #all the rasters in normVars have the same number of layers so it doesn't matter which one we call
   
   mm.year <- strsplit(names(normVars[[1]])[x], split = '[.]') #all the rasterbricks in normVars also have the same names so again, doesn't matter which one we call
@@ -234,13 +234,17 @@ for(x in 1:nlayers(normVars[[1]])){ #all the rasters in normVars have the same n
   
   sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, nStack)
   names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', names(normVars))
-  abund[[x]] <- MakeGAMAbundance(model = bi.model, r.stack = sr)
+  
+  #mask off waters deeper than 1000 m
+  sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
+  
+  abundGAM[[x]] <- MakeGAMAbundance(model = bi.model, r.stack = sr)
   print(x)
 }
-names(abund) <- names(normVars[[1]])
+names(abundGAM) <- names(normVars[[1]])
 
 ###save everything
-save(bi.model, bigam.cv, bigam.preds, gam.rmse, abund, file = "GAMoutputs.RData")
+save(bi.model, bigam.cv, bigam.preds, gam.rmse, abundGAM, file = "GAMoutputs.RData")
 
 
 #### EFHSDM - MAXENT ####
@@ -253,23 +257,35 @@ mxnt.preds <- mxnt.cv[[1]]
 mxnt.rmse <- RMSE(obs = mxnt.preds$abund, pred = mxnt.preds$cvpred)
 
 #make abundance rasters for entire timeseries 
-abundMXNT <- vector(mode = 'list', length = dim(bottomT)[3])
-for(x in 1:dim(bottomT)[3]){
+abundMXNT <- vector(mode = 'list', length = nlayers(normVars[[1]]))
+for(x in 1:nlayers(normVars[[1]])){
   
-  mm.year <- strsplit(names(bottomT)[x], split = '[.]')
+  mm.year <- strsplit(names(normVars[[1]])[x], split = '[.]')
   
   mm <- match(mm.year[[1]][1],month.abb) 
   rMonth[] <- mm
   yr <- as.numeric(mm.year[[1]][2])
   rYear[] <- yr
   
-  sr <- stack(rlon, rlat, rMonth, rYear, subset(bottomT, x), bathyC, rugC)
-  names(sr) <- c("x", "y", "month.num", "year", "botTemp", 'bathy', 'rugosity')
+  nStack <- vector(mode = 'list', length = length(normVars))
+  for(n in 1:length(normVars)){
+    nStack[[n]] <- subset(normVars[[n]], x)
+  }
+  nStack <- stack(nStack)
+  crs(nStack) <- crs(bathyC)
+  extent(nStack) <- extent(bathyC)
+  
+  sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, nStack)
+  names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', names(normVars))
+  
+  #mask off waters deeper than 1000 m
+  sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
+  
   abundMXNT[[x]] <- raster(MakeMaxEntAbundance(model = mxnt, maxent.stack = sr, type = 'maxnet'))
   print(x)
 }
 #abundMXNT <- stack(abundMXNT)
-names(abundMXNT) <- names(bottomT)
+names(abundMXNT) <- names(normVars[[1]])
 
 ###save everything
 save(mxnt, mxnt.cv, mxnt.preds, mxnt.rmse, abundMXNT, file = "MAXENToutputs.RData")
@@ -280,12 +296,23 @@ save(mxnt, mxnt.cv, mxnt.preds, mxnt.rmse, abundMXNT, file = "MAXENToutputs.RDat
 #convert dataframe to spatial object 
 stDF = st_as_sf(sppDF2, coords = c("x", "y"), crs = 4326, agr = "constant")
 
+#create formula 
+form <- "value ~ + bathy + rugosity + month.num + year"
+#add feeding guild covariates
+for(x in 1:length(fInd)){
+  form <- paste(form, ' + ', colnames(sppDF2)[fInd[x]], sep = '')
+}
+#add habitat guild covariates
+for(x in 1:length(hInd)){
+  form <- paste(form, ' + ', colnames(sppDF2)[hInd[x]], sep = '')
+}
+
 # fit the RFSI model
-rfsi_model <- rfsi(formula = value ~ botTemp + bathy + rugosity + year + month.num,
+rfsi_model <- rfsi(formula = form,
                    data = stDF, 
                    zero.tol = 0,
                    n.obs = 10, # number of nearest observations
-                   cpus = 4,
+                   cpus = 6,
                    progress = TRUE,
                    importance = "impurity",
                    seed = 42,
@@ -308,7 +335,7 @@ mtry <- 3:(2+2*max(n.obs))
 tgrid = expand.grid(min.node.size=min.node.size, num.trees=ntree,
                     mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
 
-rfsiCV <- cv.rfsi(formula = value ~ botTemp + bathy + rugosity + year + month.num,
+rfsiCV <- cv.rfsi(formula = form,
                   data = stDF, 
                   tgrid = tgrid, # combinations for tuning
                   tgrid.n = 2, # number of randomly selected combinations from tgrid for tuning
@@ -325,11 +352,11 @@ rfsiCV <- cv.rfsi(formula = value ~ botTemp + bathy + rugosity + year + month.nu
 rf.rmse <- EFHSDM::RMSE(obs = rfsiCV$obs, pred = rfsiCV$pred)
 
 #build predictions 
-r <- subset(bottomT, 1)
+r <- subset(normVars[[1]], 1)
 rMonth <- rYear <- r
 
-abundRF <- vector(mode = 'list', length = dim(bottomT)[3])
-for(x in 1:dim(bottomT)[3]){
+abundRF <- vector(mode = 'list', length = nlayers(normVars[[1]]))
+for(x in 1:nlayers(normVars[[1]])){
   
   mm.year <- strsplit(names(bottomT)[x], split = '[.]')
   
@@ -338,8 +365,20 @@ for(x in 1:dim(bottomT)[3]){
   yr <- as.numeric(mm.year[[1]][2])
   rYear[] <- yr
   
-  sr <- stack(rMonth, rYear, subset(bottomT, x), bathyC, rugC)
-  names(sr) <- c("month.num", "year", "botTemp", 'bathy','rugosity')
+  nStack <- vector(mode = 'list', length = length(normVars))
+  for(n in 1:length(normVars)){
+    nStack[[n]] <- subset(normVars[[n]], x)
+  }
+  nStack <- stack(nStack)
+  crs(nStack) <- crs(bathyC)
+  extent(nStack) <- extent(bathyC)
+  
+  sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, nStack)
+  names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', names(normVars))
+  
+  #mask off waters deeper than 1000 m
+  sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
+  
   abundRF[[x]] <- raster(pred.rfsi(model = rfsi_model,
                             data = stDF, 
                             obs.col = "value",
@@ -350,7 +389,7 @@ for(x in 1:dim(bottomT)[3]){
                             progress = TRUE))
   print(x)
 }
-names(abundRF) <- names(bottomT)
+names(abundRF) <- names(normVars[[1]])
 
 ###save everything
 save(rfsi_model, rfsiCV, rf.rmse, abundRF, file = "RFoutputs.RData")
@@ -425,39 +464,49 @@ save(mesh, fit, fitCV, sdm.preds, sdm.rmse, abundSDM, file = "sdmTMBoutputs.RDat
 
 
 #### Boosted Regression Tree ####
-mod <- gbm.step(data = sppDF2, gbm.x = c(1:2,6:10), gbm.y = 4, 
+mod <- gbm.step(data = sppDF2, gbm.x = c('x', 'y', 'month.num', 'year', 'bathy', 'rugosity', names(sppDF2)[fInd], names(sppDF2)[hInd]), 
+                gbm.y = 'value', 
                 family = 'bernoulli', tree.complexity = 5,
                 learning.rate = 0.01, bag.fraction = 0.75, n.folds = 10)
 
 ##abundance 
 #get lat/lon from raster
-r <- subset(bottomT, 1)
+r <- subset(normVars[[1]], 1)
 rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
 xy<-xyFromCell(r,1:length(r)) #matrix of logitudes (x) and latitudes(y)
 rlon[]<-xy[,1] #raster of longitudes
 rlat[]<-xy[,2] #raster of latitides
-par(mfrow=c(1,2))
-image(rlon,main="longitudes")
-image(rlat,main="latitudes")
 rMonth <- rYear <- r
 
-abundBRT <- vector(mode = 'list', length = dim(bottomT)[3])
-for(x in 1:dim(bottomT)[3]){
+abundBRT <- vector(mode = 'list', length = nlayers(normVars[[1]]))
+for(x in 1:nlayers(normVars[[1]])){
   
-  mm.year <- strsplit(names(bottomT)[x], split = '[.]')
+  mm.year <- strsplit(names(nlayers(normVars[[1]]))[x], split = '[.]')
   
   mm <- match(mm.year[[1]][1],month.abb) 
   rMonth[] <- mm
   yr <- as.numeric(mm.year[[1]][2])
   rYear[] <- yr
   
-  sr <- stack(rlon, rlat, rMonth, rYear, subset(bottomT, x), bathyC, rugC)
-  names(sr) <- c("x", "y", "month.num", "year", "botTemp", 'bathy', 'rugosity')
+  nStack <- vector(mode = 'list', length = length(normVars))
+  for(n in 1:length(normVars)){
+    nStack[[n]] <- subset(normVars[[n]], x)
+  }
+  nStack <- stack(nStack)
+  crs(nStack) <- crs(bathyC)
+  extent(nStack) <- extent(bathyC)
+  
+  sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, nStack)
+  names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', names(normVars))
+  
+  #mask off waters deeper than 1000 m
+  sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
+  
   p <- dismo::predict(object = mod, x = sr,type="response")
   abundBRT[[x]] <- raster::rasterize(x = sppDF2[,c(1,2)], y = rYear, field = p)
   print(x)
 }
-names(abundBRT) <- names(bottomT)
+names(abundBRT) <- names(normVars[[1]])
 
 ###calculate RMSE/evaluate
 preds <- predict.gbm(mod, sppDF2,
