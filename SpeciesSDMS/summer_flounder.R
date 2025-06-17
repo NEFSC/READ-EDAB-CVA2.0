@@ -142,6 +142,62 @@ sppDF2$value <- replace(sppDF2$value, sppDF2$value == 2, 1)
 save(sppDF2, file = 'fisheries_environment_dataframe.RData')
 #######
 
+#### DETERMINE GUILDS ####
+#load in CSV with feeding and habitat guilds defined 
+guilds <- read.csv('~/READ-EDAB-CVA2.0/CVA2.0 Species List.csv')
+g <- which(guilds$SCI_NAME == trg) #find row associated with species
+
+#isolate feeding guild
+fGuild <- guilds$Feeding.Guild[g]
+
+#isolate habitat guild
+hGuild <- guilds$Habitat.Guild[g]
+
+##isolate covariates for each guild type 
+#Feeding guilds: 
+  #Planktivores - diazotroph, small, medium, and large phytoplankton primary productivity integrated in top 100 m (new NO3-based) 
+  #Piscivores - small, medium, large zooplankton Nitrogen biomass in upper 100 m
+  #Bethos/benthivores - Downware particulate organic carbon flux, net primary production? 
+  #Apex predators - net primary production
+
+if(fGuild == 'Planktivore'){
+  fInd <- which(colnames(sppDF2) == 'daizPP' | 
+                  colnames(sppDF2) == 'smPP' | 
+                  colnames(sppDF2) == 'mdPP' |
+                  colnames(sppDF2) == 'lgPP')
+}
+if(fGuild == 'Piscivore'){
+  fInd <- which(colnames(sppDF2) == 'smZoo' | 
+                  colnames(sppDF2) == 'mdZoo' | 
+                  colnames(sppDF2) == 'lgZoo')
+}
+if(fGuild == 'Benthos' | fGuild == 'Benthivore'){
+  fInd <- which(colnames(sppDF2) == 'poc' | 
+                  colnames(sppDF2) == 'NPP')
+}
+if(fGuild == 'Apex Predator'){
+  fInd <- which(colnames(sppDF2) == 'NPP')
+}
+
+#Habitat guilds: 
+#  Groundfish/benthos - bottom temperature, salinity, oxygen, aragonite solubility (proxy for pH)
+#   Pelagic/migratory - surface temperature, salinity, surface pH, MLD
+
+if(hGuild == 'Groundfish' | hGuild == 'Benthic'){
+  hInd <- which(colnames(sppDF2) == 'bottomT' | 
+                  colnames(sppDF2) == 'bottomS' | 
+                  colnames(sppDF2) == 'bottomO2' |
+                  colnames(sppDF2) == 'argSol' )
+}
+if(hGuild == 'Pelagic' | hGuild == 'Pelagic Migratory'){
+  hInd <- which(colnames(sppDF2) == 'surfaceT' | 
+                  colnames(sppDF2) == 'surfaceS' | 
+                  colnames(sppDF2) == 'surfacepH' |
+                  colnames(sppDF2) == 'MLD' )
+}
+
+#######
+
 ####### RUN MODELS #######
 #### EFHSDM - GAM ####
 #formula
