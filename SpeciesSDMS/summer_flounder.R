@@ -2,6 +2,7 @@
 
 ###load libraries
 library(ncdf4)
+library(caret)
 library(DescTools)
 library(fields)
 library(abind)
@@ -29,7 +30,7 @@ library(gamm4)
 
 
 ####### BUILD DIRECTORY ######
-setwd("~/READ-EDAB-CVA2.0/SpeciesSDMS")
+setwd("~/ClimateVulnerabilityAssessment2.0)/SpeciesModels")
 
 #name directory - use common name for species in camel case
 dirName <- 'SummerFlounder'
@@ -50,10 +51,10 @@ trg <- 	"PARALICHTHYS DENTATUS" #summer flounder example for methods workshop
 dirName 
 
 #open connection - needs vpn
-channel <- dbutils::connect_to_database(server="NEFSC_pw_oraprod",uid="KGALLAGHER")
+channel <- dbutils::connect_to_database(server="NEFSC_USERS",uid="KGALLAGHER")
 
 #load create_pa_rast function
-source('C:/Users/katherine.gallagher/Documents/Code/create_pa_rast.R')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/create_pa_rast.R')
 
 summerFlounder <- create_pa_rast(target = trg)
 
@@ -65,15 +66,15 @@ save(sppRast, file = 'rasters.RData')
 
 ####### GET ENVIRONMENTAL DATA ####
 ##load normalized MOM6 output 
-load("~/MOM6/data/variable_normalized_list_1993_2019.RData")
+load("~/ClimateVulnerabilityAssessment2.0)/Data/variable_normalized_list_1993_2019.RData")
 #'surfaceT', 'bottomT', 'surfaceS', 'bottomS', 'bottomO2', 'surfacepH', 'NPP', 'MLD', 'zoops',  'argSol', 'daizPP', 'smPP', 'mdPP', 'lgPP', 'smZoo', 'mdZoo', 'lgZoo', 'poc'
 
 #get distance to shore 
-load('~/MOM6/data/dist_to_coast.RData') #d2c - already a raster 
+load('~/ClimateVulnerabilityAssessment2.0)/Data/dist_to_coast.RData') #d2c - already a raster 
 
 ##get bathy & rugosity
 #bathymetry
-bathy <- raster('C:/Users/katherine.gallagher/Documents/NES_bathy.tiff') #load bathy raster
+bathy <- raster('~/ClimateVulnerabilityAssessment2.0)/Data/NES_bathy.tiff') #load bathy raster
 
 #rugosity 
 bathySpat <- rast(bathy) #convert to terra to use terra function
@@ -95,6 +96,7 @@ rugC <- rasterize(x = rug.grid[,1:2], y = r, field = rug.grid[,3], fun = mean)
 #### MATCH FISHERIES & ENVIRONMENTAL DATA ####
 ##get data frame 
 spDF <- summerFlounder[[2]]
+save(spDF, file = 'fisheries_dataframe.RData')
 
 #match data to rasters - do for all covariates and then just use the ones that are important 
 for(x in 1:length(normVars)){
@@ -132,7 +134,7 @@ save(sppDF2, file = 'fisheries_environment_dataframe.RData')
 
 #### DETERMINE GUILDS ####
 #load in CSV with feeding and habitat guilds defined 
-guilds <- read.csv('~/READ-EDAB-CVA2.0/CVA2.0 Species List.csv')
+guilds <- read.csv('~/ClimateVulnerabilityAssessment2.0)/CVA2.0 Species List.csv')
 g <- which(guilds$SCI_NAME == trg) #find row associated with species
 
 #isolate feeding guild
@@ -186,28 +188,33 @@ if(hGuild == 'Pelagic' | hGuild == 'Pelagic Migratory'){
 
 #######
 
+#### REMOVE CORRELATED VARIABLES ####
+spDF2 <- sppDF2[,c(1:2,4,6:7, 26:28, hInd, fInd)] #subset dataframe to x,y,value, month, year, static variables, and relevant environmental covariates
+
+corInd <- findCorrelation(cor(spDF2[,-c(1:5)]), names = T) #find correlated variables 
+
+spDF2 <- spDF2[,-which(colnames(spDF2) == corInd)]
+
+#######
+
 ####### RUN MODELS #######
 #### EFHSDM - GAM ####
 
 #formula - write out static variables that will be consistent across all feeding and habitat guilds
 form <- "value ~ s(x,y, bs = 'ts', k=10) + s(bathy, bs = 'ts', k=6) + s(rugosity, bs = 'ts', k=6) + s(coast_dist, bs = 'ts', k=6) + s(month_num, bs = 'cc', k=6) + s(coast_dist, month_num, bs = 'ts', k = 3) + s(year, bs = 'ts', k=6)"
-#add feeding guild covariates
-for(x in 1:length(fInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[fInd[x]], ", bs = 'ts', k=6)", sep = '')
-}
-#add habitat guild covariates
-for(x in 1:length(hInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[hInd[x]], ", bs = 'ts', k=6) ", sep = '')
+#add covariates
+for(x in 6:ncol(spDF2)){
+    form <- paste(form, ' + s(', colnames(spDF2)[x], ", bs = 'ts', k=6)", sep = '')
 }
 
 gam.form <- formula(form)
 
 #run model
-bi.model <- FitGAM(gam.formula = gam.form, data = sppDF2, family.gam = "binomial", select = T, reduce = T)
+bi.model <- FitGAM(gam.formula = gam.form, data = spDF2, family.gam = "binomial", select = T, reduce = T)
 
 #cross validation to get RMSE
 ###get RMSE
-bigam.cv <- CrossValidateModel(model = bi.model, data = sppDF2, folds = 10, model.type = "gam")
+bigam.cv <- CrossValidateModel(model = bi.model, data = spDF2, folds = 10, model.type = "gam")
 bigam.preds <- bigam.cv[[1]]
 gam.rmse <- RMSE(obs = bigam.preds$abund, pred = bigam.preds$cvpred)
 
@@ -256,10 +263,10 @@ save(bi.model, bigam.cv, bigam.preds, gam.rmse, abundGAM, file = "GAMoutputs.RDa
 
 #### EFHSDM - MAXENT ####
 #run model - no formula needed
-mxnt <- FitMaxnet(data = sppDF2, species = 'value', vars = c('x', 'y', 'month_num', 'year', 'bathy', 'rugosity', 'coast_dist', names(sppDF2)[fInd], names(sppDF2)[hInd]), reduce = T)
+mxnt <- FitMaxnet(data = spDF2, species = 'value', vars = c('x', 'y', 'month_num', 'year', colnames(spDF2)[6:ncol(spDF2)]), reduce = T)
 
 #cross validate and get RMSE
-mxnt.cv <- CrossValidateModel(model = mxnt, data = sppDF2, folds = 10, model.type = "maxnet", species = 'value', scale.preds = F)
+mxnt.cv <- CrossValidateModel(model = mxnt, data = spDF2, folds = 10, model.type = "maxnet", species = 'value', scale.preds = F)
 mxnt.preds <- mxnt.cv[[1]]
 mxnt.rmse <- RMSE(obs = mxnt.preds$abund, pred = mxnt.preds$cvpred)
 
@@ -298,62 +305,57 @@ names(abundMXNT) <- names(normVars[[1]])
 save(mxnt, mxnt.cv, mxnt.preds, mxnt.rmse, abundMXNT, file = "MAXENToutputs.RData")
 
 
-#### MATEO - RANDOM FOREST SPATIAL INTERPOLATION (RFSI) ####
+#### METEO - RANDOM FOREST SPATIAL INTERPOLATION (RFSI) ####
 
 #convert dataframe to spatial object 
-stDF = st_as_sf(sppDF2, coords = c("x", "y"), crs = 4326, agr = "constant")
+stDF = st_as_sf(spDF2, coords = c("x", "y"), crs = 4326, agr = "constant")
 
 #create formula 
 form <- "value ~ + bathy + rugosity + coast_dist + month_num + year"
-#add feeding guild covariates
-for(x in 1:length(fInd)){
-  form <- paste(form, ' + ', colnames(sppDF2)[fInd[x]], sep = '')
-}
-#add habitat guild covariates
-for(x in 1:length(hInd)){
-  form <- paste(form, ' + ', colnames(sppDF2)[hInd[x]], sep = '')
+#add covariates
+for(x in 6:ncol(spDF2)){
+  form <- paste(form, ' + ', colnames(spDF2)[x], sep = '')
 }
 
-# fit the RFSI model
-rfsi_model <- rfsi(formula = formula(form),
-                   data = stDF, 
-                   zero.tol = 0,
-                   n.obs = 10, # number of nearest observations
-                   cpus = 6,
-                   progress = TRUE,
-                   importance = "impurity",
-                   seed = 42,
-                   num.trees = 250,
-                   mtry = 5,
-                   splitrule = "variance",
-                   min.node.size = 5,
-                   sample.fraction = 0.95,
-                   quantreg = FALSE)
-
-#cross validation 
-## now do cross validation 
-# making tgrid - defaults from examples 
-n.obs <- 1:6
+#tuning parameters for model
+n.obs <- 1:10
 min.node.size <- 2:10
 sample.fraction <- seq(1, 0.632, -0.05) # 0.632 without / 1 with replacement
 splitrule <- "variance"
-ntree <- 250 # 500
+ntree <- 200 # 500
 mtry <- 3:(2+2*max(n.obs))
 tgrid = expand.grid(min.node.size=min.node.size, num.trees=ntree,
                     mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
 
+
+# fit the RFSI model
+rfsi_model <- tune.rfsi(formula = formula(form),
+                   data = stDF, 
+                   cpus = 6,
+                   progress = TRUE,
+                   importance = "impurity",
+                   seed = 42,
+                   fit.final.model = T, 
+                   acc.metric = 'RMSE',
+                   tgrid = tgrid,
+                   tune.type = "LLO", # Leave-Location-Out CV
+                   probability = T, 
+                   write.forest = T)
+
+#cross validation 
 rfsiCV <- cv.rfsi(formula = formula(form),
                   data = stDF, 
                   tgrid = tgrid, # combinations for tuning
-                  tgrid.n = 2, # number of randomly selected combinations from tgrid for tuning
                   tune.type = "LLO", # Leave-Location-Out CV
+                  probability = T,
                   k = 10, # number of folds
                   seed = 42,
                   acc.metric = "RMSE", # R2, CCC, MAE
                   output.format = "data.frame", # "data.frame", # "SpatVector",
-                  cpus=4, # detectCores()-1,
+                  cpus=6, # detectCores()-1,
                   progress=1,
-                  importance = "impurity") # ranger parameter
+                  importance = "impurity", 
+                  write.forest = T) # ranger parameter
 
 #get RMSE
 rf.rmse <- EFHSDM::RMSE(obs = rfsiCV$obs, pred = rfsiCV$pred)
@@ -403,11 +405,41 @@ save(rfsi_model, rfsiCV, rf.rmse, abundRF, file = "RFoutputs.RData")
 
 
 #### Boosted Regression Tree ####
-mod <- gbm.step(data = sppDF2, gbm.x = c('x', 'y', 'month_num', 'year', 'bathy', 'rugosity', 'coast_dist', names(sppDF2)[fInd], names(sppDF2)[hInd]), 
+mod <- gbm.step(data = spDF2, gbm.x = c('x', 'y', 'month_num', 'year', names(spDF2)[6:ncol(spDF2)]), 
                 gbm.y = 'value', 
                 family = 'bernoulli', tree.complexity = 5,
-                learning.rate = 0.01, bag.fraction = 0.75, n.folds = 10)
-#this does the k-fold validation as well as builds the model so a seperate k-folds validation call isn't necessary
+                learning.rate = 0.005, bag.fraction = 0.75, n.folds = 10)
+
+#k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
+#code for paper Camrin et al 2023: https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.2893
+source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_brt.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/pseudoR2.brt.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/saveTSS.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/saveAUC.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/bhattacharyya.stat.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/bhatt.coef.r')
+
+brt_kfold <- eval_kfold_brt(dataInput = spDF2, 
+                            gbm.x = c('x', 'y', 'month_num', 'year', names(spDF2)[6:ncol(spDF2)]), 
+                            gbm.y = 'value',  
+                            learning.rate = 0.005, 
+                            bag.fraction = 0.75, 
+                            tree.complexity = 5, 
+                            k_folds = 10,
+                            is_fixed = F)
+
+summary_stats <- as.data.frame(eval_brt(mod, spDF2, 'value', plot = FALSE))
+
+brt_kfold <- lapply(brt_kfold, FUN=function(x) x) %>% do.call(rbind, .) %>% as.data.frame()
+brt_kfold <- data.frame(as.list(colMeans(brt_kfold)))
+for (i in 1:ncol(brt_kfold)) names(brt_kfold)[i] <- paste0('kfold_', names(brt_kfold)[i])
+summary_stats <- cbind(summary_stats, brt_kfold)
+summary_stats$kfold_nfolds <- 10
+summary_stats$n_pres <- length(which(df[,response] == 1))
+summary_stats$n_abs <- length(which(df[,response] == 0))
+summary_stats$tmin <- min(as.Date(df$date))
+summary_stats$tmax <- max(as.Date(df$date))
 
 ##abundance 
 #get lat/lon from raster
@@ -443,25 +475,25 @@ for(x in 1:nlayers(normVars[[1]])){
   sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
   
   p <- dismo::predict(object = mod, x = sr,type="response")
-  abundBRT[[x]] <- raster::rasterize(x = sppDF2[,c(1,2)], y = rYear, field = p)
+  abundBRT[[x]] <- raster::rasterize(x = spDF2[,c(1,2)], y = rYear, field = p)
   print(x)
 }
 names(abundBRT) <- names(normVars[[1]])
 
 ###calculate RMSE/evaluate
-preds <- predict.gbm(mod, sppDF2,
+preds <- predict.gbm(mod, spDF2,
                      n.trees=mod$gbm.call$best.trees, type="response")
-calc.deviance(obs=sppDF2$value, pred=preds, calc.mean=TRUE)
-d <- cbind(sppDF2$value, preds)
+calc.deviance(obs=spDF2$value, pred=preds, calc.mean=TRUE)
+d <- cbind(spDF2$value, preds)
 pres <- d[d[,1]==1, 2]
 abs <- d[d[,1]==0, 2]
 e <- evaluate(p=pres, a=abs, model = mod)
 
 #calculate RMSE
-(brt.rmse <- EFHSDM::RMSE(obs = sppDF2$value, pred = preds))
+(brt.rmse <- EFHSDM::RMSE(obs = spDF2$value, pred = preds))
 
 ##put obs and predicted together for ensemble 
-brt.preds <- data.frame(obs = sppDF2$value, preds = preds)
+brt.preds <- data.frame(obs = spDF2$value, preds = preds)
 
 ###save everything
 save(mod, brt.rmse, brt.preds, abundBRT, file = "BRToutputs.RData")
@@ -471,22 +503,22 @@ save(mod, brt.rmse, brt.preds, abundBRT, file = "BRToutputs.RData")
 ## WARNING - THIS IS THE LONG ONE - 2/12 deg mesh takes about an hour to run the Cross Validation and ~2 hours to predict the entire timeseries
 
 #make mesh
-mesh <- make_mesh(sppDF2, xy_cols = c('x', 'y'), cutoff = 6/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
+mesh <- make_mesh(spDF2, xy_cols = c('x', 'y'), cutoff = 6/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
 #MOM6 resolution is 1/12 = ~8 km 
 
 form <- "value ~ s(bathy, k=6) + s(rugosity, k=6) + s(month_num, k = 6) + s(year, k = 6) + s(coast_dist, k = 6) + s(month_num, coast_dist, k = 3)"
 #add feeding guild covariates
 for(x in 1:length(fInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[fInd[x]], ', k = 6) ', sep = '')
+  form <- paste(form, ' + s(', colnames(spDF2)[fInd[x]], ', k = 6) ', sep = '')
 }
 #add habitat guild covariates
 for(x in 1:length(hInd)){
-  form <- paste(form, ' + s(', colnames(sppDF2)[hInd[x]], ', k = 6) ', sep = '')
+  form <- paste(form, ' + s(', colnames(spDF2)[hInd[x]], ', k = 6) ', sep = '')
 }
 
 fit <- sdmTMB(
   formula = formula(form),
-  data = sppDF2,
+  data = spDF2,
   mesh = mesh,
   family = binomial(link = 'logit'),
   spatial = "off",
@@ -501,7 +533,7 @@ save(mesh, fit, file = "sdmTMBoutputs.RData")
 plan(multisession, workers = 5)
 fitCV <- sdmTMB_cv(
   formula = formula(form),
-  data = sppDF2,
+  data = spDF2,
   mesh = mesh,
   family = binomial(link = 'logit'),
   spatial = "off",
@@ -539,12 +571,13 @@ for(x in 1:nlayers(normVars[[1]])){ #stopped randomly in the middle so make sure
   rastDF$Mon.Yr <- names(normVars[[1]])[x]
   my <- strsplit(x = rastDF$Mon.Yr, split = '[.]')
   rastDF$month <- unlist(lapply(my, FUN = function(x){x[1]}))
-  rastDF$month.num <- match(rastDF$month, month.abb)
+  rastDF$month_num <- match(rastDF$month, month.abb)
   rastDF$year <- as.numeric(unlist(lapply(my, FUN = function(x){x[2]})))
   
   ##extract bathy/rug points
   rastDF$bathy <- raster::extract(bathy, rastDF[,c('x', 'y')])
   rastDF$rugosity <- raster::extract(rug, rastDF[,c('x', 'y')])
+  rastDF$coast_dist <- raster::extract(d2c, rastDF[,c('x', 'y')])
   
   abundSDM[[x]] <- predict(fit, newdata = rastDF)
   print(x)
