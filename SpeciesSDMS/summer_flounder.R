@@ -307,18 +307,23 @@ save(mxnt, mxnt.cv, mxnt.preds, mxnt.rmse, abundMXNT, file = "MAXENToutputs.RDat
 
 #### METEO - RANDOM FOREST SPATIAL INTERPOLATION (RFSI) ####
 
+spDF2$staid <- 1:nrow(spDF2) #standin station ids 
+#spDF2$MMYY <- my(paste(spDF2$month_num, spDF2$year, sep = '-'))
+spDF2$year <- year(spDF2$year)
+
 #convert dataframe to spatial object 
 stDF = st_as_sf(spDF2, coords = c("x", "y"), crs = 4326, agr = "constant")
+stDF = st_sftime(stDF, time_column_name = 'time')
 
 #create formula 
-form <- "value ~ + bathy + rugosity + coast_dist + month_num + year"
+form <- "value ~ month_num"
 #add covariates
 for(x in 6:ncol(spDF2)){
   form <- paste(form, ' + ', colnames(spDF2)[x], sep = '')
 }
 
 #tuning parameters for model
-n.obs <- 1:10
+n.obs <- 5:10
 min.node.size <- 2:10
 sample.fraction <- seq(1, 0.632, -0.05) # 0.632 without / 1 with replacement
 splitrule <- "variance"
@@ -328,34 +333,24 @@ tgrid = expand.grid(min.node.size=min.node.size, num.trees=ntree,
                     mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
 
 
-# fit the RFSI model
-rfsi_model <- tune.rfsi(formula = formula(form),
-                   data = stDF, 
-                   cpus = 6,
+# cross-validate and tune the RFSI model (all included in single function)
+rfsiCV <- cv.rfsi(formula = formula(form),
+                   data = stDF,
+                   data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
+                   cpus = 10,
                    progress = TRUE,
                    importance = "impurity",
                    seed = 42,
-                   fit.final.model = T, 
                    acc.metric = 'RMSE',
                    tgrid = tgrid,
+                   tgrid.n= length(tgrid),
                    tune.type = "LLO", # Leave-Location-Out CV
-                   probability = T, 
-                   write.forest = T)
+                   write.forest = T, 
+                   s.crs = st_crs(stDF), 
+                   k = 10)
 
-#cross validation 
-rfsiCV <- cv.rfsi(formula = formula(form),
-                  data = stDF, 
-                  tgrid = tgrid, # combinations for tuning
-                  tune.type = "LLO", # Leave-Location-Out CV
-                  probability = T,
-                  k = 10, # number of folds
-                  seed = 42,
-                  acc.metric = "RMSE", # R2, CCC, MAE
-                  output.format = "data.frame", # "data.frame", # "SpatVector",
-                  cpus=6, # detectCores()-1,
-                  progress=1,
-                  importance = "impurity", 
-                  write.forest = T) # ranger parameter
+#save best model 
+rfsi_model <- rfsiCV$final.model
 
 #get RMSE
 rf.rmse <- EFHSDM::RMSE(obs = rfsiCV$obs, pred = rfsiCV$pred)
@@ -388,13 +383,12 @@ for(x in 1:nlayers(normVars[[1]])){
   #mask off waters deeper than 1000 m
   sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
   
-  abundRF[[x]] <- raster(pred.rfsi(model = rfsi_model,
+  abundRF[[x]] <- raster(pred.rfsi(model = rfsi_tune$final.model,
                             data = stDF, 
                             obs.col = "value",
                             newdata = terra::rast(sr), 
                             output.format = "SpatRaster", # "sf", # "SpatVector", 
-                            zero.tol = 0,
-                            cpus = 1, # detectCores()-1,
+                            cpus = 10, # detectCores()-1,
                             progress = TRUE))
   print(x)
 }
@@ -412,7 +406,7 @@ mod <- gbm.step(data = spDF2, gbm.x = c('x', 'y', 'month_num', 'year', names(spD
 
 #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
 #code for paper Camrin et al 2023: https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.2893
-source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt.r')
+source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt_wpredictions.r')
 source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_brt.r')
 source('~/ClimateVulnerabilityAssessment2.0)/Code/pseudoR2.brt.r')
 source('~/ClimateVulnerabilityAssessment2.0)/Code/saveTSS.r')
@@ -429,17 +423,26 @@ brt_kfold <- eval_kfold_brt(dataInput = spDF2,
                             k_folds = 10,
                             is_fixed = F)
 
+#this is all informative but doesn't provide the information to calculate RMSE
 summary_stats <- as.data.frame(eval_brt(mod, spDF2, 'value', plot = FALSE))
 
-brt_kfold <- lapply(brt_kfold, FUN=function(x) x) %>% do.call(rbind, .) %>% as.data.frame()
-brt_kfold <- data.frame(as.list(colMeans(brt_kfold)))
-for (i in 1:ncol(brt_kfold)) names(brt_kfold)[i] <- paste0('kfold_', names(brt_kfold)[i])
-summary_stats <- cbind(summary_stats, brt_kfold)
+brt_kfold2 <- lapply(brt_kfold[[1]], FUN=function(x) x) %>% do.call(rbind, .) %>% as.data.frame()
+brt_kfold2 <- data.frame(as.list(colMeans(brt_kfold2)))
+for (i in 1:ncol(brt_kfold2)) names(brt_kfold2)[i] <- paste0('kfold_', names(brt_kfold2)[i])
+summary_stats <- cbind(summary_stats, brt_kfold2)
 summary_stats$kfold_nfolds <- 10
-summary_stats$n_pres <- length(which(df[,response] == 1))
-summary_stats$n_abs <- length(which(df[,response] == 0))
-summary_stats$tmin <- min(as.Date(df$date))
-summary_stats$tmax <- max(as.Date(df$date))
+summary_stats$n_pres <- length(which(spDF2[,response] == 1))
+summary_stats$n_abs <- length(which(spDF2[,response] == 0))
+
+##edited eval_kfold_brt to provide all training data subsets with predictions/obs to calculate RMSE 
+# eval_kfold_brt will now return the summary_stats table as item 1 in the list, 
+# and a datatable with the observations and predictions in item 2 of the list
+#calculate RMSE
+(brt.rmse <- EFHSDM::RMSE(obs = brt_kfold[[2]]$value, pred = brt_kfold[[2]]$preds))
+
+##put obs and predicted together for ensemble 
+brt.preds <- data.frame(obs = brt_kfold[[2]]$value, preds = brt_kfold[[2]]$preds)
+
 
 ##abundance 
 #get lat/lon from raster
@@ -469,7 +472,7 @@ for(x in 1:nlayers(normVars[[1]])){
   extent(nStack) <- extent(bathyC)
   
   sr <- stack(rlon, rlat, rMonth, rYear, bathyC, rugC, d2c, nStack)
-  names(sr) <- c("x", "y", "month.num", "year", 'bathy', 'rugosity', "coast_dist", names(normVars))
+  names(sr) <- c("x", "y", "month_num", "year", 'bathy', 'rugosity', "coast_dist", names(normVars))
   
   #mask off waters deeper than 1000 m
   sr <- replace(sr, bathyC < -1000 | bathyC > 0, NA)
@@ -479,21 +482,6 @@ for(x in 1:nlayers(normVars[[1]])){
   print(x)
 }
 names(abundBRT) <- names(normVars[[1]])
-
-###calculate RMSE/evaluate
-preds <- predict.gbm(mod, spDF2,
-                     n.trees=mod$gbm.call$best.trees, type="response")
-calc.deviance(obs=spDF2$value, pred=preds, calc.mean=TRUE)
-d <- cbind(spDF2$value, preds)
-pres <- d[d[,1]==1, 2]
-abs <- d[d[,1]==0, 2]
-e <- evaluate(p=pres, a=abs, model = mod)
-
-#calculate RMSE
-(brt.rmse <- EFHSDM::RMSE(obs = spDF2$value, pred = preds))
-
-##put obs and predicted together for ensemble 
-brt.preds <- data.frame(obs = spDF2$value, preds = preds)
 
 ###save everything
 save(mod, brt.rmse, brt.preds, abundBRT, file = "BRToutputs.RData")
