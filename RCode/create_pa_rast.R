@@ -19,9 +19,12 @@ library(reshape2)
 #scientific name of species of interest
 #trg <- "MUSTELUS CANIS"  #smooth dogfish
 
-create_pa_rast <- function(target){
+surveyCSV <- c('~/TrawlData/MaineDMR_Trawl_Survey_Tow_Catch_2025-06-30.csv')
+surveyColumns <- matrix(c('Start_Longitude', 'Start_Latitude', 'Start_Date', 'Number_Caught', 'Common_Name'), nrow = 1, ncol = 5)
+
+create_pa_rast <- function(target.sci, target.common, target.alt, addSurveys, surveyCols){
   #function to create presence/absence (PA) raster brick for a target species
-  #target is the scientific name of the species of interest
+  #target.sci/common is the scientific/common name of the species of interest
   #connection to NEFSC database should be established prior to running the function
 #### step 1 ####
 #get grid 
@@ -105,6 +108,21 @@ obsdatNE <- obsdat[i,]
 ###from data pull to here takes ~12 minutes; NE subset is much easier to work with 
 rm(obsdat) #remove larger dataframe to save space/memory
 
+### add state/other surveys
+if(length(addSurveys) != 0){ #if there are additional csvs to add, do this piece 
+  surveys <- NULL 
+  for(x in 1:length(addSurveys)){
+    s <- read.csv(addSurveys[x]) #read in each csv
+    s$time <- as.POSIXct(s[,surveyColumns[x,3]]) #pull time
+    s$month <- month(s$time) #make month
+    s$year <- year(s$time) #make year
+    
+    s <- s[,c('time', 'month', 'year', surveyColumns[x,])] #subset to important columns
+    colnames(s) <- c('time', 'month', 'year', 'longitude', 'latitude', 'date', 'count', 'name')
+    surveys <- rbind(surveys, s) #bind csvs together
+  }
+}
+
 #### step 2 ####
 #loop through years and months to build rasters for target species
 
@@ -113,7 +131,7 @@ mths <- 1:12
 
 #### FISHERIES DEPENDENT DATA
 #check if we can use the fisheries dependent data, using the same thresholds as McHenry et al 2019
-oInd <- obsSPP$NESPP4[which(obsSPP$SCINAME == trg)]
+oInd <- obsSPP$NESPP4[which(obsSPP$SCINAME == target)]
 iSPP <- obsdatNE$NESPP4 %in% oInd #was the species caught?  
 
 m <- unique(obsdatNE$MONTH[iSPP]) #in which months has the species has been caught? 
@@ -140,7 +158,7 @@ if(length(which(iSPP == T)) >= 30 & length(m) >= 6){
           iLon <- Closest(x = lonR-360, a = tow$LONDD[1], which = T)
           iLat <- Closest(x = latR, a = tow$LATDD[1], which = T)
           
-          if(trg %in% tow$SCINAME){ #if species is in tow
+          if(target %in% tow$SCINAME){ #if species is in tow
             mat[iLat, iLon] <- 2 #replace grid cell with a 2
           } else {
             mat[iLat, iLon] <- 1 #if species is not found but grid cell is sampled, 1
@@ -160,7 +178,7 @@ if(length(which(iSPP == T)) >= 30 & length(m) >= 6){
 } #end if species was detected enough
 
 
-#### FISHERIES INDEPENDENT DATA
+#### FISHERIES INDEPENDENT DATA from NOAA
 surv$MONTH <- month(surv$EST_TOWDATE) #create month column since surv data doesn't come with one 
 
 sppInd <- NULL #initialize array 
@@ -183,7 +201,7 @@ for(y in yrs){
           iLon <- Closest(x = lonR-360, a = tow$LON[1], which = T)
           iLat <- Closest(x = latR, a = tow$LAT[1], which = T)
           
-          if(trg %in% tow$SCINAME){ #if species is in tow
+          if(target %in% tow$SCINAME){ #if species is in tow
             mat[iLon, iLat] <- 2 #replace grid cell with a 2
           } else {
             mat[iLon, iLat] <- 1 #1 if area was surveyed, but species was absent
@@ -200,13 +218,53 @@ for(y in yrs){
     print(y)
   } #end y
 
+#### ADDITIONAL SURVEYS 
+sppAdd <- NULL 
+
+for(y in yrs){
+  for(mn in mths){
+    #create matrix for each month
+    mat <- matrix(0, nrow = length(lonR), ncol = length(latR))
+    
+    #subset observer data to month and year 
+    sub <- surveys[surveys$year == y & surveys$month == mn, ]
+    #if there are data
+    if(nrow(sub) != 0){
+      for(i in 1:nrow(sub)){ #for each row - not using tow just in case the information isn't in all csvs
+        
+        #find closest lat/lon - using just first entry because they should all be the same  
+        iLon <- Closest(x = lonR-360, a = sub$longitude[i], which = T)
+        iLat <- Closest(x = latR, a = sub$latitude[i], which = T)
+        
+        if(grepl(target.sci, sub$name[i]) | grepl(target.common, sub$name[i]) | grepl(target.alt, sub$name[i])){ #if species is in tow - lots of alternatives to help catch different names across species
+          mat[iLon, iLat] <- 2 #replace grid cell with a 2
+        } else {
+          mat[iLon, iLat] <- 1 #1 if area was surveyed, but species was absent
+        }
+      } #end for i
+    } #end if nrow(sub)
+    
+    #put in NAs for land following example file 
+    mat <- replace(mat, is.na(exm), NA)
+    
+    #add to array
+    sppAdd <- abind(sppAdd, t(mat), along = 3)
+  } #end mn
+  print(y)
+} #end y
+
 #### step 3 #####
 # combine independent and dependent data
-if(is.null(sppDep) == F){ #if fisheries dependent data exists
+if(is.null(sppDep) == F & is.null(sppAdd)){ #if fisheries dependent data exists
   sppAll <- sppDep + sppInd
 } else {
   sppAll <- sppInd #sppAll is just equal to the fisheries independent data
 }
+
+if(!is.null(sppAdd)){ #if additional survey data exists, add it
+  sppAll <- sppAll + sppAdd
+} 
+
 sppAll <- replace(sppAll, sppAll > 2, 2) #set any values greater 2 (there aren't many) - indicating that the target species was found in both independent and dependent surveys within the same month - to 1
 
 #make into rasterBrick
@@ -234,7 +292,7 @@ sppDF <- melt(sppDF, id.vars = 1:2)
 sppDF$variable <- as.character(sppDF$variable)
 my <- strsplit(x = sppDF$variable, split = '[.]')
 sppDF$month <- unlist(lapply(my, FUN = function(x){x[1]}))
-sppDF$month.num <- match(sppDF$month, month.abb)
+sppDF$month_num <- match(sppDF$month, month.abb)
 sppDF$year <- as.numeric(unlist(lapply(my, FUN = function(x){x[2]})))
 
 
