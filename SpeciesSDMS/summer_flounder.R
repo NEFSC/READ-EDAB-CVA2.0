@@ -27,6 +27,7 @@ library(meteo)
 library(dismo)
 library(gbm3)
 library(gamm4)
+library(ROCR)
 
 
 ####### BUILD DIRECTORY ######
@@ -51,12 +52,22 @@ trg <- 	"PARALICHTHYS DENTATUS" #summer flounder example for methods workshop
 dirName 
 
 #open connection - needs vpn
-channel <- dbutils::connect_to_database(server="NEFSC_USERS",uid="KGALLAGHER")
+channel <- dbutils::connect_to_database(server="NEFSC_pw_oraprod",uid="KGALLAGHER")
 
 #load create_pa_rast function
 source('~/ClimateVulnerabilityAssessment2.0)/Code/create_pa_rast.R')
 
-summerFlounder <- create_pa_rast(target = trg)
+surveyCSV <- c('~/TrawlData/MaineDMR_Trawl_Survey_Tow_Catch_2025-06-30.csv',
+               '~/TrawlData/MABottom_Trawl_2025-07-01.csv')
+surveyColumns <- matrix(c('Start_Longitude', 'Start_Latitude', 'Start_Date', 'Number_Caught', 'Common_Name'
+                          ,'Lon', 'Lat', 'Date', 'Num', 'SCI_NAME'), 
+                        nrow = length(surveyCSV), ncol = 5)
+
+summerFlounder <- create_pa_rast(target.sci = trg, 
+                                 target.common = 'Summer Flounder', 
+                                 target.alt = 'Fluke', 
+                                 addSurveys = surveyCSV,
+                                  surveyCols = surveyColumns)
 
 #save rasters in directory
 sppRast <- summerFlounder[[1]]
