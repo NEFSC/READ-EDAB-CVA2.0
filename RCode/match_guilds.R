@@ -1,4 +1,4 @@
-match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key, feeding_col = 'Feeding.Guild', habitat_key,  habitat_col = 'Habitat.Guild', static_vars = c('x', 'y', 'month_num', 'year', 'bathy', 'rugosity', 'coast_dist'), pa_col = 'value'){
+match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key, feeding_col = 'Feeding.Guild', habitat_key,  habitat_col = 'Habitat.Guild', static_vars = c('x', 'y', 'month', 'year', 'bathy', 'rugosity', 'dist2coast'), pa_col = 'value'){
   #spp_env - a data frame with target species presence/absence matched to all possible environmental covariates
   #spp the name of the target species
   #spp_col - name of the column with the species name to match to the guild csv
@@ -9,7 +9,7 @@ match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key,
   
   guilds <- read.csv(spp_guild) #load in species list 
   
-  g <- which(guilds[,spp_col] == spp) #find row associated with target species
+  g <- which(guilds[,spp_col] %in% spp) #find row associated with target species
   
   #isolate feeding guild
   fGuild <- guilds[g, feeding_col]
@@ -30,8 +30,17 @@ match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key,
   hInd <- habitat[nzchar(habitat[,i]), i] #get covariates 
   
   ### subset spp_env
-  se <- spp_env[,c(pa_col, static_vars, fInd, hInd)]
+  ind <- colnames(spp_env) %in% c(pa_col, static_vars, fInd, hInd)
+  se <- spp_env[,ind]
   
   return(se)
   
+}
+
+remove_corr <- function(se, pa_col, xy_col, month_col, year_col){
+    #but first, remove correlated variables 
+    ind <- which(colnames(se) == pa_col | colnames(se) == xy_col[1] | colnames(se) == xy_col[2] | colnames(se) == month_col | colnames(se) == year_col)
+    corInd <- findCorrelation(cor(se[,-ind]), names = T) #find correlated variables 
+    se <- se[,-which(colnames(se) == corInd)]
+  return(se)
 }

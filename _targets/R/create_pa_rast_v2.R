@@ -180,7 +180,7 @@ if(dataType == 'Observer'){
 if(dataOK){
   for(x in 1:nrow(my)){
   #create matrix for each month
-  mat <- matrix(0, nrow = length(lonR), ncol = length(latR))
+  mat <- matrix(0, nrow = length(latR), ncol = length(lonR))
   
   #subset observer data to month and year 
   sub <- data[data$month.year == my$month.year[x], ]
@@ -202,7 +202,7 @@ if(dataOK){
   } #end if nrow(sub)
   
   #add to array
-  spRast <- abind(spRast, t(mat), along = 3)
+  spRast <- abind(spRast, mat, along = 3)
   }
 }
 

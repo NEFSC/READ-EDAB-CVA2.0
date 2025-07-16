@@ -1,18 +1,20 @@
 ###make abundances 
 
-make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, se = NULL, weights = NULL ){
+make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
   #make predictions from model output 
   #mod - model to predict from 
   #model - character string listing the model type
   #rasts - list of rasters to predict to
       #for single model predictions should be a list of raster stacks
       #for ensemble predictions, it should be a length(list) == number of models, where each list contains a list of rasters containing predictions from model; needs to be the same length as weights
+  #staticData will be the Rdata file containing all the staticVars - same used to match environmental and species data
   #mask - binary - determines if predictions are limited to a specific bathymetry 
   #bathy_nm - name of bathymetry layer in rasts
   #bathy_max - desired maximum bathymetry 
-  #se - spp_env dataset used to build models - only used for sdm models
+  #se - spp_env dataset used to build models - only used for rf/sdm models
   #weights - ensemble weights for each model in the ensemble - for ensembles only 
   
+
   #make static vars (month/year) into rasters
   r <- subset(rasts[[1]], 1)
   rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
@@ -26,6 +28,8 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
   } else {
     hsm <- vector(mode = 'list', length = length(rasts[[1]]))
   }
+  
+  load(staticData) #staticVars object containing a list of rasters with the same extent as the environmental variables
   
   #slightly different models depending on the model 
   if(model == 'gam'){
@@ -44,12 +48,14 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
     for(n in 1:length(rasts)){
       nStack[[n]] <- subset(rasts[[n]], x)
     }
+    nStack <- c(nStack, staticVars)
     nStack <- stack(nStack)
+    names(nStack) <- c(names(rasts), names(staticVars))
     crs(nStack) <- crs(rasts[[1]])
     extent(nStack) <- extent(rasts[[1]])
     
     sr <- stack(rlon, rlat, rMonth, rYear, nStack)
-    names(sr) <- c("x", "y", "month_num", "year", names(rasts))
+    names(sr)[1:4] <- c("x", "y", "month_num", "year")
     
     if(mask){ #if mask == T
       #mask off waters deeper than 1000 m
@@ -78,12 +84,15 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       for(n in 1:length(rasts)){
         nStack[[n]] <- subset(rasts[[n]], x)
       }
+      nStack <- c(nStack, staticVars)
       nStack <- stack(nStack)
+      names(nStack) <- c(names(rasts), names(staticVars))
       crs(nStack) <- crs(rasts[[1]])
       extent(nStack) <- extent(rasts[[1]])
       
       sr <- stack(rlon, rlat, rMonth, rYear, nStack)
-      names(sr) <- c("x", "y", "month_num", "year", names(rasts))
+      names(sr)[1:4] <- c("x", "y", "month_num", "year")
+      
       
       if(mask){ #if mask == T
         #mask off waters deeper than 1000 m
@@ -123,12 +132,15 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       for(n in 1:length(rasts)){
         nStack[[n]] <- subset(rasts[[n]], x)
       }
+      nStack <- c(nStack, staticVars)
       nStack <- stack(nStack)
+      names(nStack) <- c(names(rasts), names(staticVars))
       crs(nStack) <- crs(rasts[[1]])
       extent(nStack) <- extent(rasts[[1]])
       
       sr <- stack(rlon, rlat, rMonth, rYear, nStack)
-      names(sr) <- c("x", "y", "month_num", "year", names(rasts))
+      names(sr)[1:4] <- c("x", "y", month_col, year_col)
+      
       
       if(mask){ #if mask == T
         #mask off waters deeper than 1000 m
@@ -145,12 +157,12 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       srDF$year <- year(my(paste(srDF$month_num, srDF$year, sep = '-')))
       
       #convert dataframe to spatial object 
-      srDF = st_as_sf(srDF, coords = c("x", "y"), crs = 4326, agr = "constant")
+      srDF = st_as_sf(srDF, coords = xy_col, crs = 4326, agr = "constant")
       srDF = st_sftime(srDF, time_column_name = 'year')
       
       predDF <- pred.rfsi(model = mod,
                           data = stDF, 
-                          data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
+                          data.staid.x.y.z = c('staid', xy_col, 'year'),
                           obs.col = "value",
                           newdata = srDF, 
                           newdata.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
@@ -180,12 +192,15 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       for(n in 1:length(rasts)){
         nStack[[n]] <- subset(rasts[[n]], x)
       }
+      nStack <- c(nStack, staticVars)
       nStack <- stack(nStack)
+      names(nStack) <- c(names(rasts), names(staticVars))
       crs(nStack) <- crs(rasts[[1]])
       extent(nStack) <- extent(rasts[[1]])
       
       sr <- stack(rlon, rlat, rMonth, rYear, nStack)
-      names(sr) <- c("x", "y", "month_num", "year", names(rasts))
+      names(sr)[1:4] <- c("x", "y", "month_num", "year")
+      
       
       if(mask){ #if mask == T
         #mask off waters deeper than 1000 m
@@ -216,12 +231,15 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       for(n in 1:length(rasts)){
         nStack[[n]] <- subset(rasts[[n]], x)
       }
+      nStack <- c(nStack, staticVars)
       nStack <- stack(nStack)
+      names(nStack) <- c(names(rasts), names(staticVars))
       crs(nStack) <- crs(rasts[[1]])
       extent(nStack) <- extent(rasts[[1]])
       
       sr <- stack(rlon, rlat, rMonth, rYear, nStack)
-      names(sr) <- c("x", "y", "month_num", "year", names(rasts))
+      names(sr)[1:4] <- c("x", "y", "month_num", "year")
+      
       
       if(mask){ #if mask == T
         #mask off waters deeper than 1000 m
@@ -230,13 +248,14 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
       }
       
       ##convert rasterStack to dataframe to play well with model 
-      srDF <- as.data.frame(rasterToPoints(sr))
-      
-      sdmpred<- predict(mod, newdata = srDF)
-      sdmpred$prob <- exp(sdmpred$est)/(1+exp(sdmpred$est))
+      srDF <- as.data.frame(rasterToPoints(sr)[,-c(1:2)])
+      srDF <- srDF[-which(is.na(srDF$bottomT)),]
+
+      sdmpred<- predict(mod, newdata = srDF, type = 'response')
+      #sdmpred$prob <- exp(sdmpred$est)/(1+exp(sdmpred$est))
       coordinates(sdmpred) <- ~x + y
       proj4string(sdmpred) <- CRS("+proj=longlat +datum=WGS84 +no_defs ")
-      hsm[[x]] <- raster::rasterize(x = xy[,1:2], y = rYear, field = 'prob')
+      hsm[[x]] <- raster::rasterize(x = sdmpred, y = rYear, field = sdmpred$est)
       #print(x)
     }
   } #end if sdmtmb
@@ -244,7 +263,17 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
   if(model == 'ens'){
     print('Predicting Ensemble...')
     
-    if(length(rasts) == length(weights)){
+    if(length(rasts) == length(weights)){ #make sure they are the same length
+    
+      if(inTarget){ #if function is being used in an R targets workflow, need to extract right values for weights  
+        wts <- vector(length = length(weights))
+        for(x in 1:length(rasts)){
+          #extract models - if inTarget == T, then all model components will be in ensembleMods 
+          wts <- weights$weights
+        } #end x
+      } else { #if inTarget == F, just use provided lists
+          wts <- weights
+      }
     
       for(x in 1:nlayer(rasts[[1]])){
         #make list of abundances for timestamp
@@ -253,7 +282,7 @@ make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, s
           abunds[[m]] <- terra::rast(rasts[[m]][[x]])
         }
         #make weighted average ensembles 
-        hsm[[x]] <- raster(MakeEnsembleAbundance(model.weights = weights, abund.list = abunds))
+        hsm[[x]] <- raster(MakeEnsembleAbundance(model.weights = wts, abund.list = abunds))
       } #end x
     } else {
       #print error 

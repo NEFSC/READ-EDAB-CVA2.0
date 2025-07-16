@@ -117,6 +117,7 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
     dat <- s
     names(dat) <- c('year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
   }
+
   
   return(dat)
 }
@@ -131,7 +132,6 @@ create_rast <- function(data, dataType, grid, tmMult = 24 * 60 * 60, origin = '1
   #tmMult - a value to multiply by to get grid timestamp into seconds (for days, this would be 24 * 60 * 60)
   #origin - start of timeseries as YYYY-MM-DD
   #targetVec is a character vector containing the name of the target species and any possible variations 
-  
   #subRast - option to subset final raster brick, if TRUE, sub must also be supplied
   #sub is an extent object used to subset raster brick
   
@@ -147,7 +147,7 @@ nc_close(gridNC)
 #### step 2 ####
 #loop through years & months to build rasters
 
-if(dataType == 'Surveys' | dataType == 'Observer'){
+if(dataType == 'Surveys' | dataType == 'Observer'){ #load in data
   data <- read.csv(data) 
 }
 
@@ -180,7 +180,7 @@ if(dataType == 'Observer'){
 if(dataOK){
   for(x in 1:nrow(my)){
   #create matrix for each month
-  mat <- matrix(0, nrow = length(lonR), ncol = length(latR))
+  mat <- matrix(0, nrow = length(latR), ncol = length(lonR))
   
   #subset observer data to month and year 
   sub <- data[data$month.year == my$month.year[x], ]
@@ -202,7 +202,7 @@ if(dataOK){
   } #end if nrow(sub)
   
   #add to array
-  spRast <- abind(spRast, t(mat), along = 3)
+  spRast <- abind(spRast, mat, along = 3)
   }
 }
 
@@ -237,6 +237,7 @@ merge_rasts <- function(rastList){
     rastAll <- replace(rastAll, rastList[[x]] == 1, 1) #if that member of Rastlist has a 1, replace the value in rastAll with a 1 (indicating that the area was surveyed, but the species was not found)
     rastAll <- replace(rastAll, rastList[[x]] == 2, 2)#if that member of Rastlist has a 2, replace the value in rastAll with a 2 (indicating that the area was surveyed AND the species was found)
   } #this should iterate over each member of the list and update for each layer
+
   
   return(rastAll)
 
