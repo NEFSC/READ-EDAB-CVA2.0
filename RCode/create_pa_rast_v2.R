@@ -112,10 +112,8 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
     s$month <- month(s$time) #make month
     s$year <- year(s$time) #make year
     
-    s <- s[,c('time', 'month', 'year', csvCols)] #subset to important columns
-    colnames(s) <- c('time', 'month', 'year', 'lon', 'lat', 'date', 'count', 'name')
-    dat <- s
-    names(dat) <- c('year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
+    dat <- s[,c('time', 'month', 'year', csvCols)] #subset to important columns
+    colnames(dat) <- c('time', 'month', 'year', 'lon', 'lat', 'date', 'count', 'name')
   }
 
   
@@ -125,15 +123,14 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
 create_rast <- function(data, dataType, grid, tmMult = 24 * 60 * 60, origin = '1993-01-01', targetVec){
   #function to create presence/absence (PA) raster brick for a target species
   #data is the dataframe output from standardize_data
+  #dataType = same as standardize data
   #grid is a ncdcf object with the variables lon, lat, time, and gridVar - can be link to remote data - just must be able to be read with nc_open
       #grid should be **square** and lon/lat should be vectors when pulled 
       #this netcdf should cover the extent of the desired study area
-  #gridVar is a variable name in grid - values won't be used, but this is helpful to define any land masks 
   #tmMult - a value to multiply by to get grid timestamp into seconds (for days, this would be 24 * 60 * 60)
   #origin - start of timeseries as YYYY-MM-DD
   #targetVec is a character vector containing the name of the target species and any possible variations 
-  #subRast - option to subset final raster brick, if TRUE, sub must also be supplied
-  #sub is an extent object used to subset raster brick
+
   
 #### step 1 ####
 #get grid to map to
@@ -231,14 +228,20 @@ merge_rasts <- function(rastList){
   #remove null objects in list 
   rastList <- rastList[!sapply(rastList, is.null)]
   
-  rastAll <- rastList[[1]] #make raster to fill (all should have the same extent so it really doesn't matter )
-  rastAll[] <- 0 #make it empty 
-  for(x in 1:length(rastList)){ #for each member of rastList
-    rastAll <- replace(rastAll, rastList[[x]] == 1, 1) #if that member of Rastlist has a 1, replace the value in rastAll with a 1 (indicating that the area was surveyed, but the species was not found)
-    rastAll <- replace(rastAll, rastList[[x]] == 2, 2)#if that member of Rastlist has a 2, replace the value in rastAll with a 2 (indicating that the area was surveyed AND the species was found)
-  } #this should iterate over each member of the list and update for each layer
-
+ # rastAll <- rastList[[1]] #make raster to fill (all should have the same extent so it really doesn't matter )
+ # rastAll[] <- 0 #make it empty 
   
+ # rastStack <- stack(rastList)
+  
+  rastAll <- vector(mode = 'list', length = nlayers(rastList[[1]]))
+  for(x in 1:nlayers(rastList[[1]])){
+    rs <- stack(lapply(rastList, FUN = function(y){subset(y, x)}))
+    rastAll[[x]] <- max(rs)
+  }
+  rastAll <- raster::brick(rastAll)
+  extent(rastAll) <- extent(rastList[[1]])
+  proj4string(rastAll) <- CRS('+proj=longlat +datum=WGS84 +no_defs')
+  names(rastAll) <- names(rastList[[1]])
   return(rastAll)
 
 }
