@@ -1,4 +1,4 @@
-match_guilds <- function(spp_env, spp, spp_col = 'SCI_NAME', spp_guild, feeding_key, feeding_col = 'Feeding.Guild', habitat_key,  habitat_col = 'Habitat.Guild', static_vars = c('x', 'y', 'month_num', 'year', 'bathy', 'rugosity', 'coast_dist'), pa_col = 'value'){
+match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key, feeding_col = 'Feeding.Guild', habitat_key,  habitat_col = 'Habitat.Guild', static_vars = c('x', 'y', 'month_num', 'year', 'bathy', 'rugosity', 'coast_dist'), pa_col = 'value'){
   #spp_env - a data frame with target species presence/absence matched to all possible environmental covariates
   #spp the name of the target species
   #spp_col - name of the column with the species name to match to the guild csv

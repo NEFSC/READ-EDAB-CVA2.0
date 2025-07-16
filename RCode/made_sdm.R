@@ -1,14 +1,14 @@
 #code for paper Camrin et al 2023: https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.2893
-source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt_wpredictions.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_brt.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/pseudoR2.brt.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/saveTSS.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/saveAUC.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/bhattacharyya.stat.r')
-source('~/ClimateVulnerabilityAssessment2.0)/Code/bhatt.coef.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt_wpredictions.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_brt.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/pseudoR2.brt.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/saveTSS.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/saveAUC.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/bhattacharyya.stat.r')
+#source('~/ClimateVulnerabilityAssessment2.0)/Code/bhatt.coef.r')
 
 
-make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, metricVec, predList){
+make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, metricVec = NULL, predList = NULL){
   #spp-env data frame subset to important covariates with match_guilds 
   #model - one of the following to build models appropriately: gam, maxent, rf, brt, sdmtmb
   #pa_col - name of columns containing response data 

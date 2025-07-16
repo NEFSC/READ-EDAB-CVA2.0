@@ -58,9 +58,11 @@ channel <- dbutils::connect_to_database(server="NEFSC_pw_oraprod",uid="KGALLAGHE
 source('~/ClimateVulnerabilityAssessment2.0)/Code/create_pa_rast.R')
 
 surveyCSV <- c('~/TrawlData/MaineDMR_Trawl_Survey_Tow_Catch_2025-06-30.csv',
-               '~/TrawlData/MABottom_Trawl_2025-07-01.csv')
+               '~/TrawlData/MABottom_Trawl_2025-07-01.csv',
+               '~/TrawlData/NJOT_Tow_Catch_2025-07-01.csv')
 surveyColumns <- matrix(c('Start_Longitude', 'Start_Latitude', 'Start_Date', 'Number_Caught', 'Common_Name'
-                          ,'Lon', 'Lat', 'Date', 'Num', 'SCI_NAME'), 
+                          ,'Lon', 'Lat', 'Date', 'Num', 'SCI_NAME',
+                          'START_LON', "START_LAT", 'DATE', 'NUMBER', 'LATIN_NAME'), 
                         nrow = length(surveyCSV), ncol = 5)
 
 summerFlounder <- create_pa_rast(target.sci = trg, 
@@ -85,7 +87,7 @@ load('~/ClimateVulnerabilityAssessment2.0)/Data/dist_to_coast.RData') #d2c - alr
 
 ##get bathy & rugosity
 #bathymetry
-bathy <- raster('~/ClimateVulnerabilityAssessment2.0)/Data/NES_bathy.tiff') #load bathy raster
+bathy <- raster('C:/Users/katherine.gallagher/Documents/NES_bathy.tiff') #load bathy raster
 
 #rugosity 
 bathySpat <- rast(bathy) #convert to terra to use terra function
@@ -145,7 +147,7 @@ save(sppDF2, file = 'fisheries_environment_dataframe.RData')
 
 #### DETERMINE GUILDS ####
 #load in CSV with feeding and habitat guilds defined 
-guilds <- read.csv('~/ClimateVulnerabilityAssessment2.0)/CVA2.0 Species List.csv')
+guilds <- read.csv('C:/Users/katherine.gallagher/Documents/spp_list.csv')
 g <- which(guilds$SCI_NAME == trg) #find row associated with species
 
 #isolate feeding guild

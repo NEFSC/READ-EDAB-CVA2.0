@@ -1,6 +1,6 @@
 ###make abundances 
 
-make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, se, weights ){
+make_predictions <- function(mod, model, rasts, mask = T, bathy_nm, bathy_max, se = NULL, weights = NULL ){
   #make predictions from model output 
   #mod - model to predict from 
   #model - character string listing the model type
