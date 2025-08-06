@@ -26,12 +26,12 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
   #this function handles all the data pulls and returns a data frame with standard column names to be made into a raster stack
   #dataType is one of the following - 'Surveys', "Observer", or 'CSV'
   #if NOAA Surveys/Obs - will use either survdat or ROracle commands to get data, connection defined with channel 
-  #if csv, a file path must be supplied with csv, and relevant columns must be listed in csvCols in the following order: 'longitude', 'latitude', 'date (must be some sort of time vector that can be converted to Posix with as.POSIXct', 'count (can be count/abundance/density, etc)', 'name'
+  #if csv, a file path must be supplied with csv, and relevant columns must be listed in csvCols in the following order: 'towid', 'longitude', 'latitude', 'date (must be some sort of time vector that can be converted to Posix with as.POSIXct', 'count (can be count/abundance/density, etc)', 'name'
   
   
   ##now move onto different processing pipelines
   if(dataType == 'Surveys'){
-    print('Making rasters from Survey Data...')
+    print('Standardizing Survey Data...')
     ## pull fisheries-independent data
     data <- get_survdat_data(channel, getWeightLength = F, getLengths = F, getBio = F, conversion.factor = T)
     surv <- data$survdat
@@ -45,12 +45,13 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
     
     surv <- merge(surv, survSPP)
     surv$MONTH <- month(surv$EST_TOWDATE) #create month column since surv data doesn't come with one 
-    dat <- surv[,c('YEAR', "MONTH", "LON", "LAT", "ABUNDANCE", "SCINAME")] #subset to necessary columns 
-    names(dat) <- c('year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
+    surv$towID <- paste(surv$CRUISE6, surv$STRATUM, surv$TOW, surv$STATION)
+    dat <- surv[,c('towID', 'YEAR', "MONTH", "LON", "LAT", "ABUNDANCE", "SCINAME")] #subset to necessary columns 
+    names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
   } #end if survey 
   
   if(dataType == 'Observer'){
-    print('Making rasters from Observer Data...')
+    print('Standardizing Observer Data...')
     ## pull fisheries-dependent data - a bit more intense since there isn't a nice function to do it, and needs to be subset, but follows the same basic steps as survdat
     #observer data 
     obs.qry <-  paste0("select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
@@ -99,21 +100,24 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols){
     obsdat$LAT_SEC <- substr(obsdat$LATHBEG, 5, 6)
     #convert to decimal degrees
     obsdat$LATDD <- as.numeric(conv_unit(paste(obsdat$LAT_DEG, obsdat$LAT_MIN, obsdat$LAT_SEC, sep = ' '), from = 'deg_min_sec', to = 'dec_deg'))
-    dat <- obsdat[,c('YEAR', "MONTH", 'LONDD', 'LATDD', 'HAILWT', 'SCINAME')] #subset to important columns
-    names(dat) <- c('year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
+    
+    obsdat$ID <- paste0(obsdat$TRIPID, obsdat$HAULNUM)
+    
+    dat <- obsdat[,c('ID', 'YEAR', "MONTH", 'LONDD', 'LATDD', 'HAILWT', 'SCINAME')] #subset to important columns
+    names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
   } #end if observer
   
   if(dataType == 'CSV'){ 
     ### build raster from CSV data from state/other surveys
-    print('Making rasters from CSV Data...')
+    print('Standardizing CSV Data...')
     
     s <- read.csv(csv) #read in each csv
-    s$time <- as.POSIXct(s[,csvCols[3]]) #pull time
+    s$time <- as.POSIXct(s[,csvCols[4]]) #pull time
     s$month <- month(s$time) #make month
     s$year <- year(s$time) #make year
     
     dat <- s[,c('time', 'month', 'year', csvCols)] #subset to important columns
-    colnames(dat) <- c('time', 'month', 'year', 'lon', 'lat', 'date', 'count', 'name')
+    colnames(dat) <- c('time', 'month', 'year', 'towID', 'lon', 'lat', 'date', 'count', 'name')
   }
 
   
@@ -131,6 +135,11 @@ create_rast <- function(data, dataType, grid, tmMult = 24 * 60 * 60, origin = '1
   #origin - start of timeseries as YYYY-MM-DD
   #targetVec is a character vector containing the name of the target species and any possible variations 
 
+  require(ncdf4)
+  require(lubridate)
+  require(raster)
+  require(DescTools)
+  require(abind)
   
 #### step 1 ####
 #get grid to map to
@@ -144,9 +153,9 @@ nc_close(gridNC)
 #### step 2 ####
 #loop through years & months to build rasters
 
-if(dataType == 'Surveys' | dataType == 'Observer'){ #load in data
-  data <- read.csv(data) 
-}
+#first to make this a little bit easier, subset the dataset to have the same year extent as the grid
+tmInd <- which(data$year >= min(year(tm)) & data$year <= max(year(tm)))
+data <- data[tmInd,]
 
 #first, build vector of months/years throughout grid timeseries 
 my <- expand.grid(1:12, unique(year(tm)))
@@ -184,13 +193,15 @@ if(dataOK){
 
   #if there are data
   if(nrow(sub) != 0){
-    for(i in 1:nrow(sub)){ 
+    ids <- unique(sub$towID)
+    for(i in ids){ 
+      tow <- sub[sub$towID == i, ]
       
       #find closest lat/lon   
-      iLon <- Closest(x = lonR-360, a = sub$lon[i], which = T)
-      iLat <- Closest(x = latR, a = sub$lat[i], which = T)
+      iLon <- Closest(x = lonR-360, a = tow$lon[1], which = T)
+      iLat <- Closest(x = latR, a = tow$lat[1], which = T)
       
-      if(sub$name[i] %in% targetVec & sub$count[i] != 0){ #if species is in tow
+      if(any(targetVec %in% tow$name)){ #if species is in tow
         mat[iLat, iLon] <- 2 #replace grid cell with a 2
       } else {
         mat[iLat, iLon] <- 1 #if species is not found but grid cell is sampled, 1
@@ -201,7 +212,7 @@ if(dataOK){
   #add to array
   spRast <- abind(spRast, mat, along = 3)
   }
-}
+
 
 #### step 3 #####
 #turn into raster brick
@@ -215,13 +226,18 @@ sppBrick <- rotate(flip(sppBrick)) #rotate to get orientation right
 
 
 #make names for raster layers
-names(sppBrick) <- paste(sprintf("%02d", my$Var1), my$Var2, sep = '.') #use unique month.year combinations  
+names(sppBrick) <- paste(sprintf("%02d", my$Var1), my$Var2, sep = '.') #use unique month.year combinations 
+
+} else {
+  sppBrick <- NULL
+}
 
 return(sppBrick) #return rasterbrick
 
 } #end function 
 
 merge_rasts <- function(rastList){
+  require(raster)
   #merge rasters generated from multiple data types 
   #rastList is a list of rasterStacks generated by create_rast
   
@@ -233,8 +249,8 @@ merge_rasts <- function(rastList){
   
  # rastStack <- stack(rastList)
   
-  rastAll <- vector(mode = 'list', length = nlayers(rastList[[1]]))
-  for(x in 1:nlayers(rastList[[1]])){
+  rastAll <- vector(mode = 'list', length = raster::nlayers(rastList[[1]]))
+  for(x in 1:raster::nlayers(rastList[[1]])){
     rs <- stack(lapply(rastList, FUN = function(y){subset(y, x)}))
     rastAll[[x]] <- max(rs)
   }

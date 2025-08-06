@@ -8,20 +8,22 @@
 #urlHead <- "https://psl.noaa.gov/thredds/ncss/grid/Projects/CEFI/regional_mom6/" #first part of the URL to access ncss server to allow for subsetting 
 ##############
 
-pull_env <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static = "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/raw/r20230520/ocean_static.nc"){
+pull_env <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static = "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/raw/r20230520/ocean_static.nc", release){
   require(jsonlite)
+  require(ncdf4)
   
   vars <- fromJSON(varURL) #turn json file into a list 
   
-  long.name <- url <- grid.type <- out.freq <- NULL  #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull 
+  long.name <- url <- grid.type <- out.freq <- rl <- NULL  #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull 
   for(x in 1:length(vars)){
     long.name <- c(long.name, vars[[x]]$cefi_long_name)
     grid.type <- c(grid.type, vars[[x]]$cefi_grid_type)
     out.freq <- c(out.freq, vars[[x]]$cefi_output_frequency)
     url <- c(url, vars[[x]]$cefi_opendap)
+    rl <- c(rl, vars[[x]]$cefi_release)
   }
   
-  varList <- avgList <- normList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
+  varList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
   
   #get info for subsetting
   #putting subsetting back because everything else takes too long otherwise 
@@ -33,7 +35,7 @@ pull_env <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly',
   se <- extent(bounds) #extent to subset to
   
   for(y in 1:length(reqVars)){
-    ind <- which(long.name == reqVars[y] & grid.type == gt & out.freq == of) #find appropriate url for the variable 
+    ind <- which(long.name == reqVars[y] & grid.type == gt & out.freq == of  & rl == release) #find appropriate url for the variable 
     
     #load url 
     v <- stack(url[ind])

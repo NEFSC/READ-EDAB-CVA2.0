@@ -53,3 +53,8 @@ isolate_output <- function(target, name){
   out <- target[[i]]
   return(out)
 }
+
+save_output <- function(target, path){
+  save(target, file = path)
+  return(path)
+}

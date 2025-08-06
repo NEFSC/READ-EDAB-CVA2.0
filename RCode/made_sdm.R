@@ -213,25 +213,22 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
 }
 
 sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
-  #spp-env data frame subset to important covariates with match_guilds 
+ #mod - model output from make_sdm
+   #se - spp-env data frame subset to important covariates with match_guilds 
   #model - one of the following to build models appropriately: gam, maxent, rf, brt, sdmtmb
   #pa_col - name of columns containing response data 
   #xy_col - names of columns containing positional data, where the first is the x(lon) and second is the y(lat)
   #month/year_col - names of columns containing months and years associated with observations 
-  #ensembleMods/Mets/Preds - vector or list of evaluation metric to use to generate weights and prediction dataframes from CVs to use to validate model -- ALL NEED TO BE THE SAME LENGTH AND ORDER 
-  #metric = name of metric to use for model weights - currently accepts auc or rmse
-  #inTarget - binary to change ensemble modeling methods if function is being used in an rTargets workflow - need to make sure the right things are grabbed from targets
-  
-  #now build model of choice
-  #each produces the following objects: mod, cv, preds, rmse, auc, RDE
+
+
   if(model == 'gam'){ #build gam model 
     #cross validation
-    cv <- CrossValidateModel(model = mod, data = se, folds = 10, model.type = "gam")
+    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 10, model.type = "gam")
   } #end if gam 
   
   if(model == 'maxent'){
     #cross validate
-    cv <- CrossValidateModel(model = mod, data = se, folds = 10, model.type = "maxnet", species = pa_col, scale.preds = F)
+    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 10, model.type = "maxnet", species = pa_col, scale.preds = F)
   } #end if maxent
   
   if(model == 'rf'){

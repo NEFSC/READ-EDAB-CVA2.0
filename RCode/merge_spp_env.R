@@ -43,7 +43,7 @@ merge_spp_env <- function(rastStack, envData, addStatic = TRUE, staticData){
     load(staticData) #staticVars
     nmSD <- vector(length = length(staticVars))
     for(x in 1:length(staticVars)){
-      s <- extract(x = staticVars[[x]], y = sppDF[,c('x','y')], method = 'simple')
+      s <- extract(x = staticVars[[x]], y = sppDF[,c('x','y')], fun = 'mean', method = 'simple')
       nmSD[x] <- names(staticVars)[x]
       sppDF <- cbind(sppDF, s)
       print(names(staticVars)[x])
