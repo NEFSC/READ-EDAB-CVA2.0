@@ -244,20 +244,20 @@ merge_rasts <- function(rastList){
   #remove null objects in list 
   rastList <- rastList[!sapply(rastList, is.null)]
   
- # rastAll <- rastList[[1]] #make raster to fill (all should have the same extent so it really doesn't matter )
- # rastAll[] <- 0 #make it empty 
+  # rastAll <- rastList[[1]] #make raster to fill (all should have the same extent so it really doesn't matter )
+  # rastAll[] <- 0 #make it empty 
   
- # rastStack <- stack(rastList)
+  # rastStack <- stack(rastList)
   
   rastAll <- vector(mode = 'list', length = raster::nlayers(rastList[[1]]))
   for(x in 1:raster::nlayers(rastList[[1]])){
     rs <- stack(lapply(rastList, FUN = function(y){subset(y, x)}))
-    rastAll[[x]] <- max(rs)
+    rastAll[[x]] <- calc(rs, max) 
   }
   rastAll <- raster::brick(rastAll)
   extent(rastAll) <- extent(rastList[[1]])
   proj4string(rastAll) <- CRS('+proj=longlat +datum=WGS84 +no_defs')
   names(rastAll) <- names(rastList[[1]])
   return(rastAll)
-
+  
 }

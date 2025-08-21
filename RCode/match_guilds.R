@@ -53,7 +53,7 @@ clean_data <- function(se, pa_col){
   paDF[,pa_col] <- replace(paDF[,pa_col], paDF[,pa_col] == 1, 0)
   paDF[,pa_col] <- replace(paDF[,pa_col], paDF[,pa_col] == 2, 1)
   
-  paDF <- paDF[complete.cases(paDF),]
+  paDF2 <- paDF[complete.cases(paDF),]
   
   return(paDF)
 }

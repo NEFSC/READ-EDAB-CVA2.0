@@ -54,51 +54,71 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
     
     se <- cbind(1:nrow(se), se) #stand in station ids 
     colnames(se)[1] <- "staid"
-    se$year <- year(my(paste(se[,month_col], se[,year_col], sep = '-')))
+    se$month.year <- paste(se[,month_col], se[,year_col], sep = '-')
+    se$year <- year(my(se$month.year))
+    
+    #subsample by space-time
+    set.seed(2025)
+    
+    #make regions 
+    se$region <- NA
+    se$region[which(se[,xy_col[1]] > -70 & se[,xy_col[2]] < 41.5)] <- 'GB' #georges bank
+    se$region[which(se[,xy_col[1]] > -71 & se[,xy_col[2]] > 41.5)] <- 'GOM' #gulf of maine
+    se$region[which(se[,xy_col[1]] < -70 & se[,xy_col[2]] < 42 & se[,xy_col[2]] > 39.5)] <- 'SNE' #southern new england
+    se$region[which(se[,xy_col[2]] < 39.5)] <- 'MAB' #mid-atlantic bight
+    
+    #make space-time id
+    se$sp.tm <- paste(se$month.year, se$region, sep = '-')
+    sptm <- unique(se$sp.tm)
+    #subsample data 
+    seSub <- NULL
+    for(x in sptm){
+      sub <- se[se$sp.tm == x,]
+      
+      abs <- sub[sub$value == 0,]
+      pres <- sub[sub$value == 1,]
+      
+      if(nrow(pres) <= 5){
+        allSub <- NULL
+      } else if(nrow(abs) > nrow(pres)){
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+        allSub <- rbind(absSub, pres)
+      } else {
+        allSub <- sub
+      }
+      
+      seSub <- rbind(seSub, allSub)
+    }
     
     #convert dataframe to spatial object 
-    stDF = st_as_sf(se, coords = xy_col, crs = 4326, agr = "constant")
+    stDF = st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
     stDF = st_sftime(stDF, time_column_name = year_col)
     
     #create formula 
     form <- "value ~ "
     for(x in 2:ncol(se)){
-      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
+      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col
+         & colnames(se)[x] != 'month.year' & colnames(se)[x] != 'region' & colnames(se)[x] != 'sp.tm' & colnames(se)[x] != 'staid'){ #make sure you don't add the response variable or the variables you've already added
         form <- paste0(form, ' + ', colnames(se)[x])
       }
     } #end for x 
     
-    #tuning parameters for model
-    n.obs <- 5:10
-    min.node.size <- 2:10
-    sample.fraction <- seq(1, 0.632, -0.05) # 0.632 without / 1 with replacement
-    splitrule <- "variance"
-    ntree <- 200 # 500
-    mtry <- 3:(2+2*max(n.obs))
-    tgrid = expand.grid(min.node.size=min.node.size, num.trees=ntree,
-                        mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
-    
     #tune model 
-    rfsi_tune <- tune.rfsi(formula = formula(form),
-                           data = stDF,
-                           data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
-                           cpus = 1,
-                           progress = T,
-                           importance = "permutation",
-                           seed = 42,
-                           acc.metric = 'R2',
-                           tgrid = tgrid,
-                           tgrid.n= length(tgrid),
-                           tune.type = "LLO", # Leave-Location-Out CV
-                           write.forest = T, 
-                           s.crs = st_crs(stDF), 
-                           k = 10, 
-                           use.idw = T,
-                           classification = F)
-    
-    #save best model 
-    mod <- rfsi_tune$final.model
-    
+    mod <- rfsi(formula = formula(form),
+                data = stDF,
+                data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
+                cpus = 1,
+                progress = F,
+                importance = "impurity",
+                seed = 42,
+                num.trees = 200,
+                s.crs = st_crs(stDF), 
+                use.idw = T,
+                classification = F,
+                write.forest = T,
+                splitrule = "variance",
+                min.node.size = 5,
+                sample.fraction = 0.95)
     
   } #end if RF
   
@@ -108,7 +128,7 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
     modAll <- gbm.step(data = se, gbm.x = names(se)[-which(names(se) == pa_col)], 
                     gbm.y = pa_col, 
                     family = 'bernoulli', tree.complexity = 5,
-                    learning.rate = 0.005, bag.fraction = 0.75, n.folds = 10) #using the same parameters as Braun et al 2023
+                    learning.rate = 0.005, bag.fraction = 0.75, max.trees = 2000, n.folds = 10) #using the same parameters as Braun et al 2023
     
     ###simplify model before k-fold validations 
     simpBRT <- gbm.simplify(modAll)
@@ -117,7 +137,7 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
     mod <- gbm.step(data = se, gbm.x = simpBRT$pred.list[[length(simpBRT$pred.list)]], 
                      gbm.y = pa_col, 
                      family = 'bernoulli', tree.complexity = 5,
-                     learning.rate = 0.005, bag.fraction = 0.75, n.folds = 10)
+                     learning.rate = 0.005, bag.fraction = 0.75, max.trees = 2000, n.folds = 10)
     
     
   } #end if BRT
@@ -236,39 +256,74 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     colnames(se)[1] <- "staid"
     se$year <- year(my(paste(se[,month_col], se[,year_col], sep = '-')))
     
+    #subsample by space-time
+    set.seed(2025)
+    
+    #make regions 
+    se$region <- NA
+    se$region[which(se[,xy_col[1]] > -70 & se[,xy_col[2]] < 41.5)] <- 'GB' #georges bank
+    se$region[which(se[,xy_col[1]] > -71 & se[,xy_col[2]] > 41.5)] <- 'GOM' #gulf of maine
+    se$region[which(se[,xy_col[1]] < -70 & se[,xy_col[2]] < 42 & se[,xy_col[2]] > 39.5)] <- 'SNE' #southern new england
+    se$region[which(se[,xy_col[2]] < 39.5)] <- 'MAB' #mid-atlantic bight
+    
+    #make space-time id
+    se$sp.tm <- paste(se$month.year, se$region, sep = '-')
+    sptm <- unique(se$sp.tm)
+    #subsample data 
+    seSub <- NULL
+    for(x in sptm){
+      sub <- se[se$sp.tm == x,]
+      
+      abs <- sub[sub$value == 0,]
+      pres <- sub[sub$value == 1,]
+      
+      if(nrow(pres) <= 5){
+        allSub <- NULL
+      } else if(nrow(abs) > nrow(pres)){
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+        allSub <- rbind(absSub, pres)
+      } else {
+        allSub <- sub
+      }
+      
+      seSub <- rbind(seSub, allSub)
+    }
+    
     #convert dataframe to spatial object 
-    stDF = st_as_sf(se, coords = xy_col, crs = 4326, agr = "constant")
+    stDF = st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
     stDF = st_sftime(stDF, time_column_name = year_col)
+    
     
     #create formula 
     form <- "value ~ "
     for(x in 2:ncol(se)){
-      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
+      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col &
+         colnames(se)[x] != 'month.year' & colnames(se)[x] != 'region' & colnames(se)[x] != 'sp.tm' & colnames(se)[x] != 'staid'){ #make sure you don't add the response variable or the variables you've already added
         form <- paste0(form, ' + ', colnames(se)[x])
       }
     } #end for x 
     
     #tuning parameters for model
-    n.obs <- 5:10
-    min.node.size <- 2:10
-    sample.fraction <- seq(1, 0.632, -0.05) # 0.632 without / 1 with replacement
+    n.obs <- 5
+    min.node.size <- mod$min.node.size
+    sample.fraction <- 0.95 
     splitrule <- "variance"
-    ntree <- 200 # 500
-    mtry <- 3:(2+2*max(n.obs))
-    tgrid = expand.grid(min.node.size=min.node.size, num.trees=ntree,
-                        mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
+    ntree <- mod$num.trees # 500
+    mtry <- mod$mtry
+    tgrid = data.frame(min.node.size=min.node.size, num.trees=ntree,
+                       mtry=mtry, n.obs=n.obs, sample.fraction=sample.fraction)
     
     # cross-validate (this will also run tune.rfsi, but it doesn't give you to the output like the raw code suggests! #rude)
     cv <- cv.rfsi(formula = formula(form),
                   data = stDF,
                   data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
-                  cpus = 1,
-                  progress = 1,
-                  importance = "permutation",
+                  cpus = 3,
+                  progress = T,
+                  importance = "impurity",
                   seed = 42,
                   acc.metric = 'R2',
                   tgrid = tgrid,
-                  tgrid.n= length(tgrid),
+                  tgrid.n= 1,
                   tune.type = "LLO", # Leave-Location-Out CV
                   write.forest = T, 
                   s.crs = st_crs(stDF), 
@@ -279,16 +334,15 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
   
   if(model == 'brt'){
     ###simplify model before k-fold validations 
-    simpBRT <- mod
+    #simpBRT <- mod
     
     #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
     cv <- eval_kfold_brt(dataInput = se, 
-                                gbm.x = simpBRT$pred.list[[length(simpBRT$pred.list)]], #only use simplified parameters for k-folds 
+                                gbm.x = mod$gbm.call$gbm.x, #only use simplified parameters for k-folds 
                                 gbm.y = pa_col,  
                                 learning.rate = 0.005, 
                                 bag.fraction = 0.75, 
-                                tree.complexity = 5, 
-                                k_folds = 10,
+                                tree.complexity = 5, k_folds = 10, max.trees = 2000,
                                 is_fixed = F)[[2]]
     
   } #end if BRT
@@ -397,7 +451,7 @@ sdm_eval <- function(preds, model, metric, mod = NULL){
     }
     
     if(metric == 'auc'){
-      Pred <- prediction(cv$pred, cv$obs)
+      Pred <- prediction(preds$pred, preds$obs)
       Perf <- performance(Pred, 'auc')
       met <- Perf@y.values[[1]]
     }
@@ -479,14 +533,49 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     colnames(se)[1] <- "staid"
     se$year <- year(my(paste(se[,month_col], se[,year_col], sep = '-')))
     
+    #subsample by space-time
+    set.seed(2025)
+    
+    #make regions 
+    se$region <- NA
+    se$region[which(se[,xy_col[1]] > -70 & se[,xy_col[2]] < 41.5)] <- 'GB' #georges bank
+    se$region[which(se[,xy_col[1]] > -71 & se[,xy_col[2]] > 41.5)] <- 'GOM' #gulf of maine
+    se$region[which(se[,xy_col[1]] < -70 & se[,xy_col[2]] < 42 & se[,xy_col[2]] > 39.5)] <- 'SNE' #southern new england
+    se$region[which(se[,xy_col[2]] < 39.5)] <- 'MAB' #mid-atlantic bight
+    
+    #make space-time id
+    se$sp.tm <- paste(se$month.year, se$region, sep = '-')
+    sptm <- unique(se$sp.tm)
+    #subsample data 
+    seSub <- NULL
+    for(x in sptm){
+      sub <- se[se$sp.tm == x,]
+      
+      abs <- sub[sub$value == 0,]
+      pres <- sub[sub$value == 1,]
+      
+      if(nrow(pres) <= 5){
+        allSub <- NULL
+      } else if(nrow(abs) > nrow(pres)){
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+        allSub <- rbind(absSub, pres)
+      } else {
+        allSub <- sub
+      }
+      
+      seSub <- rbind(seSub, allSub)
+    }
+    
     #convert dataframe to spatial object 
-    stDF = st_as_sf(se, coords = xy_col, crs = 4326, agr = "constant")
+    stDF = st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
     stDF = st_sftime(stDF, time_column_name = year_col)
+    
     
     #create formula 
     form <- "value ~ "
     for(x in 2:ncol(se)){
-      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
+      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col &
+         colnames(se)[x] != 'month.year' & colnames(se)[x] != 'region' & colnames(se)[x] != 'sp.tm' & colnames(se)[x] != 'staid'){ #make sure you don't add the response variable or the variables you've already added
         form <- paste0(form, ' + ', colnames(se)[x])
       }
     } #end for x 
