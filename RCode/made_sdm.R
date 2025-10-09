@@ -1,11 +1,3 @@
-#code for paper Camrin et al 2023: https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.2893
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_kfold_brt_wpredictions.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/eval_brt.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/pseudoR2.brt.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/saveTSS.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/saveAUC.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/bhattacharyya.stat.r')
-#source('~/ClimateVulnerabilityAssessment2.0)/Code/bhatt.coef.r')
 
 
 make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWeights = NULL, ensemblePreds = NULL){
@@ -14,9 +6,11 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
   #pa_col - name of columns containing response data 
   #xy_col - names of columns containing positional data, where the first is the x(lon) and second is the y(lat)
   #month/year_col - names of columns containing months and years associated with observations 
-  #ensembleMods/Mets/Preds - vector or list of evaluation metric to use to generate weights and prediction dataframes from CVs to use to validate model -- ALL NEED TO BE THE SAME LENGTH AND ORDER 
-  #metric = name of metric to use for model weights - currently accepts auc or rmse
+  #ensembleMods/Preds - vector or list of evaluation metric to use to generate weights and prediction dataframes from CVs to use to validate model -- ALL NEED TO BE THE SAME LENGTH AND ORDER 
   
+  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' | mod != 'ens'){
+    stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
+  }
   
   #now build model of choice
   #each produces the following objects: mod, cv, preds, rmse, auc, RDE
@@ -78,13 +72,15 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
       abs <- sub[sub$value == 0,]
       pres <- sub[sub$value == 1,]
       
-      if(nrow(pres) <= 5){
-        allSub <- NULL
-      } else if(nrow(abs) > nrow(pres)){
-        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+      if(nrow(pres) <= 5){ #if there are few presences
+        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs)/4)),] #subsample absences to a 1/4 of the absences within month and region
+        allSub <- rbind(absSub, pres) #combine with presences (if any are absent)
+        #this will allow all regions, years, and months to be present in the final time series to help predictions while also making the ratio of presences/absences somewhat more even 
+      } else if(nrow(abs) > nrow(pres)){ #if there are enough presences, but absences still outnumber presences
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),] #subsample absences 
         allSub <- rbind(absSub, pres)
-      } else {
-        allSub <- sub
+      } else { #if presences outnumber absences
+        allSub <- sub #do nothing and keep it all 
       }
       
       seSub <- rbind(seSub, allSub)
@@ -106,7 +102,7 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
     #tune model 
     mod <- rfsi(formula = formula(form),
                 data = stDF,
-                data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
+                data.staid.x.y.z = c('staid', 'X', 'Y'),
                 cpus = 1,
                 progress = F,
                 importance = "impurity",
@@ -124,6 +120,8 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
   
   if(model == 'brt'){
     print('Building Boosted Regression Trees...')
+    
+    se <- se[complete.cases(se),]
     
     modAll <- gbm.step(data = se, gbm.x = names(se)[-which(names(se) == pa_col)], 
                     gbm.y = pa_col, 
@@ -145,19 +143,18 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
   if(model == 'sdmtmb'){
     print('Building sdmTMB...')
     
-    #make mesh
-    mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 6/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
-    #MOM6 resolution is 1/12 = ~8 km 
-    
     #build formula
     form <- paste0(pa_col, " ~ ")
     #loop through covariates since they will all have the same smoother 
     for(x in 1:ncol(se)){
       if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + s(', colnames(se)[x], ", bs = 'ts', k = 6)")
+        form <- paste0(form, ' + s(', colnames(se)[x], ", k = 6)")
       }
     } #end for x 
     
+    #make mesh
+    mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
+    #MOM6 resolution is 1/12 = ~8 km 
     
     #following general parameters from Andrew Allyn's work with lobster off the coast of Maine 
     #see sp/spatiotemporal model code - https://github.com/aallyn/lobSDM/blob/main/Code/5_AdultLob_SDM.R
@@ -166,12 +163,12 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
       data = se,
       mesh = mesh,
       family = binomial(link = 'logit'),
-      spatial = "on",
-      spatiotemporal = 'ar1',
-      time = 'year',
+      #spatial = "on",
+      spatiotemporal = 'iid',
+      time = year_col,
       reml = T,
-      anisotropy = F,
-      share_range = T,
+      anisotropy = T,
+      share_range = F,
       do_fit = T
     )
     
@@ -184,7 +181,7 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
       #it may not fix the problem but it might help
       
       
-      cn <- gsub("[\\(\\)]", "", regmatches(names(i), gregexpr("\\(.*?\\)", names(i)))[[1]])
+      cn <- gsub('s\\(', '', names(i))
       badvars <- names(se) %in% cn
       print(paste('Removing', names(se)[badvars]))
       se <- se[,-which(names(se) == cn)]
@@ -194,23 +191,26 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
       form <- paste0(pa_col, " ~ ")
       #loop through covariates since they will all have the same smoother 
       for(x in 1:ncol(se)){
-        if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
-          form <- paste0(form, ' + s(', colnames(se)[x], ", bs = 'ts', k = 6)")
+        if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col & colnames(se)[x] != 'sp.tm' & colnames(se)[x] != 'region'){ #make sure you don't add the responseSub variable or the variables you've already added
+          form <- paste0(form, ' + s(', colnames(se)[x], ", k = 6)")
         }
       } #end for x 
+      
+      #make mesh
+      mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 1)
       
       #re-run sdm
       mod <- sdmTMB(
         formula = formula(form),
-        sea = se,
+        data = se,
         mesh = mesh,
         family = binomial(link = 'logit'),
-        spatial = "on",
-        spatiotemporal = 'ar1',
-        time = 'year',
+        #spatial = "on",
+        spatiotemporal = 'iid',
+        time = year_col,
         reml = T,
-        anisotropy = F,
-        share_range = T,
+        anisotropy = T,
+        share_range = F,
         do_fit = T
       )
       
@@ -224,7 +224,12 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
   
   if(model == 'ens'){
    # weights <- MakeEnsemble(rmse = mets) #make weights
-    mod <- ValidateEnsemble(pred.list = ensemblePreds, model.weights = weights, make.plots = F) #validate to get preds/obs to metrics 
+    
+    if(length(weights) == length(ensemblePreds)){
+      mod <- ValidateEnsemble(pred.list = ensemblePreds, model.weights = weights, make.plots = F, latlon = F) #validate to get preds/obs to metrics 
+    } else { 
+      stop('weights and model prediction list are not the same length')
+      }
     
   } #end if ensemble 
   
@@ -240,21 +245,26 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
   #xy_col - names of columns containing positional data, where the first is the x(lon) and second is the y(lat)
   #month/year_col - names of columns containing months and years associated with observations 
 
+  
+  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' ){
+    stop('model is not gam, maxent, rf, brt, or sdmtmb')
+  }
 
   if(model == 'gam'){ #build gam model 
     #cross validation
-    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 10, model.type = "gam")
+    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 5, model.type = "gam")
   } #end if gam 
   
   if(model == 'maxent'){
     #cross validate
-    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 10, model.type = "maxnet", species = pa_col, scale.preds = F)
+    cv <- EFHSDM::CrossValidateModel(model = mod, data = se, folds = 5, model.type = "maxnet", species = pa_col, scale.preds = F)
   } #end if maxent
   
   if(model == 'rf'){
     se <- cbind(1:nrow(se), se) #stand in station ids 
     colnames(se)[1] <- "staid"
-    se$year <- year(my(paste(se[,month_col], se[,year_col], sep = '-')))
+    se$month.year <- paste(se[,month_col], se[,year_col], sep = '-')
+    se$year <- year(my(se$month.year))
     
     #subsample by space-time
     set.seed(2025)
@@ -277,17 +287,20 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
       abs <- sub[sub$value == 0,]
       pres <- sub[sub$value == 1,]
       
-      if(nrow(pres) <= 5){
-        allSub <- NULL
-      } else if(nrow(abs) > nrow(pres)){
-        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+      if(nrow(pres) <= 5){ #if there are few presences
+        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs)/4)),] #subsample absences to a minimum number per month and region
+        allSub <- rbind(absSub, pres) #combine with presences (if any are absent)
+        #this will allow all regions, years, and months to be present in the final time series to help predictions while also making the ratio of presences/absences somewhat more even 
+      } else if(nrow(abs) > nrow(pres)){ #if there are enough presences, but absences still outnumber presences
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),] #subsample absences 
         allSub <- rbind(absSub, pres)
-      } else {
-        allSub <- sub
+      } else { #if presences outnumber absences
+        allSub <- sub #do nothing and keep it all 
       }
       
       seSub <- rbind(seSub, allSub)
     }
+    
     
     #convert dataframe to spatial object 
     stDF = st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
@@ -317,7 +330,7 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     cv <- cv.rfsi(formula = formula(form),
                   data = stDF,
                   data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
-                  cpus = 3,
+                  cpus = 1,
                   progress = T,
                   importance = "impurity",
                   seed = 42,
@@ -327,7 +340,7 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
                   tune.type = "LLO", # Leave-Location-Out CV
                   write.forest = T, 
                   s.crs = st_crs(stDF), 
-                  k = 10,
+                  k = 5,
                   classification = F)
     
   } #end if RF
@@ -336,48 +349,52 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     ###simplify model before k-fold validations 
     #simpBRT <- mod
     
+    se <- se[complete.cases(se),]
+    
     #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
     cv <- eval_kfold_brt(dataInput = se, 
                                 gbm.x = mod$gbm.call$gbm.x, #only use simplified parameters for k-folds 
                                 gbm.y = pa_col,  
                                 learning.rate = 0.005, 
                                 bag.fraction = 0.75, 
-                                tree.complexity = 5, k_folds = 10, max.trees = 2000,
+                                tree.complexity = 5, k_folds = 5, max.trees = 2000,
                                 is_fixed = F)[[2]]
     
   } #end if BRT
   
   if(model == 'sdmtmb'){
     print('Building sdmTMB...')
+    #build formula
+    #form <- paste0(pa_col, " ~ ")
+    #loop through covariates since they will all have the same smoother 
+    #for(x in 1:ncol(se)){
+     # if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
+      #  form <- paste0(form, ' + s(', colnames(se)[x], ", k = 6)")
+      #}
+    #} #end for x 
+    
+    se2 <- se[,c(all.vars(formula(mod$formula[[1]])), year_col, xy_col)]
     
     #make mesh
-    mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 6/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
+    mesh <- make_mesh(se2, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
     #MOM6 resolution is 1/12 = ~8 km 
-    
-    #build formula
-    form <- paste0(pa_col, " ~ ")
-    #loop through covariates since they will all have the same smoother 
-    for(x in 1:ncol(se)){
-      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + s(', colnames(se)[x], ", bs = 'ts', k = 6)")
-      }
-    } #end for x 
-
     #cross-validation
+    
     cv <- sdmTMB_cv(
-      formula = formula(form),
-      data = se,
+      formula = formula(mod$formula[[1]]),
+      data = se2,
       mesh = mesh,
       family = binomial(link = 'logit'),
-      spatial = "on",
-      spatiotemporal = 'ar1',
-      time = 'year',
+      #spatial = "on",
+      spatiotemporal = 'iid',
+      time = year_col,
       reml = T,
-      anisotropy = F,
-      share_range = T,
+      anisotropy = T,
+      share_range = F,
       do_fit = T,
-      k_folds = 10,
-      parallel = F
+      k_folds = 5,
+      parallel = F,
+      use_initial_fit = T
     )
     
   } #end if sdmtmb
@@ -391,9 +408,10 @@ sdm_preds <- function(cv, model){
   #cv - output from sdm_cv
   #model - one of the following to build models appropriately: gam, maxent, rf, brt, sdmtmb
 
+  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' ){
+    stop('model is not gam, maxent, rf, brt, or sdmtmb')
+  }
   
-  #now build model of choice
-  #each produces the following objects: mod, cv, preds, rmse, auc, RDE
   if(model == 'gam' | model == 'maxent'){ #get preds for gam or maxent
     #get evaluation metrics (RMSE & AUC)
     preds <-cv[[1]]
@@ -401,12 +419,13 @@ sdm_preds <- function(cv, model){
   
   if(model == 'rf'){
     preds <- cv #the output from cv is also preds here
+    colnames(preds)[6:7] <- c('abund', 'pred')
   } #end if RF
   
   if(model == 'brt'){
     ##put obs and predicted together for ensemble 
-    preds <- data.frame(obs = cv$value, preds = cv$preds)
-    names(preds) <- c('value', 'preds')
+    preds <- data.frame(abund = cv$value, pred = cv$preds)
+    #names(preds) <- c('abund', 'pred')
   } #end if BRT
   
   if(model == 'sdmtmb'){
@@ -424,19 +443,23 @@ sdm_eval <- function(preds, model, metric, mod = NULL){
   #model - one of the following to build models appropriately: gam, maxent, rf, brt, sdmtmb, ens
   #metric = name of metric to calculate - rmse or auc
   #mod - ensemble model object from make_sdm
+  
+  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' | mod != 'ens'){
+    stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
+  }
 
   #now evaluate model of choice
   #each produces the following objects: mod, cv, preds, rmse, auc, RDE
   if(model == 'gam' | model == 'maxent'){ #get metrics for gam or maxent model 
-
+    preds2 <- preds[complete.cases(preds),]
     if(metric == 'rmse'){
      #RMSE
-      met <- RMSE(obs = preds$abund, pred = preds$cvpred)
+      met <- RMSE(obs = preds2$abund, pred = preds2$cvpred)
     }
     
     if(metric == 'auc'){
     #AUC
-      Pred <- prediction(preds$cvpred, preds$abund)
+      Pred <- prediction(preds2$cvpred, preds2$abund)
       Perf <- performance(Pred, 'auc')
       met <- Perf@y.values[[1]]
     }
@@ -447,11 +470,11 @@ sdm_eval <- function(preds, model, metric, mod = NULL){
     
     if(metric == 'rmse'){
     #get RMSE
-        met <- EFHSDM::RMSE(obs = preds$obs, pred = preds$pred)
+        met <- EFHSDM::RMSE(obs = preds$abund, pred = preds$pred)
     }
     
     if(metric == 'auc'){
-      Pred <- prediction(preds$pred, preds$obs)
+      Pred <- prediction(preds$pred, preds$abund)
       Perf <- performance(Pred, 'auc')
       met <- Perf@y.values[[1]]
     }
@@ -461,12 +484,12 @@ sdm_eval <- function(preds, model, metric, mod = NULL){
   if(model == 'brt'){
 
     if(metric == 'rmse'){
-      met <- EFHSDM::RMSE(obs = preds$value, pred = preds$preds)
+      met <- EFHSDM::RMSE(obs = preds$abund, pred = preds$pred)
     }
     
     if(metric == 'auc'){
       #calculate AUC
-      Pred <- prediction(preds$preds, preds$value)
+      Pred <- prediction(preds$pred, preds$abund)
       Perf <- performance(Pred, 'auc')
       met <- Perf@y.values[[1]]
     }
@@ -513,6 +536,10 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
   #pa_col - name of columns containing response data 
   #xy_col - names of columns containing positional data, where the first is the x(lon) and second is the y(lat)
   
+  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' ){
+    stop('model is not gam, maxent, rf, brt, or sdmtmb')
+  }
+  
   #now build model of choice
   #each produces the following objects: mod, cv, preds, rmse, auc, RDE
   if(model == 'gam'){ #build gam model 
@@ -531,7 +558,8 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     
     se <- cbind(1:nrow(se), se) #stand in station ids 
     colnames(se)[1] <- "staid"
-    se$year <- year(my(paste(se[,month_col], se[,year_col], sep = '-')))
+    se$month.year <- paste(se[,month_col], se[,year_col], sep = '-')
+    se$year <- year(my(se$month.year))
     
     #subsample by space-time
     set.seed(2025)
@@ -554,13 +582,15 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
       abs <- sub[sub$value == 0,]
       pres <- sub[sub$value == 1,]
       
-      if(nrow(pres) <= 5){
-        allSub <- NULL
-      } else if(nrow(abs) > nrow(pres)){
-        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),]
+      if(nrow(pres) <= 5){ #if there are few presences
+        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs)/4)),] #subsample absences to a minimum number per month and region
+        allSub <- rbind(absSub, pres) #combine with presences (if any are absent)
+        #this will allow all regions, years, and months to be present in the final time series to help predictions while also making the ratio of presences/absences somewhat more even 
+      } else if(nrow(abs) > nrow(pres)){ #if there are enough presences, but absences still outnumber presences
+        absSub <- abs[sample(x = nrow(abs), size = nrow(pres)),] #subsample absences 
         allSub <- rbind(absSub, pres)
-      } else {
-        allSub <- sub
+      } else { #if presences outnumber absences
+        allSub <- sub #do nothing and keep it all 
       }
       
       seSub <- rbind(seSub, allSub)
@@ -593,13 +623,13 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
   if(model == 'sdmtmb'){
     
     #make mesh
-    mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 6/12) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
+    mesh <- make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones  
     #MOM6 resolution is 1/12 = ~8 km 
     
     ### get relative importance of model using type 3 anova method
     # model with *only* intercept and no random fields:
     fit_null <- sdmTMB(
-      value ~ 1, 
+      formula(paste0(pa_col, " ~ 1")), 
       spatial = "off", 
       family = binomial(link = 'logit'),
       data = se,
@@ -607,31 +637,31 @@ sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     
     #loop across variables and get their partial deviance explained 
     RDE <- vector(length = ncol(se))
-    for(x in 1:ncol(se)){
-      if(colnames(se)[x] != pa_col & colnames(se)[x] != xy_col[1] & colnames(se)[x] != xy_col[2] & colnames(se)[x] != year_col){ #don't do this for the response variable, xy vars, or year
+    for(y in 1:ncol(se)){
+      if(colnames(se)[y] != pa_col & colnames(se)[y] != xy_col[1] & colnames(se)[y] != xy_col[2] & colnames(se)[y] != year_col & colnames(se)[y] != 'region' & colnames(se)[y] != 'sp.tm'){ #don't do this for the response variable, xy vars, or year
         #isolate covariate 
         
         #build formula with single covariate
-        formSub <- paste0(pa_col, " ~ + s(", colnames(se)[x], ", bs = 'ts', k = 6)")
+        formSub <- paste0(pa_col, " ~ + s(", colnames(se)[y], ", k = 6)")
         
         fitSub <- sdmTMB(
           formula = formula(formSub),
           data = se,
           mesh = mesh,
           family = binomial(link = 'logit'),
-          spatial = "on",
-          spatiotemporal = 'ar1',
-          time = 'year',
+          #spatial = "on",
+          spatiotemporal = 'iid',
+          time = year_col,
           reml = T,
-          anisotropy = F,
-          share_range = T,
+          anisotropy = T,
+          share_range = F,
           do_fit = T
         )
         
-        RDE[x] <- 1 - deviance(fitSub) / deviance(fit_null)
-        print(x)
-      }
-    } #end if
+        RDE[y] <- 1 - deviance(fitSub) / deviance(fit_null)
+        print(y)
+      } #end if
+    } #end for
     names(RDE) <- names(se)
     
   } #end if sdmtmb
