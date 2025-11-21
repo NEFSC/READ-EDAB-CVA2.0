@@ -1,6 +1,6 @@
-###make abundances 
+###make abundances - moved and documented in make_sdm.R
 
-make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
+make_predictions <- function(mod, model, rasts, staticData, bathyR, mask = T, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
   #make predictions from model output 
   #mod - model to predict from 
   #model - character string listing the model type
@@ -14,9 +14,8 @@ make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, 
   #se - spp_env dataset used to build models - only used for rf/sdm models
   #weights - ensemble weights for each model in the ensemble - for ensembles only 
   
-  if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' | mod != 'ens'){
-    stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
-  }
+  if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb', 'ens')){
+  
 
   #make static vars (month/year) into rasters
   r <- subset(rasts[[1]][[1]], 1)
@@ -262,6 +261,7 @@ make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, 
   
   if(model == 'sdmtmb'){
     print('Predicting sdmTMB...')
+    require(sdmTMB)
     for(x in 1:nlayers(rasts[[1]][[1]])){ #all the rasters in rasts have the same number of layers so it doesn't matter which one we call
       
       #may need to change if names aren't always going to be month.year 
@@ -287,20 +287,21 @@ make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, 
       
       if(mask){ #if mask == T
         #mask off waters deeper than 1000 m
-        i <- which(names(sr) == bathy_nm)
-        sr <- replace(sr, abs(subset(sr, i)) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+        #i <- which(names(sr) == bathy_nm)
+        sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
       }
       
       ##convert rasterStack to dataframe to play well with model 
       srDF <- as.data.frame(rasterToPoints(sr)[,-c(1:2)])
       srDF <- srDF[complete.cases(srDF),]
 
+      require(sdmTMB)
       pred <- predict(mod, newdata = srDF, type = 'response')
       #sdmpred$prob <- exp(sdmpred$est)/(1+exp(sdmpred$est))
       coordinates(pred) <- ~x + y
       proj4string(pred) <- CRS("+proj=longlat +datum=WGS84 +no_defs ")
       hsm[[x]] <- raster::rasterize(x = pred, y = rYear, field = pred$est)
-      #print(x)
+      print(x)
     }
     names(hsm) <- names(rasts[[1]][[1]])
   } #end if sdmtmb
@@ -326,7 +327,12 @@ make_predictions <- function(mod, model, rasts, staticData, mask = T, bathy_nm, 
     }
   } #end if ensemble
 
-  names(hsm) <- names(rasts[[1]])
+  names(hsm) <- names(rasts[[1]][[1]])
   
   return(hsm)
+  } else {
+    stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
+  }
 }
+
+

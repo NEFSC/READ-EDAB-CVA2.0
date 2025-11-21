@@ -48,7 +48,7 @@ remove_corr <- function(se, pa_col, xy_col, month_col, year_col){
 }
 
 clean_data <- function(se, pa_col){
-  paDF <- se[se[,pa_col] != 0,] #remove unsampled cells (pa_col == 0)
+  paDF <- se[se[,pa_col] != 0,]
   #switch it back to 0/1 now that we only have grid cells that were sampled 
   paDF[,pa_col] <- replace(paDF[,pa_col], paDF[,pa_col] == 1, 0)
   paDF[,pa_col] <- replace(paDF[,pa_col], paDF[,pa_col] == 2, 1)
