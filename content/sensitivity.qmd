@@ -1,0 +1,10 @@
+---
+title: Sensitivity
+---
+
+Species sensitivity to change will be measured qualitativly as in the original CVA. Experts will rank the impacts of different life history attributes on species sensitivity. A literature review is currently underway to determine the important life history traits that were both important to the original CVA and are important for target species. 
+
+We are also currently exploring options to quantify sensitivity from the MOM6 output following some of the methods of Boyce et al 2022 and 2024 such as margins between predicted or current conditions and known maximum environmental limits. 
+
+### Sensitivity vs Adaptability 
+The Boyce et al 2022 and 2024 papers seperated species sensitivity and adaptability attributes. In the original CVA, sensitivity and adaptive attributes were grouped together, as removing one or the other significantly changed the results. Furthermore, Morrison et al 2015 considered sensitivity and adaptivity inverses of each other (ie higher sensitivity would mean that a species is less adaptive) and decided to group them. 
