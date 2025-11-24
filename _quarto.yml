@@ -1,0 +1,67 @@
+project: 
+  type: website
+
+website: 
+  page-navigation: true
+  title: "Climate Vulnerability Assessment 2.0" 
+  site-url: "https://urban-dollop-6llj83e.pages.github.io/" 
+  repo-url: "https://github.com/NEFSC/READ-EDAB/CVA2.0"
+  repo-actions: [edit, source, issue]
+  favicon: images/favicon.ico
+  
+  page-footer:
+    right: "This page is built with [Quarto](https://quarto.org/)."
+    left: "&copy; CC-1.0"
+  
+  sidebar:
+    background: "#D9E3E4"
+    logo: "https://raw.githubusercontent.com/nmfs-opensci/assets/main/logo/nmfs-opensci-logo3.png"
+    favicon: images/favicon.ico
+    pinned: true
+    align: center
+    tools: 
+      - icon: globe
+        href: https://nmfs-opensci.github.io
+        text: "NMFS Open Science"
+      - icon: github
+        href: https://github.com/nmfs-opensci
+        text: "NMFS OpenSci"
+
+    style: "floating"
+    search: true
+    collapse-level: 1
+    contents:
+      - href: index.qmd
+        text: Home
+      - section: 'Methods' 
+        href: content/methods-overview.qmd
+        contents: 
+          - content/data.qmd
+          - content/sdm-methods.qmd
+          - content/exposure.qmd
+          - content/sensitivity.qmd
+          - content/vulnerability_directionality.qmd
+      - section: 'R Package' 
+        href: content/rpackage-overview.qmd
+        contents:
+          - content/install-setup.qmd
+          - content/ensemble-sdms.qmd
+          - content/sensitivity-calculation.qmd
+      - href: content/acknowledgements.qmd
+        text: Acknowledgements
+
+format:
+  html:
+    theme:
+      light: [cosmo, theme.scss] 
+      dark: [cosmo, theme-dark.scss]
+    code-copy: true
+    code-overflow: wrap
+    toc: true
+
+
+filters:
+  - include-files.lua
+  - quarto
+
+  
