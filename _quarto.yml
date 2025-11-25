@@ -4,8 +4,8 @@ project:
 website: 
   page-navigation: true
   title: "Climate Vulnerability Assessment 2.0" 
-  site-url: "https://urban-dollop-6llj83e.pages.github.io/" 
-  repo-url: "https://github.com/NEFSC/READ-EDAB-CVA2.0"
+  site-url: "https://nmfs-opensci.github.io/NOAA-quarto-simple" 
+  repo-url: "https://github.com/nmfs-opensci/NOAA-quarto-simple"
   repo-actions: [edit, source, issue]
   favicon: images/favicon.ico
   
