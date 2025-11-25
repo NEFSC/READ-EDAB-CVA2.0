@@ -1,0 +1,8 @@
+---
+title: Calculating Sensitivity
+---
+
+### Overview
+Sensitivity is calculated from MOM6 forecast data, and utilizes predicted species distributions, and the relative importance of covariates in the ensemble models. 
+
+Detailed methods coming soon. 

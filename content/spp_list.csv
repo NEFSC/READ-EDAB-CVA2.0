@@ -1,0 +1,37 @@
+Common Name,COM_NAME,Scientific Name,Alternate Name,SCI_NAME,SCI_NAME_ALT,SCI_NAME_ALT2,Managing Body,Feeding Guild,Habitat Guild
+Atlantic cod ,ATLANTIC COD ,Gadus morhua,Cod Atlantic,GADUS MORHUA,,,NEFMC,Piscivore,Groundfish
+Atlantic croaker,ATLANTIC CROAKER,Micropogonias undulatus,CROAKER ATLANTIC,MICROPOGONIAS UNDULATUS,MICROPOGONIAS UNDULATES,MICROPOGONIUS UNDULATUS,ASMFC,Benthivore,Groundfish
+Atlantic halibut,ATLANTIC HALIBUT,Hippoglossus hippoglossus,Halibut Atlantic,HIPPOGLOSSUS HIPPOGLOSSUS,HALIBUT ATLANTIC,,NEFMC,Piscivore,Groundfish
+Atlantic herring,ATLANTIC HERRING,Clupea harengus,Herring Atlantic,CLUPEA HARENGUS,,,NEFMC,Planktivore,Pelagic
+Atlantic mackerel,ATLANTIC MACKEREL,Scomber scombrus,Mackerel Atlantic,SCOMBER SCOMBRUS,MACKEREL ATLANTIC,,MAFMC,Planktivore,Pelagic 
+Atlantic sea scallop,ATLANTIC SEA SCALLOP,Placopecten magellanicus,Scallop Sea,PLACOPECTEN MAGELLANICUS,PLACOPECTEN MAGELANICUS,,NEFMC,Benthos,Benthic
+Atlantic surfclam,ATLANTIC SURFCLAM,Spisula solidissima,,SPISULA SOLIDISSIMA,,,MAFMC,Benthos,Benthic
+Atlantic wolffish,ATLANTIC WOLFFISH,Anarhichas lupus,Wolffish Atlantic,ANARHICHAS LUPUS,,,NEFMC,Benthivore,Groundfish
+Black sea bass,BLACK SEA BASS,Centropristis striata,Sea Bass Black,CENTROPRISTIS STRIATA,SEA BASS BLACK,,MAFMC & ASMFC,Benthivore,Groundfish
+Bluefin Tuna,BLUEFIN TUNA,Thunnus thynnus,TUNA BLUEFIN,THUNNUS THYNNUS,,,HMS FMP,Apex Predator,Pelagic 
+Bluefish,BLUEFISH,Pomatomus saltatrix,,POMATOMUS SALTATRIX,,,MAFMC,Piscivore,Pelagic
+Blueline tilefish,BLUELINE TILEFISH,Caulolatilus microps,TILEFISH GRAY BLUELINE,CAULOLATILUS MICROPS,,,MAFMC,Benthivore,Groundfish
+Butterfish,BUTTERFISH,Peprilus triacanthus,,PEPRILUS TRIACANTHUS,,,MAFMC,Planktivore,Pelagic
+Chub mackerel,CHUB MACKEREL,Scomber colias,,SCOMBER COLIAS,SCOMBER JAPONICUS,,MAFMC,Planktivore,Pelagic
+Cobia,COBIA,Rachycentron canadum,,RACHYCENTRON CANADUM,,,ASMFC,Benthivore,Pelagic Migratory
+Golden tilefish,GOLDEN TILEFISH,Lopholatilus chamaeleonticeps,TILEFISH GOLDEN,LOPHOLATILUS CHAMAELEONTICEPS,,,MAFMC,Benthivore,Groundfish
+Haddock,HADDOCK,Melanogrammus aeglefinus,,MELANOGRAMMUS AEGLEFINUS,,,NEFMC,Benthivore,Groundfish
+Longfin squid,LONGFIN SQUID,Doryteuthis (Amerigo) pealeii,Squid Long Finned,DORYTEUTHIS (AMERIGO) PEALEII,LOLIGO PEALEII,DORYTEUTHIS PEALEI,MAFMC,Piscivore,Pelagic
+Monkfish,MONKFISH,Lophius americanus,Goosefish,LOPHIUS AMERICANUS,ANGLERFISH MONKFISH,,MAFMC,Piscivore,Groundfish
+Ocean pout,OCEAN POUT,Zoarces americanus,Pout Ocean,ZOARCES AMERICANUS,MACROZOARCES AMERICANUS,,NEFMC,Benthivore,Groundfish
+Ocean quahog,OCEAN QUAHOG,Arctica islandica,Clam Ocean Quahog,ARCTICA ISLANDICA,,,MAFMC,Benthos,Benthic
+Pollock,POLLOCK,Pollachius virens,,POLLACHIUS VIRENS,,,NEFMC,Piscivore,Groundfish
+Red Drum,RED DRUM,Sciaenops ocellatus,Red,SCIAENOPS OCELLATUS,SCIAENOPS OCELLATA,DRUM RED,ASMFC,Benthivore,Groundfish
+Scup,SCUP,Stenotomus chrysops,,STENOTOMUS CHRYSOPS,,,MAFMC,Benthivore,Groundfish
+Shortfin squid,SHORTFIN SQUID,Illex illecebrosus,Squid Short-Finned,ILLEX ILLECEBROSUS,,,MAFMC,Piscivore,Pelagic
+Spanish mackerel,SPANISH MACKEREL,Scomberomorus maculatus,MACKEREL SPANISH,SCOMBEROMORUS MACULATUS,,,MAFMC & ASMFC,Piscivore,Pelagic
+Smooth dogfish,SMOOTH DOGFISH,Mustelus canis,SHARK DOGFISH SMOOTH,MUSTELUS CANIS,,,HMS FMP,Benthivore,Groundfish
+Spiny dogfish,SPINY DOGFISH,Squalus acanthias,Dogfish Spiny,SQUALUS ACANTHIAS,SHARK DOGFISH SPINY,,MAFMC,Piscivore,Groundfish
+Striped bass,STRIPED BASS,Morone saxatilis,Bass Striped,MORONE SAXATILIS,,,ASMFC,Piscivore,Groundfish
+Summer flounder,SUMMER FLOUNDER,Paralichthys dentatus,Flounder Atlantic Summer (Fluke),PARALICHTHYS DENTATUS,,,MAFMC,Piscivore,Groundfish
+Tautog,TAUTOG,Tautoga onitis,,TAUTOGA ONITIS,,,ASMFC,Benthivore,Groundfish
+White hake,WHITE HAKE,Urophycis tenuis,Hake White,UROPHYCIS TENUIS,,,NEFMC,Piscivore,Groundfish
+Windowpane flounder,WINDOWPANE FLOUNDER,Scophthalmus aquosus,Flounder Atlantic Windowpane (Sand Dab ),SCOPHTHALMUS AQUOSUS,,,NEFMC,Piscivore,Groundfish
+Winter flounder,WINTER FLOUNDER,Pseudopleuronectes americanus,Flounder Winter,PSEUDOPLEURONECTES AMERICANUS,,,NEFMC,Benthivore,Groundfish
+Witch flounder,WITCH FLOUNDER,Glyptocephalus cynoglossus,Flounder Atlantic Witch (Gray Sole),GLYPTOCEPHALUS CYNOGLOSSUS,,,NEFMC,Benthivore,Groundfish
+Yellowtail flounder,YELLOWTAIL FLOUNDER,Limanda ferruginea,Flounder Yellowtail,LIMANDA FERRUGINEA,,,NEFMC,Benthivore,Groundfish
