@@ -32,13 +32,13 @@ neamap <- standardize_data(dataType = 'CSV', csv = "./Data/csvs/raw/NEAMAP_Tow_C
 This function results in a dataframe being transformed from this: 
 ```{r}
 #| echo: false
-exRaw <- read.csv('GOP_092025.csv')
+exRaw <- read.csv('maine_example_2010.csv')
 head(exRaw)
 ```
 To this: 
 ```{r}
 #| echo: false
-exSt <- read.csv('GOP.csv')
+exSt <- read.csv('maine_clean_example_2010.csv')
 head(exSt)
 ```
 To ensure that fisheries and environmental data are on the same scale, and to convert any abundance data to presence/absence, the fisheries csvs produced by `standardize_data` are then converted into rasters of effort/presence/absence with the function `create_rast`. While the source datasets are generated for the entire dataset, one rasterStack is produced for each target species and data source. `create_rast` produces rasters with the same resolution as the environmental data where values range from 0 to 2, where 0 means that no effort was present in the grid cell, 1 means that there was fishing effort but the target species was not caught, and 2 indicates that the target species was caught in that grid cell.
