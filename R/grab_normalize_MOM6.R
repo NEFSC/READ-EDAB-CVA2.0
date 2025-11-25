@@ -1,12 +1,24 @@
-### function to pull MOM6 environmental data and create a list of normalized data rasters 
-
-########## INPUTS 
-#varURL <- "https://psl.noaa.gov/cefi_portal/data_index/cefi_data_indexing.Projects.CEFI.regional_mom6.cefi_portal.northwest_atlantic.full_domain.hindcast.json" #url pointing to variable lists for desired run type (hindcast, decadal forecast) and domain (nwa) in question
-#reqVars <- c('Bottom Temperature') #list of vars to pull 
-#gt <- 'regrid' #desired grid type (options = regrid or raw)
-#of <- 'monthly' #desired output frequency (options = daily or monthly)
-#urlHead <- "https://psl.noaa.gov/thredds/ncss/grid/Projects/CEFI/regional_mom6/" #first part of the URL to access ncss server to allow for subsetting 
-##############
+#' @title MOM6 Data Functions
+#' @description Function to pull and normalize MOM6 environmental data 
+#' \itemize{
+#' \item \code{pull_hind} and \code{pull_forecast} pull the hindcast and forecast MOM6 data, respectively, accounting for differences in data structure
+#' \item \code{avg_env} calculates monthly averages of raw MOM6 data
+#' \item \code{sd_env} calculates monthly standard deviations of raw MOM6 data
+#' \item \code{norm_env} calculates a z-score to normalize MOM6 data throughout the time series based on monthly averages and standard deviations 
+#' }
+#' @param jsonURL URL pointing to JSON table variable lists for desired MOM6 run type (hindcast, decadal forecast) and domain 
+#' @param reqVars vector of variable names to pull. Must match names in the 'cefi_long_name' column provided JSON table
+#' @param shortNames vector of simplified variable names to help name resulting raster files. Must be the same length as reqVars.
+#' @param gt desired grid type. Must match one of the options in the 'cefi_grid_type' column in provided JSON table 
+#' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
+#' @param bounds xmin, xmax, ymin, ymax of desired output raster
+#' @param static URL to static grid for MOM6
+#' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table 
+#' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. For forecast only
+#' @param ens ensemble member. Must be equal to 1-10. For decadal forecasts, different ensemble members represent slightly different forcing scenarios. For forecast only.
+#' @param rawList List of output rasters from \code{pull_hind} or \code{pull_forecast}
+#' @param avgList,sdList List of output rasters from \code{avg_env} and \code{sd_env}, respectively
+#' @return All functions in this group return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable 
 
 pull_hind <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static = "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/raw/r20230520/ocean_static.nc", release){
   require(jsonlite)
@@ -23,7 +35,7 @@ pull_hind <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly'
     rl <- c(rl, vars[[x]]$cefi_release)
   }
   
-  varList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
+  rawList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
   
   #get info for subsetting
   #putting subsetting back because everything else takes too long otherwise 
@@ -49,10 +61,10 @@ pull_hind <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly'
     #subset
     v <- crop(v, se) #this is the rate limiting step
     
-    varList[[y]] <- v #save raw data in list 
+    rawList[[y]] <- v #save raw data in list 
   }
-  names(varList) <- shortNames
-  return(varList)
+  names(rawList) <- shortNames
+  return(rawList)
 }
 
 avg_env <- function(rastList){
@@ -168,7 +180,7 @@ pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'mont
       init.date <- c(init.date, vars[[x]]$cefi_init_date)
   }
   
-  varList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
+  rawList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data 
   
   #get info for subsetting
   #putting subsetting back because everything else takes too long otherwise 
@@ -219,9 +231,9 @@ pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'mont
     #subset
     v <- crop(v, se) #this is the rate limiting step
     
-    varList[[y]] <- v #save raw data in list 
+    rawList[[y]] <- v #save raw data in list 
   }
-  names(varList) <- shortNames
-  return(varList)
+  names(rawList) <- shortNames
+  return(rawList)
 }
 
