@@ -18,6 +18,7 @@
 #' @param ens ensemble member. Must be equal to 1-10. For decadal forecasts, different ensemble members represent slightly different forcing scenarios. For forecast only.
 #' @param rawList List of output rasters from \code{pull_hind} or \code{pull_forecast}
 #' @param avgList,sdList List of output rasters from \code{avg_env} and \code{sd_env}, respectively
+
 #' @return All functions in this group return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable 
 
 pull_hind <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static = "http://psl.noaa.gov/thredds/dodsC/Projects/CEFI/regional_mom6/cefi_portal/northwest_atlantic/full_domain/hindcast/monthly/raw/r20230520/ocean_static.nc", release){
