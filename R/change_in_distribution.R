@@ -1,16 +1,11 @@
-#' @title Additional Metric Functions
-#' @description
-#' Additional functions to calculate other metrics used in the CVA2.0, including metrics describing the change in species distributions
-#' 
-#' \itemize{
-#' \item \code{change_in_distribution} calculates Center of Gravity (COG) using similar methods as DisMAP, and total area of suitable habitat above a threshold
-#' }
+#' @title Calculate Change in Distribution Metrics
+#' @description Calculate two metrics to help describe changes in species distributions - Center of Gravity and Area of Preferred Habitat
 #' 
 #' @param abund model predictions, output from \code{make_predictions} as a rasterStack. Layers need names that correspond to the timestamps represented. 
 #' @param area.threshold a value between 0 and 1, defaults to 0.75. The total area of grid cells with the probability of occurance of a species equal to or above this threshold will be calculated. 
 #' @param cell.area a number representing the area of a single model grid cell on which the model is predicted.
 #' 
-#' @return \code{change_in_distribution} returns a data.frame with three columns: 1) timestamp, equal to the names of the layers in \code{abund}; 2) COG; 3) Area of probabilities greater than the \code{area.threshold}  
+#' @return a data.frame with three columns: 1) timestamp, equal to the names of the layers in \code{abund}; 2) COG; 3) Area of probabilities greater than the \code{area.threshold}  
 
 change_in_distribution <- function(abund, area.threshold = 0.75, cell.area = 8*8){
   #calculates both center of gravity and area for each time step in abund 
