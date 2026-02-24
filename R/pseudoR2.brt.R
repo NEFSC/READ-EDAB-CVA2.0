@@ -1,6 +1,10 @@
-#' calculate Pseudo-R2 for BRT
+#' @title calculate Pseudo-R2 for BRT
+#' @description
+#' Used as part of \code{eval_brt}. From Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Included with CVA2.0 package to ensure functionality.
+#'
 #' @param x is fitted model of class xxx
-#' @return 
+#' @return value representing Pseudo-R2
+#'
 #' @source https://github.com/elhazen/EcoCast-SciAdv
 
 pseudoR2.brt <- function(x) {

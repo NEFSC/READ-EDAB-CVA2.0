@@ -1,6 +1,7 @@
-#' Make abundance/distribution raster from MaxEnt model
+#' @title Make abundance/distribution raster from MaxEnt model
 #'
-#' @description Make an abundance/distribution raster from any dismo or maxnet model. Depending on the settings, it will apply various masks and the cloglog transformation.
+#' @description Make an abundance/distribution raster from any dismo or maxnet model. Depending on the settings, it will apply various masks and the cloglog transformation. This overrides the function with the same name from the \code{EFHSDM} package, which uses the stats::predict instead of the default predict function for the appropriate model type.
+#'
 #' @param model a fitted maxnet model
 #' @param maxent.stack a raster stack containing all covariates
 #' @param scale.fac numeric; scale factor that will multiply the model predictions
@@ -14,17 +15,19 @@
 #' @export
 #' @importFrom terra values
 #' @importFrom terra setValues
+#' @importFrom stats predict
+#' @importFrom maxnet maxnet
 #'
-#' @examples
+#' @source https://github.com/noaa-akro/alaska-efh-ensemble-sdm
 
-MakeMaxEntAbundance2 <- function(model,
-                                maxent.stack,
-                                scale.fac = 1,
-                                land = NULL,
-                                mask = NULL,
-                                type = "cloglog",
-                                clamp = F,
-                                filename = "") {
+MakeMaxEntAbundance <- function(model,
+                                 maxent.stack,
+                                 scale.fac = 1,
+                                 land = NULL,
+                                 mask = NULL,
+                                 type = "cloglog",
+                                 clamp = F,
+                                 filename = "") {
   # correct a common mistake
   if (is.null(filename) || is.na(filename)) {
     filename <- ""
@@ -43,8 +46,8 @@ MakeMaxEntAbundance2 <- function(model,
     }))
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
-   # preds <- stats::predict(model, dat[dat.spots, ], type = "link")
-preds <- predict(model, dat[dat.spots, ], type = "link")
+    # preds <- stats::predict(model, dat[dat.spots, ], type = "link")
+    preds <- predict(model, dat[dat.spots, ], type = "link")
     preds2 <- exp(preds + model$ent) * scale.fac
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
@@ -62,7 +65,7 @@ preds <- predict(model, dat[dat.spots, ], type = "link")
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
     #preds <- stats::predict(model, dat[dat.spots, ], type = "cloglog")
-preds <- predict(model, dat[dat.spots, ], type = "cloglog")
+    preds <- predict(model, dat[dat.spots, ], type = "cloglog")
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
     new.vals[dat.spots] <- preds
@@ -82,15 +85,15 @@ preds <- predict(model, dat[dat.spots, ], type = "cloglog")
   # Apply additional masks if necessary
   if (is.null(land) == F) {
     habitat.prediction <- terra::mask(habitat.prediction, land,
-      inverse = T, overwrite = TRUE,
-      filename = filename
+                                      inverse = T, overwrite = TRUE,
+                                      filename = filename
     )
   }
   # Apply additional masks if necessary
   if (is.null(mask) == F) {
     habitat.prediction <- terra::mask(habitat.prediction, mask,
-      overwrite = TRUE,
-      filename = filename
+                                      overwrite = TRUE,
+                                      filename = filename
     )
   }
   return(habitat.prediction)
