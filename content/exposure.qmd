@@ -1,9 +1,0 @@
----
-title: Species Exposure
----
-
-Species exposure will be quantified using decadal and long term projections from the MOM6 model. In the CVA1.0, exposure to surface temperatures and changes in ocean acidification were quantified using a z-score. This quantity describes how many standard deviations over the present mean conditions a value, in this case mean future conditions, are. 
-
-For the CVA2.0, we will use this same metric. Z-scores will be calculated across space and time on monthly timesteps for the decadal and eventually long-term predictions. Exposure values will be averaged within each month to produce a single exposure metric for each variable, and across time and space, using predicted species distributions to perform weighted averages so that only expsoure within the species ranges are considered. To calculate a total exposure across environmental variables, we will use relative variable importance from the ensemble models to perform weighted averages of the time series and maps across important covariates in the model. 
-
-We will also quantify changes in habitat suitability over time by projecting the ensemble species distribution model onto future climate conditions. The projections and the models themselves will allow us to examine the drivers of change, by looking at change in important envrionmental covariates. 
