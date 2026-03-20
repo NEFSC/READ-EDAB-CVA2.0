@@ -1,5 +1,5 @@
 #' @title saveRast
-#' @ description A wrapper function for the \code{create_rast} function. This function adds log and skip functionality to help with batch runs and running \code{create_rast} in parallel. 
+#' @description A wrapper function for the \code{create_rast} function. This function adds log and skip functionality to help with batch runs and running \code{create_rast} in parallel.
 
 #' @param csvName character string indicating which csv to use to create raster without extension (i.e. 'example' NOT 'example.csv')
 #' @param isObs TRUE/FALSE indicating whether or not the data is observer or similar fisheries-dependent data. Will force check to determine if species is observed at least 30 times throughout timeseries before creating raster
@@ -13,17 +13,17 @@
 saveRast <- function(csvName, isObs, grid, spp, sppNames, skip){
 
   data <- read.csv(paste0('./Data/csvs/standardized/', csvName, '.csv'))
-  
+
   #open log file
   sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T)
   #sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T, type = 'message')
-  
+
   # Ensure the sinks are closed when the function exits, regardless of how it exits.
   on.exit({
     #sink(type = "message")
     sink()
   })
-  
+
   print(paste(csvName , spp, sep = '-'))
   print(Sys.time())
 
@@ -32,7 +32,7 @@ saveRast <- function(csvName, isObs, grid, spp, sppNames, skip){
       print('file exists and skip == T, so skipping this file!')
       return(NA)
     } else {
-      
+
       nms <- strsplit(sppNames, split = ',')[[1]]
       rast <- create_rast(data = data, isObs = isObs, grid = grid, targetVec = nms)
 
@@ -40,11 +40,11 @@ saveRast <- function(csvName, isObs, grid, spp, sppNames, skip){
         print('rast is NULL - minimum conditions not met')
       } else {
         print(range(rast[]))
-        raster::writeRaster(rast, filename = paste0(file.path(getwd(),spp, 'input_rasters'), '/', csvName, '.nc'), bylayer = F,overwrite = T)
+       raster::writeRaster(rast, filename = paste0(file.path(getwd(),spp, 'input_rasters'), '/', csvName, '.nc'), bylayer = F,overwrite = T)
       }
-      
+
       return(range(rast[]))
-      
+
     }#end skip && if file is present
   } else { #if skip = F, just run it without checking
     nms <- strsplit(sppNames, split = ',')[[1]]
@@ -56,9 +56,9 @@ saveRast <- function(csvName, isObs, grid, spp, sppNames, skip){
       print(range(rast[]))
       raster::writeRaster(rast, filename = paste0(file.path(getwd(),spp, 'input_rasters'), '/', csvName, '.nc'), bylayer = F,overwrite = T)
     }
-    
+
     return(range(rast[]))
   }
-  
+
   sink() #close log file
 } #end function

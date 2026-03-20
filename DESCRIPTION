@@ -1,11 +1,34 @@
 Package: CVA2.0
-Title: What the Package Does (One Line, Title Case)
+Title: Climate Vulnerability Assessment 2.0 Model Builing and Analysis Methods
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Katherine", "Gallagher", , "katherine.gallagher@noaa.gov", role = c("aut", "cre"))
+Description: This package performs all of the necessary analysis for CVA2.0. This includes pulling and formatting the necessary MOM^ and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores. 
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports: 
+    stats,
+    ncdf4,
+    caret,
+    sf,
+    raster,
+    sdmTMB,
+    ranger,
+    sp,
+    EFHSDM,
+    terra,
+    meteo,
+    dismo,
+    gbm,
+    sftime,
+    maxnet,
+    gstat,
+    graphics,
+    utils,
+    dplyr,
+    PredictABEL,
+    grDevices,
+    gt, ggplot2, purrr
+Suggests: DBI, survdat,  foreach, parallel, doParallel, ROCR, jsonlite, data.table, abind, lubridate, measurements, DescTools, reshape2, RColorBrewer, cmocean, fields, fmsb, quarto, scales
