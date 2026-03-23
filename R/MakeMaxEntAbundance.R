@@ -13,6 +13,7 @@
 #'
 #' @return a raster map with the desired prediction
 #' @export
+#'
 #' @importFrom terra values
 #' @importFrom terra setValues
 #' @importFrom stats predict

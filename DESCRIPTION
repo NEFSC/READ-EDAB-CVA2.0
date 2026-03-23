@@ -1,9 +1,9 @@
-Package: CVA2.0
-Title: Climate Vulnerability Assessment 2.0 Model Builing and Analysis Methods
+Package: spatialcva
+Title: Build a Spatial Climate Vulnerability Assessment
 Version: 0.0.0.9000
 Authors@R: 
     person("Katherine", "Gallagher", , "katherine.gallagher@noaa.gov", role = c("aut", "cre"))
-Description: This package performs all of the necessary analysis for CVA2.0. This includes pulling and formatting the necessary MOM^ and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores. 
+Description: This package provides the tools to build a spatial Climate Vulnerability Assessment. This includes pulling and formatting the necessary MOM6 and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -31,4 +31,7 @@ Imports:
     PredictABEL,
     grDevices,
     gt, ggplot2, purrr
-Suggests: DBI, survdat,  foreach, parallel, doParallel, ROCR, jsonlite, data.table, abind, lubridate, measurements, DescTools, reshape2, RColorBrewer, cmocean, fields, fmsb, quarto, scales
+Suggests: DBI, survdat, foreach, parallel, doParallel, ROCR, jsonlite, data.table, abind, lubridate, measurements, DescTools, reshape2, RColorBrewer, cmocean, fields, fmsb, quarto, scales
+Remotes:
+    NOAA-EDAB/survdat,
+    EFHSDM=noaa-akro/alaska-efh-ensemble-sdm
