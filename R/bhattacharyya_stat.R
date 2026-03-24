@@ -1,6 +1,6 @@
 #' @title Bhattacharyya's coefficient test
 #' @description
-#'  test Bhattacharyya's coefficient ranges from 0 to 1, with 0 being no overlap in distributions and 1 being perfect overlap. Used within \code{eval_brt}. Included with CVA2.0 package to ensure functionality.
+#'  test Bhattacharyya's coefficient ranges from 0 to 1, with 0 being no overlap in distributions and 1 being perfect overlap. Used within \code{eval_brt}. Included to ensure functionality.
 #'
 #' @source From Camrin Brawn (WHOI): https://zenodo.org/records/7971532 and http://tguillerme.github.io/R/bhatt.coef.R
 #'
@@ -10,7 +10,7 @@
 #'
 #' @return vector of Bhattacharyya's coefficients for each variable
 
-bhattacharyya.stat <- function(data, response, vars){
+bhattacharyya_stat <- function(data, response, vars){
 
   bh <- list()
   for (i in 1:length(vars)){
@@ -22,7 +22,7 @@ bhattacharyya.stat <- function(data, response, vars){
     data.abs <- data[idx.abs,] %>% dplyr::select(vars[i])
     data.abs <- data.abs[!is.na(data.abs)]
 
-    bh[[i]] <- bhatt.coeff(data.pres, data.abs)
+    bh[[i]] <- bhatt_coeff(data.pres, data.abs)
     names(bh[[i]]) <- vars[i]
   }
 

@@ -1,6 +1,6 @@
 #' @title Bhattacharyya Coefficient of two distributions
 #'
-#' @description Calculates the Bhattacharyya Coefficient (BC) between two distributions. BC is the sum of the square root of the multiplication of the elements in bin i for both distributions. It ranges from 0 (no overlap) to 1 (full overlap). v.0.1. Used within \code{eval_brt}. Included with CVA2.0 package to ensure functionality.
+#' @description Calculates the Bhattacharyya Coefficient (BC) between two distributions. BC is the sum of the square root of the multiplication of the elements in bin i for both distributions. It ranges from 0 (no overlap) to 1 (full overlap). v.0.1. Used within \code{eval_brt}. Included to ensure functionality.
 #'
 #' @source From Camrin Brawn (WHOI): https://zenodo.org/records/7971532.
 #'
@@ -16,7 +16,7 @@
 #-R 3
 ##########################
 
-bhatt.coeff<-function(x,y, bw=bw.nrd0, ...) {
+bhatt_coeff<-function(x,y, bw=bw.nrd0, ...) {
   #SANITIZING
   #x
   if(!is.numeric(x)) {

@@ -1,7 +1,7 @@
 #' @title Calculate BRT model evaluation statistics
 #'
 #' @description
-#' Calculate evaluation statistics for BRT models. From Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Included with CVA2.0 package to ensure functionality.
+#' Calculate evaluation statistics for BRT models. From Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Included to ensure functionality.
 #'
 #' @param model a BRT model object
 #' @param test_data is data used to fit the model. Must contain a column name that matches response.
@@ -46,7 +46,7 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
     #dev.off()
   }
 
-  bhvals <- bhattacharyya.stat(test_data, response, model$var.names)
+  bhvals <- bhattacharyya_stat(test_data, response, model$var.names)
   summarystats$MeanBH <- mean(unlist(bhvals))
   #if (i==1) bhvect<-bhvals else bhvect<-rbind(bhvect,bhvals)
 

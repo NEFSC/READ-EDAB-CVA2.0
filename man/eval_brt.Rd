@@ -22,5 +22,5 @@ eval_brt(model, test_data, response, plot = TRUE)
 model evaluation statistics
 }
 \description{
-Calculate evaluation statistics for BRT models. From Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Included with CVA2.0 package to ensure functionality.
+Calculate evaluation statistics for BRT models. From Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Included to ensure functionality.
 }

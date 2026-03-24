@@ -4,10 +4,10 @@
 \alias{avg_env}
 \title{Average MOM6 Data}
 \usage{
-avg_env(rawList)
+avg_env(raw_list)
 }
 \arguments{
-\item{rawList}{List of output rasters from \code{pull_hind} or \code{pull_forecast}}
+\item{raw_list}{List of output rasters from \code{pull_hind} or \code{pull_forecast}}
 }
 \value{
 a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
