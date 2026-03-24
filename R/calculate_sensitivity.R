@@ -2,7 +2,7 @@
 #' @description Wrapper function that calculate species sensitivity using \code{attribute.score} and \code{logic.rule} for individual attributes and apply logic rule to calculate total sensitivity. The option to perform bootstrapping is provided. Based on code from the Southeast Fisheries Science Center (SEFSC)
 #'
 #'
-#' @param species.attributes a list of data frames, with each data frame corresponding to all of the expert scores for one species. See example for how to generate this list from the FCVA output.
+#' @param species_attributes a list of data frames, with each data frame corresponding to all of the expert scores for one species. See example for how to generate this list from the FCVA output.
 #' @param bootstrap binary TRUE/FALSE to turn on/off bootstrapping of sensitivity scores. Will impact outputs.
 #' @param samples number of samples to run for bootstrapping. Default is 10,000.
 
@@ -23,13 +23,13 @@
 #' #this combines the list of vectors into a data.frame
 #' }
 
-calculate.sensitivity <- function(species.attributes, bootstrap = TRUE, samples = 10000){
-  #species.attributes is a list of dataframes, with one data frame per species
+calculate_sensitivity <- function(species_attributes, bootstrap = TRUE, samples = 10000){
+  #species_attributes is a list of dataframes, with one data frame per species
   #bootstrap is boolean TRUE/FALSE to trigger bootstrapping
   #samples is the number of samples to use in bootstrapping
 
   #subset by attribute
-  attribute.list <- split(species.attributes, species.attributes$Attribute.Name) #make list of data frames with one data frame per list
+  attribute.list <- split(species_attributes, species_attributes$Attribute.Name) #make list of data frames with one data frame per list
   a.scores <- lapply(attribute.list, attribute_score, bootstrap = bootstrap, samples = samples) #calculate scores for attributes via weighted mean
   out <- do.call(cbind, a.scores) #combine scores into vector
 

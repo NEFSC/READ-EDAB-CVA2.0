@@ -5,7 +5,7 @@
 #' @param present_rasters,future_rasters lists of rasterStacks, representing the present and future timeseries to calculate exposure with, with each item in the list corresponding to an environmental variable. Both lists need to have the same length (aka number of variables) but the lengths of the timeseries (equal to the number of layers in rasterStacks) can differ. Function assumes that the rasters are monthly timeseries and will average monthly.
 #' @return a list of rasterStacks with each layer representing monthly raw exposure. The length of the list is equal to the length of the lists supplied as \code{present_rasters} and \code{future_rasters}
 
-calculate_exposure <- function(present_rasters, future_rasters){
+calculate_raw_exposure <- function(present_rasters, future_rasters){
   EXP <- vector(mode = 'list', length = length(future_rasters))
   for(v in 1:length(future_rasters)){
     ex <- vector(mode = 'list', length = 12)

@@ -2,21 +2,20 @@
 #'
 #' @description Uses the logic rule from CVA1.0 to combine variable-specific exposures to create a total exposure map
 #'
-#'
-#' @param mapExp rasterStack output from \code{makeExposureMap}
-#' @param countAll TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables
-#' @param weights output from \code{combineWeights} - a vector of variable weights in ensemble SDM
-#' @param wThreshold numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation
+#' @param variable_maps rasterStack output from \code{make_exposure_map}
+#' @param count_all TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables
+#' @param weights output from \code{combine_weights} - a vector of variable weights in ensemble SDM
+#' @param weight_threshold numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation
 #'
 #' @return A single raster representing total exposure across space
 
 
-combineMaps <- function(mapExp, countAll, weights, wThreshold){
-  if(countAll){
-    mapSub <- mapExp
+combine_exposure_maps <- function(variable_maps, count_all, weights, weight_threshold){
+  if(count_all){
+    mapSub <- variable_maps
   } else {
-    wi <- which(weights >= wThreshold)
-    mapSub <- raster::subset(mapExp,wi)
+    wi <- which(weights >= weight_threshold)
+    mapSub <- raster::subset(variable_maps,wi)
   }
 
   #multiply mean exposure maps by variable weights to scale, and count how many layers have each rank within each cell

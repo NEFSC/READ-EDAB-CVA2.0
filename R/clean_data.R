@@ -2,7 +2,6 @@
 #' @description
 #' This function converts the presence/absence/effort (0-2) data to presence/absence data (0-1)
 #'
-#'
 #' @param se data.frame of fisheries and environmental data
 #' @param pa_col column name for presence/absence column
 #'
