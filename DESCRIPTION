@@ -23,7 +23,6 @@ Imports:
     dismo,
     gbm,
     sftime,
-    maxnet,
     gstat,
     graphics,
     utils,

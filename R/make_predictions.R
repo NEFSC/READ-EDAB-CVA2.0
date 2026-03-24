@@ -98,7 +98,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
           sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
-        hsm[[x]] <- raster::raster(make_maxent_abundance(model = mod, maxent.stack = sr, type = 'maxnet'))
+        hsm[[x]] <- raster::raster(EFHSDM::MakeMaxEntAbundance(model = mod, maxent.stack = sr, type = 'maxnet'))
         #print(x)
       }
       names(hsm) <- names(rasts[[1]][[1]])
