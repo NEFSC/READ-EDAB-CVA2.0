@@ -1,6 +1,6 @@
 #' @title Make abundance/distribution raster from MaxEnt model
 #'
-#' @description Make an abundance/distribution raster from any dismo or maxnet model. Depending on the settings, it will apply various masks and the cloglog transformation. This overrides the function with the same name from the \code{EFHSDM} package, which uses the stats::predict instead of the default predict function for the appropriate model type.
+#' @description Make an abundance/distribution raster from any dismo or maxnet model. Depending on the settings, it will apply various masks and the cloglog transformation. This function originates from the \code{EFHSDM} package, which uses the stats::predict, instead of the maxnet::predict function.
 #'
 #' @param model a fitted maxnet model
 #' @param maxent.stack a raster stack containing all covariates
@@ -14,14 +14,9 @@
 #' @return a raster map with the desired prediction
 #' @export
 #'
-#' @importFrom terra values
-#' @importFrom terra setValues
-#' @importFrom stats predict
-#' @importFrom maxnet maxnet
-#'
 #' @source https://github.com/noaa-akro/alaska-efh-ensemble-sdm
 
-MakeMaxEntAbundance <- function(model,
+make_maxent_abundance <- function(model,
                                  maxent.stack,
                                  scale.fac = 1,
                                  land = NULL,
@@ -48,7 +43,7 @@ MakeMaxEntAbundance <- function(model,
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
     # preds <- stats::predict(model, dat[dat.spots, ], type = "link")
-    preds <- predict(model, dat[dat.spots, ], type = "link")
+    preds <- maxnet::predict(model, dat[dat.spots, ], type = "link")
     preds2 <- exp(preds + model$ent) * scale.fac
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
@@ -66,7 +61,7 @@ MakeMaxEntAbundance <- function(model,
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
     #preds <- stats::predict(model, dat[dat.spots, ], type = "cloglog")
-    preds <- predict(model, dat[dat.spots, ], type = "cloglog")
+    preds <- maxnet::predict(model, dat[dat.spots, ], type = "cloglog")
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
     new.vals[dat.spots] <- preds
