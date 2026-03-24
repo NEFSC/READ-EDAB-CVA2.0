@@ -3,11 +3,12 @@
 
 #' @param spp Species name to add to log files and save data to correct directory (see vignette for recommended directory set up)
 #' @param model Component model name. One of the following: gam, maxent, rf, brt, sdmtmb
+#' @param yrMin,yrMax start/end of year range of predictions; adds range to resulting file name and helps pull appropriate timeseries for plotting and exposure analysis
 #' @param skip TRUE/FALSE indicating whether to skip creating the raster file if file already exists
 
 #' @return returns the file path of the saved predictions. Outputs are saved within specific directories. See the vignette for recommended directory set up.
 
-predictMods <- function(spp, model, skip){
+predictMods <- function(spp, model, yrMin, yrMax, skip){
   #open log file
   sink(file = file.path(getwd(), 'logs', paste0(model, '_prediction.log')), append = T)
   #sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T, type = 'message')
@@ -25,19 +26,19 @@ predictMods <- function(spp, model, skip){
   load(paste(file.path(getwd(),spp), 'pa_clean.RData', sep = '/')) #load data - dfC
 
   if(skip){
-    if(file.exists(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '.RData', sep = ''))){
+    if(file.exists(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))){
       print('prediction already exists & skip == T, so skipping')
     } else {
       #predict model
       print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
       abund <- make_predictions(mod = mod, model = model, rasts = norm, mask = T, bathyR = bathyR, bathy_max = 1000, se = dfC,  staticVars = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
-      save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '.RData', sep = ''))
+      save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
     }
   } else {
     #predict model
     print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
     abund <- make_predictions(mod = mod, model = model, rasts = norm, mask = T, bathyR = bathyR, bathy_max = 1000, se = dfC, staticVars = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
-    save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '.RData', sep = ''))
+    save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
   }
 
   return(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '.RData', sep = ''))

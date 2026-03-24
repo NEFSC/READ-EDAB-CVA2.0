@@ -4,12 +4,14 @@
 \alias{predictMods}
 \title{Predict Models}
 \usage{
-predictMods(spp, model, skip)
+predictMods(spp, model, yrMin, yrMax, skip)
 }
 \arguments{
 \item{spp}{Species name to add to log files and save data to correct directory (see vignette for recommended directory set up)}
 
 \item{model}{Component model name. One of the following: gam, maxent, rf, brt, sdmtmb}
+
+\item{yrMin, yrMax}{start/end of year range of predictions; adds range to resulting file name and helps pull appropriate timeseries for plotting and exposure analysis}
 
 \item{skip}{TRUE/FALSE indicating whether to skip creating the raster file if file already exists}
 }

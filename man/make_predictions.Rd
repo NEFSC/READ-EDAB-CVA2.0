@@ -41,7 +41,7 @@ make_predictions(
 \item{weights}{a vector of model weights - used for building the ensemble model}
 }
 \value{
-a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
+returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
 }
 \description{
 Make model predictions for either a component model (GAM/MAXENT/RF/BRT/SDMTMB) or the Ensemble model

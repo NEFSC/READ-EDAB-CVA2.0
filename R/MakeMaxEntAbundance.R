@@ -42,8 +42,8 @@ make_maxent_abundance <- function(model,
     }))
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
-    # preds <- stats::predict(model, dat[dat.spots, ], type = "link")
-    preds <- maxnet::predict(model, dat[dat.spots, ], type = "link")
+     preds <- stats::predict(model, dat[dat.spots, ], type = "link")
+  #  preds <- predict(model, dat[dat.spots, ], type = "link")
     preds2 <- exp(preds + model$ent) * scale.fac
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
@@ -60,8 +60,8 @@ make_maxent_abundance <- function(model,
     }))
     dat.spots <- which(seq(1:nrow(dat)) %in% na.spots == F)
 
-    #preds <- stats::predict(model, dat[dat.spots, ], type = "cloglog")
-    preds <- maxnet::predict(model, dat[dat.spots, ], type = "cloglog")
+    preds <- stats::predict(model, dat[dat.spots, ], type = "cloglog")
+   # preds <- maxnet::predict(model, dat[dat.spots, ], type = "cloglog")
     new.vals <- vector(length = nrow(dat))
     new.vals[na.spots] <- NA
     new.vals[dat.spots] <- preds

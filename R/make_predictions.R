@@ -12,7 +12,7 @@
 #' @param month_col,year_col column names for month and year columns respectively
 #' @param weights a vector of model weights - used for building the ensemble model
 #'
-#' @return a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
+#' @return returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
 
 make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
   if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb', 'ens')){
@@ -370,7 +370,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
 
     names(hsm) <- names(rasts[[1]][[1]])
 
-    return(hsm)
+    return(raster::stack(hsm))
   } else {
     stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
   }
