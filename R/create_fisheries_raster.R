@@ -8,16 +8,16 @@
 #' }
 #'
 #' @param data data frame to convert to presence/absence raster
-#' @param isObs TRUE/FALSE indicating whether or not the data is observer or similar fisheries-dependent data. Will force function to check if species is observed at least 30 times throughout timeseries before creating raster
+#' @param is_obs TRUE/FALSE indicating whether or not the data is observer or similar fisheries-dependent data. Will force function to check if species is observed at least 30 times throughout timeseries before creating raster
 #' @param grid static link to a ncdcf object with the variables lon, lat, time - can be link to remote data - must be able to be read with nc_open
-#' @param tmMult multiplier to help convert timestep to POSIX (seconds since origin), defaults to 86400 (number of seconds in a day)
+#' @param tm_multiplier multiplier to help convert timestep to POSIX (seconds since origin), defaults to 86400 (number of seconds in a day)
 #' @param origin Origin of time series to be used by POSIXct
-#' @param targetVec a vector containing all possible names for the target species. Must have a length >= 1
+#' @param all_names a vector containing all possible names for the target species. Must have a length >= 1
 #'
 #' @return a rasterBrick with the same extent as the provided grid, and a number of layers equal to the timeseries associated with the provided model data
 #'
 
-create_rast <- function(data, isObs = FALSE, grid, tmMult = 24 * 60 * 60, origin = '1993-01-01', targetVec){
+create_fisheries_raster <- function(data, is_obs = FALSE, grid, tm_multiplier = 24 * 60 * 60, origin = '1993-01-01', all_names){
 
   #### step 1 ####
   #get grid to map to
@@ -25,7 +25,7 @@ create_rast <- function(data, isObs = FALSE, grid, tmMult = 24 * 60 * 60, origin
   #these are vectors of the unique lon/lats on the regridded MOM6 grid
   lonR <- ncdf4::ncvar_get(gridNC, "lon")
   latR <- ncdf4::ncvar_get(gridNC, "lat")
-  tm <- as.POSIXct(ncdf4::ncvar_get(gridNC, 'time') * tmMult, origin = origin)
+  tm <- as.POSIXct(ncdf4::ncvar_get(gridNC, 'time') * tm_multiplier, origin = origin)
   ncdf4::nc_close(gridNC)
 
   #### step 2 ####
@@ -47,8 +47,8 @@ create_rast <- function(data, isObs = FALSE, grid, tmMult = 24 * 60 * 60, origin
 
   #add check for Fisheries dependent data (dataType = Observer); fisheries independent surveys do not need to do this
   dataOK <- TRUE #assume data is good to go
-  if(isObs == TRUE){
-    iSPP <- data$name %in% targetVec #was the species caught?
+  if(is_obs == TRUE){
+    iSPP <- data$name %in% all_names #was the species caught?
 
     # m <- unique(data$month[iSPP]) #in which months has the species has been caught?
 
@@ -81,7 +81,7 @@ create_rast <- function(data, isObs = FALSE, grid, tmMult = 24 * 60 * 60, origin
           iLon <- DescTools::Closest(x = lonR-360, a = tow$lon[1], which = T)
           iLat <- DescTools::Closest(x = latR, a = tow$lat[1], which = T)
 
-          if(any(targetVec %in% tow$name)){ #if species is in tow
+          if(any(all_names %in% tow$name)){ #if species is in tow
             mat[iLat, iLon] <- 2 #replace grid cell with a 2
           } else {
             mat[iLat, iLon] <- 1 #if species is not found but grid cell is sampled, 1
