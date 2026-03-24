@@ -1,13 +1,12 @@
-#' @title combineRasters
+#' @title Combine Multiple Rasters of Fisheries Data
 #' @description A wrapper function for the \code{merge_rasts} function. This function adds log and skip functionality to help with batch runs and running \code{merge_rasts} in parallel.
-#'
 #'
 #' @param name Species name to add to log files and save data to correct directory (see vignette for recommended directory set up)
 #' @param skip TRUE/FALSE indicating whether to skip creating the raster file if file already exists
 #'
-#' @return \code{combineRasters} returns the range of the rasterBrick returned by \code{merge_rasts}. This should be equal to 0 2, or else there are no presences in the dataset and the models will fail. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
+#' @return \code{combine_rasters_wrapper} returns the range of the rasterBrick returned by \code{merge_rasts}. This should be equal to 0 2, or else there are no presences in the dataset and the models will fail. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
 
-combineRasters <- function(name, skip){
+combine_rasters_wrapper <- function(name, skip){
   sink(file.path(getwd(), 'logs', 'combineRasters.log'), append = T)
   # Ensure the sinks are closed when the function exits, regardless of how it exits.
   on.exit({
