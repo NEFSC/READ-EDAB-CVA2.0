@@ -116,12 +116,12 @@ sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
     se <- se[complete.cases(se),]
 
     #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
-    cv <- eval_kfold_brt(dataInput = se,
-                         gbm.x = mod$gbm.call$gbm.x, #only use simplified parameters for k-folds
-                         gbm.y = pa_col,
-                         learning.rate = 0.005,
-                         bag.fraction = 0.75,
-                         tree.complexity = 5, k_folds = 5, max.trees = 2000,
+    cv <- eval_kfold_brt(data_input = se,
+                         gbm_x = mod$gbm.call$gbm.x, #only use simplified parameters for k-folds
+                         gbm_y = pa_col,
+                         learning_rate = 0.005,
+                         bag_fraction = 0.75,
+                         tree_complexity = 5, k_folds = 5, max_trees = 2000,
                          is_fixed = F)[[2]]
 
   } #end if BRT

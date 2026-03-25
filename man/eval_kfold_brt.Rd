@@ -5,44 +5,44 @@
 \title{K-fold BRT fit}
 \usage{
 eval_kfold_brt(
-  dataInput,
-  gbm.x,
-  gbm.y,
-  learning.rate = 0.05,
+  data_input,
+  gbm_x,
+  gbm_y,
+  learning_rate = 0.05,
   k_folds = 5,
-  tree.complexity = 3,
-  bag.fraction = 0.6,
+  tree_complexity = 3,
+  bag_fraction = 0.6,
   is_fixed = TRUE,
-  max.trees = 2000
+  max_trees = 2000
 )
 }
 \arguments{
-\item{dataInput}{input data frame}
+\item{data_input}{input data frame}
 
-\item{gbm.x}{names of predictor variables in \code{dataInput}}
+\item{gbm_x}{names of predictor variables in \code{data_input}}
 
-\item{gbm.y}{name of response variable in \code{dataInput}}
+\item{gbm_y}{name of response variable in \code{data_input}}
 
-\item{learning.rate}{sets the weight applied to individual trees input to dismo::gbm.step}
+\item{learning_rate}{sets the weight applied to individual trees input to dismo::gbm.step}
 
 \item{k_folds}{number of folds to perform}
 
-\item{tree.complexity}{is tree complexity input to dismo::gbm.step - sets complexity of individual trees}
+\item{tree_complexity}{is tree complexity input to dismo::gbm.step - sets complexity of individual trees}
 
-\item{bag.fraction}{is bag fraction input to dismo::gbm.step - sets the proportion of observations used in selecting variables}
+\item{bag_fraction}{is bag fraction input to dismo::gbm.step - sets the proportion of observations used in selecting variables}
 
 \item{is_fixed}{TRUE/FALSE to determine if gbm.step or gbm.fixed should be used.}
 
-\item{max.trees}{maximum number of trees to fit before stopping}
+\item{max_trees}{maximum number of trees to fit before stopping}
 }
 \value{
 a list containing 1) the output from \code{eval_brt} and 2) a data.frame of the observed and predicted values used to calculate RMSE/AUC by \code{sdm_cv}
 }
 \description{
-k-fold cross validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Function originally by B. Abrahms from https://github.com/briana-abrahms/DynamicEnsembleSDM/blob/master/model_evaluation.R. Modified for CVA2.0 to return information necessary to calculate evaluation metrics. Follows many of the same inputs as \code{gbm.step}
+k-fold cross validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532. Function originally by B. Abrahms from https://github.com/briana-abrahms/DynamicEnsembleSDM/blob/master/model_evaluation.R. Modified to return information necessary to calculate evaluation metrics. Follows many of the same inputs as \code{gbm.step}
 }
 \examples{
 \dontrun{
-eval_kfold_BRT(dataInput_Fit, gbm.x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
+eval_kfold_brt(data_input_Fit, gbm.x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
 }
 }
