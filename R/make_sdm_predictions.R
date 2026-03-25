@@ -293,9 +293,9 @@ make_sdm_predictions <- function(mod, model, rasts, static_variables, bathy_rast
 
         srDF <- as.data.frame(raster::rasterToPoints(sr))
         srDF <- srDF[complete.cases(srDF),-c(1:2)]
-        hsm[[x]] <- predict(newdata = sr, object = mod, type="response")
+        p <- gbm::predict.gbm(newdata = srDF, object = mod, type="response")
 
-        # hsm[[x]] <- raster::rasterize(x = srDF[,1:2], y = rYear, field = p)
+        hsm[[x]] <- raster::rasterize(x = srDF[,1:2], y = rYear, field = p)
         #print(x)
       }
       names(hsm) <- names(rasts[[1]][[1]])
