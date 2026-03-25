@@ -90,7 +90,7 @@ makeEns <- function(spp, yrMin, yrMax, buildEns = T){
     abds[[y]] <- abund
   }
 
-  abund <- make_predictions(model = 'ens', rasts = abds, weights = weights, staticVars = NULL, mask = F, bathyR = NULL, bathy_max = NULL, se = NULL, month_col = NULL, year_col = NULL, xy_col = NULL)
+  abund <- make_sdm_predictions(model = 'ens', rasts = abds, weights = weights, static_variables = NULL, mask = F, bathy_raster = NULL, bathy_max = NULL, se = NULL, month_col = NULL, year_col = NULL, xy_col = NULL)
   nms <- expand.grid(month.abb, yrMin:yrMax)
   names(abund) <- paste(nms$Var1, nms$Var2, sep = '.')
   save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE', '_', yrMin, '_', yrMax, '.RData', sep = ''))

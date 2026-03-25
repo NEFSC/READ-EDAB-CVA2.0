@@ -31,13 +31,13 @@ predictMods <- function(spp, model, yrMin, yrMax, skip){
     } else {
       #predict model
       print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
-      abund <- make_predictions(mod = mod, model = model, rasts = norm, mask = T, bathyR = bathyR, bathy_max = 1000, se = dfC,  staticVars = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
+      abund <- make_sdm_predictions(mod = mod, model = model, rasts = norm, mask = T, bathy_raster = bathyR, bathy_max = 1000, se = dfC,  static_variables = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
       save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
     }
   } else {
     #predict model
     print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
-    abund <- make_predictions(mod = mod, model = model, rasts = norm, mask = T, bathyR = bathyR, bathy_max = 1000, se = dfC, staticVars = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
+    abund <- make_sdm_predictions(mod = mod, model = model, rasts = norm, mask = T, bathy_raster = bathyR, bathy_max = 1000, se = dfC,  static_variables = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
     save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
   }
 

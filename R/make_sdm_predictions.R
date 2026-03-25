@@ -4,9 +4,9 @@
 #' @param mod the output from \code{make_sdm} - only used for ensemble
 #' @param model one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, sdmtmb, or ens
 #' @param rasts list of rasterStacks corresponding to the environmental covariates used to build the models. The number of layers in each rasterStack should be the same and correspond to the length of the timeseries for the models to be predicted on
-#' @param staticVars list of rasters containing the static variables used in model. Should be the same object used in \code{merge_spp_env}.
+#' @param static_variables list of rasters containing the static variables used in model. Should be the same object used in \code{merge_spp_env}.
 #' @param mask TRUE/FALSE indicating whether to mask off certain depths (i.e. waters deeper than 1000 m)
-#' @param bathyR,bathy_max a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.
+#' @param bathy_raster,bathy_max a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
 #' @param month_col,year_col column names for month and year columns respectively
@@ -14,7 +14,7 @@
 #'
 #' @return returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
 
-make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
+make_sdm_predictions <- function(mod, model, rasts, static_variables, bathy_raster, mask = T, bathy_max, se = NULL, month_col, year_col, xy_col, weights = NULL){
   if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb', 'ens')){
 
 
@@ -45,9 +45,9 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         for(n in 1:length(rasts)){
           nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
         }
-        nStack <- c(nStack, staticVars)
+        nStack <- c(nStack, static_variables)
         nStack <- raster::stack(nStack)
-        names(nStack) <- c(names(rasts), names(staticVars))
+        names(nStack) <- c(names(rasts), names(static_variables))
         raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
         raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -57,7 +57,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         if(mask){ #if mask == T
           #mask off waters deeper than 1000 m
           #i <- which(names(sr) == bathy_nm)
-          sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+          sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
 
@@ -83,9 +83,9 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         for(n in 1:length(rasts)){
           nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
         }
-        nStack <- c(nStack, staticVars)
+        nStack <- c(nStack, static_variables)
         nStack <- raster::stack(nStack)
-        names(nStack) <- c(names(rasts), names(staticVars))
+        names(nStack) <- c(names(rasts), names(static_variables))
         raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
         raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -95,7 +95,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         if(mask){ #if mask == T
           #mask off waters deeper than 1000 m
           #i <- which(names(sr) == bathy_nm)
-          sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+          sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
         hsm[[x]] <- raster::raster(EFHSDM::MakeMaxEntAbundance(model = mod, maxent.stack = sr, type = 'maxnet'))
@@ -165,9 +165,9 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         for(n in 1:length(rasts)){
           nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
         }
-        nStack <- c(nStack, staticVars)
+        nStack <- c(nStack, static_variables)
         nStack <- raster::stack(nStack)
-        names(nStack) <- c(names(rasts), names(staticVars))
+        names(nStack) <- c(names(rasts), names(static_variables))
         raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
         raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -177,7 +177,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         if(mask){ #if mask == T
           #mask off waters deeper than 1000 m
           #i <- which(names(sr) == bathy_nm)
-          sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+          sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
 
@@ -276,9 +276,9 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         for(n in 1:length(rasts)){
           nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
         }
-        nStack <- c(nStack, staticVars)
+        nStack <- c(nStack, static_variables)
         nStack <- raster::stack(nStack)
-        names(nStack) <- c(names(rasts), names(staticVars))
+        names(nStack) <- c(names(rasts), names(static_variables))
         raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
         raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -288,7 +288,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         if(mask){ #if mask == T
           #mask off waters deeper than 1000 m
           #i <- which(names(sr) == bathy_nm)
-          sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+          sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
         srDF <- as.data.frame(raster::rasterToPoints(sr))
@@ -318,9 +318,9 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         for(n in 1:length(rasts)){
           nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
         }
-        nStack <- c(nStack, staticVars)
+        nStack <- c(nStack, static_variables)
         nStack <- raster::stack(nStack)
-        names(nStack) <- c(names(rasts), names(staticVars))
+        names(nStack) <- c(names(rasts), names(static_variables))
         raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
         raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -330,7 +330,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
         if(mask){ #if mask == T
           #mask off waters deeper than 1000 m
           #i <- which(names(sr) == bathy_nm)
-          sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+          sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
         }
 
         ##convert rasterStack to dataframe to play well with model
