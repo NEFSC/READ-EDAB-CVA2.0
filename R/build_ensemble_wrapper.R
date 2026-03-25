@@ -1,14 +1,15 @@
 #' @title Build and Predict Ensemble Model
-#' @description A wrapper function to build and predict the ensemble models using \code{make_sdm} and \code{make_predictions}. Progress is tracked via a log file. NOTE that this function does NOT include skip functionality. This is because it is quicker than the other predictions since it is performing a weighted average of the individual model predictions.
+#'
+#' @description A wrapper function to build and predict the ensemble models using \code{build_sdm} and \code{make_sdm_predictions}. Progress is tracked via a log file. NOTE that this function does NOT include skip functionality. This is because it is quicker than the other predictions since it is performing a weighted average of the individual model predictions.
 
 #' @param spp Species name to add to log files and save data to correct directory (see vignette for recommended directory set up)
-#' @param yrMin start of year range to specify which predictions to use
-#' @param yrMax end of year range to specify which predictions to use
-#' @param buildEns TRUE/FALSE to switch on/off ensemble model building, set to FALSE to just predict ensemble
+#' @param yr_min start of year range to specify which predictions to use
+#' @param yr_max end of year range to specify which predictions to use
+#' @param build_ens TRUE/FALSE to switch on/off ensemble model building, set to FALSE to just predict ensemble
 
-#' @return returns the file path of the saved predictions. Predicted rasters, model weights, and preds from the ensemble are saved within specific directories. See the vignette for recommended directory set up.
+#' @return returns the file path of the saved predictions. Predicted rasters, model weights, and preds from the ensemble are saved within specific directories. See the manual for recommended directory set up.
 
-makeEns <- function(spp, yrMin, yrMax, buildEns = T){
+build_ensemble_wrapper <- function(spp, yr_min, yr_max, build_ens = T){
   #open log file
   sink(file = file.path(getwd(), 'logs', 'ensemble.log'), append = T)
   #sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T, type = 'message')
@@ -22,7 +23,7 @@ makeEns <- function(spp, yrMin, yrMax, buildEns = T){
   print(Sys.time())
   print(spp)
 
-  if(buildEns){
+  if(build_ens){
     print('generating weights...')
     #load in evaluation metrics
     evalFlist <- dir(file.path(getwd(),spp, 'model_output', 'eval_metrics'), pattern = '.RData', full.names = T)
@@ -78,7 +79,7 @@ makeEns <- function(spp, yrMin, yrMax, buildEns = T){
 
   print('predicting ensemble...')
 
-  abundFlist <- dir(file.path(getwd(),spp, 'output_rasters'), pattern = paste0(yrMin, '_', yrMax, '.RData'), full.names = T)
+  abundFlist <- dir(file.path(getwd(),spp, 'output_rasters'), pattern = paste0(yr_min, '_', yr_max, '.RData'), full.names = T)
   #test if an ensemble object exists because we don't want to include that
   i <- grep('ENSEMBLE', abundFlist)
   if(length(i) != 0){
@@ -91,11 +92,11 @@ makeEns <- function(spp, yrMin, yrMax, buildEns = T){
   }
 
   abund <- make_sdm_predictions(model = 'ens', rasts = abds, weights = weights, static_variables = NULL, mask = F, bathy_raster = NULL, bathy_max = NULL, se = NULL, month_col = NULL, year_col = NULL, xy_col = NULL)
-  nms <- expand.grid(month.abb, yrMin:yrMax)
+  nms <- expand.grid(month.abb, yr_min:yr_max)
   names(abund) <- paste(nms$Var1, nms$Var2, sep = '.')
-  save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE', '_', yrMin, '_', yrMax, '.RData', sep = ''))
+  save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE', '_', yr_min, '_', yr_max, '.RData', sep = ''))
   print(Sys.time())
 
-  return(paste(file.path(getwd(),spp, 'output_rasters'), 'ENSEMBLE.RData', sep = '/'))
+  return(paste(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE', '_', yr_min, '_', yr_max, '.RData', sep = ''))
 }
 
