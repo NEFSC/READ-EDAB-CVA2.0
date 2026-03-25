@@ -17,7 +17,7 @@
 #' @return a rasterBrick with the same extent as the provided grid, and a number of layers equal to the timeseries associated with the provided model data
 #'
 
-create_fisheries_raster <- function(data, is_obs = FALSE, grid, tm_multiplier = 24 * 60 * 60, origin = '1993-01-01', all_names){
+build_fisheries_raster <- function(data, is_obs = FALSE, grid, tm_multiplier = 24 * 60 * 60, origin = '1993-01-01', all_names){
 
   #### step 1 ####
   #get grid to map to

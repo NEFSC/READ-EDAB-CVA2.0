@@ -20,8 +20,8 @@ save_rasters_wrapper(csv_name, is_obs, grid, spp, spp_names, skip)
 \item{skip}{TRUE/FALSE indicating whether to skip creating the raster file if file already exists}
 }
 \value{
-\code{saveRast} returns the range of the rasterBrick returned by \code{create_fisheries_raster}. This should be equal to 0 2 if species is present in dataset, and 0 1 if species is not caught in dataset. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
+\code{saveRast} returns the range of the rasterBrick returned by \code{build_fisheries_raster}. This should be equal to 0 2 if species is present in dataset, and 0 1 if species is not caught in dataset. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
 }
 \description{
-A wrapper function for the \code{create_fisheries_raster} function. This function adds log and skip functionality to help with batch runs and running \code{create_fisheries_raster} in parallel.
+A wrapper function for the \code{build_fisheries_raster} function. This function adds log and skip functionality to help with batch runs and running \code{build_fisheries_raster} in parallel.
 }
