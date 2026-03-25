@@ -7,7 +7,7 @@
 
 #' @return returns a summary object of the model built. Outputs from the subsequent functions called within are saved within specific directories. See the vignette for recommended directory set up.
 
-makeMods <- function(spp, model, skip){
+build_evaluate_models_wrapper <- function(spp, model, skip){
   #open log file
   sink(file = file.path(getwd(), 'logs', paste0(model, '.log')), append = T)
   #sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T, type = 'message')
