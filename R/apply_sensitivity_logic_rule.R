@@ -8,7 +8,7 @@
 #' @return returns the final sensitivity scores based on the logic rule. The output is similar to \code{attribute_score}, where if \code{bootstrap = TRUE}, the function returns a vector containing the final sensitivity score for each sample, and if \code{bootstrap = FALSE}, it returns a single final value.
 
 
-apply_logic_rule <- function(attribute_vec, bootstrap){
+apply_sensitivity_logic_rule <- function(attribute_vec, bootstrap){
   if(bootstrap){ #if bootstrap = T, attribute_vec will be a MATRIX; apply the logic rule to each ROW
     total.score <- vector(length = nrow(attribute_vec))
     for(x in 1:nrow(attribute_vec)){

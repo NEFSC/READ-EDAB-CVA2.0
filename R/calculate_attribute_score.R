@@ -8,7 +8,7 @@
 
 #' @return weighted averaged scores for each attribute. If \code{bootstrap = TRUE}, this is a data frame with the number of rows equal to the number of samples, and the number of columns equal to the number of attributes. If \code{bootstrap = FALSE}, this is a vector equal to the length of the number of attributes.
 
-attribute_score <- function(attribute, bootstrap = TRUE, samples = 10000){
+calculate_attribute_score <- function(attribute, bootstrap = TRUE, samples = 10000){
   scores.only <- attribute[,(dim(attribute)[2]-3):
                              dim(attribute)[2]] #isolate scores
 

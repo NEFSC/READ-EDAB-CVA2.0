@@ -30,11 +30,11 @@ calculate_sensitivity <- function(species_attributes, bootstrap = TRUE, samples 
 
   #subset by attribute
   attribute.list <- split(species_attributes, species_attributes$Attribute.Name) #make list of data frames with one data frame per list
-  a.scores <- lapply(attribute.list, attribute_score, bootstrap = bootstrap, samples = samples) #calculate scores for attributes via weighted mean
+  a.scores <- lapply(attribute.list, calculate_attribute_score, bootstrap = bootstrap, samples = samples) #calculate scores for attributes via weighted mean
   out <- do.call(cbind, a.scores) #combine scores into vector
 
   #apply logic rule and add to vector
-  total <- apply_logic_rule(out, bootstrap = bootstrap)
+  total <- apply_sensitivity_logic_rule(out, bootstrap = bootstrap)
 
   #clean up vector
   sensitivity.attributes <- as.data.frame(cbind(out, total))
