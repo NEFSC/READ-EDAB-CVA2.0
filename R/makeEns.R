@@ -70,7 +70,7 @@ makeEns <- function(spp, yrMin, yrMax, buildEns = T){
     pds <- lapply(pds, FUN = function(x){x[which(ind2 == length(weights)),]})
 
     #make ensemble
-    ens <- make_sdm(model = 'ens', ensembleWeights = weights, ensemblePreds = pds)
+    ens <- build_sdm(model = 'ens', ensemble_weights = weights, ensemble_preds = pds)
     save(ens, file = paste(file.path(getwd(),spp, 'model_output', 'models'), 'ENSEMBLE.RData', sep = '/'))
   } #end buildEns
 

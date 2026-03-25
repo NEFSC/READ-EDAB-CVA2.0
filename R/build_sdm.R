@@ -6,12 +6,12 @@
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
 #' @param month_col,year_col column names for month and year columns respectively
 #' @param model one of the following indicating the desired model to build: gam, maxent, brt, rf, sdmtmb, or ens
-#' @param ensembleWeights vector of model weights used to build ensemble model. The vector must have the same length and be in the same order as the corresponding predictions list.
-#' @param ensemblePreds a list of prediction values from component models used to build ensemble model. The list of predictions must have the same length and be in the same order as the corresponding weight vector.
+#' @param ensemble_weights vector of model weights used to build ensemble model. The vector must have the same length and be in the same order as the corresponding predictions list.
+#' @param ensemble_preds a list of prediction values from component models used to build ensemble model. The list of predictions must have the same length and be in the same order as the corresponding weight vector.
 #'
 #' @return the model object from the desired model. Model objects will differ depending on the model type.
 
-make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWeights = NULL, ensemblePreds = NULL){
+build_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensemble_weights = NULL, ensemble_preds = NULL){
   if(mod != 'gam' | mod != 'maxent' | mod != 'rf' | mod != 'brt' | mod != 'sdmtmb' | mod != 'ens'){
     stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
   }
@@ -262,7 +262,7 @@ make_sdm <- function(se, pa_col, xy_col, month_col, year_col, model, ensembleWei
 
   if(model == 'ens'){
     # weights <- MakeEnsemble(rmse = mets) #make weights
-    mod <- EFHSDM::ValidateEnsemble(pred.list = ensemblePreds, model.weights = ensembleWeights, make.plots = F, latlon = F) #validate to get preds/obs to metrics
+    mod <- EFHSDM::ValidateEnsemble(pred.list = ensemble_preds, model.weights = ensemble_weights, make.plots = F, latlon = F) #validate to get preds/obs to metrics
 
   } #end if ensemble
 
