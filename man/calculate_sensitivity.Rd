@@ -17,7 +17,7 @@ calculate_sensitivity(species_attributes, bootstrap = TRUE, samples = 10000)
 a data.frame where each row is a species, and columns represent attribute scores, as well as the Total Sensitivity score column returned by the logic rule
 }
 \description{
-Wrapper function that calculate species sensitivity using \code{attribute.score} and \code{logic.rule} for individual attributes and apply logic rule to calculate total sensitivity. The option to perform bootstrapping is provided. Based on code from the Southeast Fisheries Science Center (SEFSC)
+Wrapper function that calculate species sensitivity using \code{attribute_score} and \code{apply_logic_rule} for individual attributes and apply logic rule to calculate total sensitivity. The option to perform bootstrapping is provided. Based on code from the Southeast Fisheries Science Center (SEFSC)
 }
 \examples{
 \dontrun{

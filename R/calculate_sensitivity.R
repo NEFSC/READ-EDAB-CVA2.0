@@ -1,5 +1,5 @@
 #' @title Calculate Sensitivity
-#' @description Wrapper function that calculate species sensitivity using \code{attribute.score} and \code{logic.rule} for individual attributes and apply logic rule to calculate total sensitivity. The option to perform bootstrapping is provided. Based on code from the Southeast Fisheries Science Center (SEFSC)
+#' @description Wrapper function that calculate species sensitivity using \code{attribute_score} and \code{apply_logic_rule} for individual attributes and apply logic rule to calculate total sensitivity. The option to perform bootstrapping is provided. Based on code from the Southeast Fisheries Science Center (SEFSC)
 #'
 #'
 #' @param species_attributes a list of data frames, with each data frame corresponding to all of the expert scores for one species. See example for how to generate this list from the FCVA output.
@@ -34,7 +34,7 @@ calculate_sensitivity <- function(species_attributes, bootstrap = TRUE, samples 
   out <- do.call(cbind, a.scores) #combine scores into vector
 
   #apply logic rule and add to vector
-  total <- logic.rule(out, bootstrap = bootstrap)
+  total <- apply_logic_rule(out, bootstrap = bootstrap)
 
   #clean up vector
   sensitivity.attributes <- as.data.frame(cbind(out, total))
