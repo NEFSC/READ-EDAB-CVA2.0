@@ -7,7 +7,7 @@
 
 #' @return weighted averaged directionality score. If \code{bootstrap = TRUE}, this is a vector containing bootstrapped scores, with a length equal to the number of samples. If \code{bootstrap = FALSE}, this is a single score.
 
-directionality <- function(species, bootstrap = TRUE, samples = 10000){
+calculate_directionality <- function(species, bootstrap = TRUE, samples = 10000){
   scores.only <- species[,(dim(species)[2]-2):
                              dim(species)[2]] #isolate scores
 
