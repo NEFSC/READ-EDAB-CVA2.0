@@ -3,17 +3,17 @@
 #' Calculate Area under the Curve (AUC) for the ensemble species distribution model on an external set of data (not used for building the model). This function builds a dataset of presence/absence with the new data across a variety of sources, extracts the predicted values from the ensemble, and calculates the resulting AUC.
 #'
 #' @param spp species name. Used to help pull correct ensemble model.
-#' @param sppNames a vector containing all possible names for the target species. Must have a length >= 1
+#' @param spp_names a vector containing all possible names for the target species. Must have a length >= 1
 #' @param sources a vector containing all of the source csvs containing the observation data to use in the test. These are loaded in directly by \code{read.csv} so they should either be full file paths or in the current working directory.
-#' @param yrMin start of year range to specify which predictions to use
-#' @param yrMax end of year range to specify which predictions to use
+#' @param yr_min start of year range to specify which predictions to use
+#' @param yr_max end of year range to specify which predictions to use
 #'
 #' @return returns the AUC value for the given model on the new data
 
 
-testEns <- function(spp, sppNames, sources, yrMin, yrMax){
+evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max){
 
-  nms <- strsplit(sppNames, split = ',')[[1]] #seperate out species names
+  nms <- strsplit(spp_names, split = ',')[[1]] #seperate out species names
 
   #combine csvs
   paDF <- NULL
@@ -49,7 +49,7 @@ testEns <- function(spp, sppNames, sources, yrMin, yrMax){
   paDF$month.year <- paste(paDF$month, paDF$year, sep = '.')
 
   #load in ensemble predictions
-  load(paste0(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE_', yrMin, '_', yrMax, '.RData'))
+  load(paste0(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE_', yr_min, '_', yr_max, '.RData'))
   abund <- raster::stack(abund)
 
   #extract predicted values at observation locations
