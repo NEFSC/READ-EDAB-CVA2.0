@@ -293,7 +293,7 @@ make_predictions <- function(mod, model, rasts, staticVars, bathyR, mask = T, ba
 
         srDF <- as.data.frame(raster::rasterToPoints(sr))
         srDF <- srDF[complete.cases(srDF),-c(1:2)]
-        hsm[[x]] <- predict(object = sr, model = mod, type="response")
+        hsm[[x]] <- predict(newdata = sr, object = mod, type="response")
 
         # hsm[[x]] <- raster::rasterize(x = srDF[,1:2], y = rYear, field = p)
         #print(x)
