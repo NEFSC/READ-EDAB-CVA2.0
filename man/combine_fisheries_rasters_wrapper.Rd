@@ -12,8 +12,8 @@ combine_fisheries_rasters_wrapper(name, skip)
 \item{skip}{TRUE/FALSE indicating whether to skip creating the raster file if file already exists}
 }
 \value{
-\code{combine_rasters_wrapper} returns the range of the rasterBrick returned by \code{merge_rasts}. This should be equal to 0 2, or else there are no presences in the dataset and the models will fail. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
+\code{combine_rasters_wrapper} returns the range of the rasterBrick returned by \code{merge_fisheries_rasters}. This should be equal to 0 2, or else there are no presences in the dataset and the models will fail. This function will also save the resulting rasterBrick as a netcdf file in the species' input_rasters folder
 }
 \description{
-A wrapper function for the \code{merge_rasts} function. This function adds log and skip functionality to help with batch runs and running \code{merge_rasts} in parallel.
+A wrapper function for the \code{merge_fisheries_rasters} function. This function adds log and skip functionality to help with batch runs and running \code{merge_fisheries_rasters} in parallel.
 }
