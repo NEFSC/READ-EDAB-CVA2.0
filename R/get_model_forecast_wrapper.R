@@ -18,13 +18,13 @@ get_model_forecast_wrapper <- function(var_df, in_par = TRUE, json_url, release,
     doParallel::registerDoParallel(cluster)
     raw <- foreach::foreach(x = 1:nrow(var_df), .packages = c("ncdf4", 'raster', 'jsonlite')) %dopar% {
       #for(x in 1:nrow(var.list)){
-      r <- pull_forecast(varURL = json_url, reqVars = var_df$Long.Name[x], shortNames = var_df$Short.Name[x], release = release, init = init, ens = ens)
+      r <- pull_mom6_forecast(var_url = json_url, req_vars = var_df$Long.Name[x], short_names = var_df$Short.Name[x], release = release, init = init, ens = ens)
       raw[[x]] <- r
     }
     parallel::stopCluster(cluster)
   } else {
     for(x in 1:nrow(var_df)){
-      r <- pull_forecast(varURL = json_url, reqVars = var_df$Long.Name[x], shortNames = var_df$Short.Name[x], release = release, init = init, ens = ens)
+      r <- pull_mom6_forecast(var_url = json_url, req_vars = var_df$Long.Name[x], short_names = var_df$Short.Name[x], release = release, init = init, ens = ens)
       raw[[x]] <- r
     }
   }

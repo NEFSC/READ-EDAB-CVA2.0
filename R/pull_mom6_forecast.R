@@ -1,10 +1,10 @@
 #' @title Pull MOM6 Forecast Data
 #' @description
-#' Pull forecast data from the MOM6 model output based on provided URL from the CEFI portal
+#' Pull forecast data from the MOM6 model output based on provided URL from the CEFI portal.
 #'
-#' @param varURL URL pointing to JSON table variable lists for desired MOM6 forecast and domain
-#' @param reqVars vector of variable names to pull. Must match names in the 'cefi_long_name' column provided JSON table
-#' @param shortNames vector of simplified variable names to help name resulting raster files. Must be the same length as reqVars.
+#' @param var_url URL pointing to JSON table variable lists for desired MOM6 forecast and domain
+#' @param req_vars vector of variable names to pull. Must match names in the 'cefi_long_name' column provided JSON table
+#' @param short_names vector of simplified variable names to help name resulting raster files. Must be the same length as req_vars.
 #' @param gt desired grid type. Must match one of the options in the 'cefi_grid_type' column in provided JSON table
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
@@ -16,9 +16,9 @@
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
 
-pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static, release, init, ens){
+pull_mom6_forecast <- function(var_url, req_vars, short_names, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static, release, init, ens){
 
-  vars <- jsonlite::fromJSON(varURL) #turn json file into a list
+  vars <- jsonlite::fromJSON(var_url) #turn json file into a list
 
   long.name <- url <- grid.type <- out.freq <- rl <- init.date <- NULL  #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull
   for(x in 1:length(vars)){
@@ -30,7 +30,7 @@ pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'mont
     init.date <- c(init.date, vars[[x]]$cefi_init_date)
   }
 
-  rawList <- vector(mode = 'list', length = length(reqVars)) #initalize empty lists to store all the data
+  rawList <- vector(mode = 'list', length = length(req_vars)) #initalize empty lists to store all the data
 
   #get info for subsetting
   #putting subsetting back because everything else takes too long otherwise
@@ -42,8 +42,8 @@ pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'mont
   e <- raster::extent(min(lon), max(lon), min(lat), max(lat)) #extent
   se <- raster::extent(bounds) #extent to subset to
 
-  for(y in 1:length(reqVars)){
-    ind <- which(long.name == reqVars[y] & grid.type == gt & out.freq == of  & rl == release & init.date == init) #find appropriate url for the variable
+  for(y in 1:length(req_vars)){
+    ind <- which(long.name == req_vars[y] & grid.type == gt & out.freq == of  & rl == release & init.date == init) #find appropriate url for the variable
 
     #load url with netcdf to account for ensemble members
     var <- NULL
@@ -83,7 +83,7 @@ pull_forecast <- function(varURL, reqVars, shortNames, gt = 'regrid', of = 'mont
 
     rawList[[y]] <- v #save raw data in list
   }
-  names(rawList) <- shortNames
+  names(rawList) <- short_names
   return(rawList)
 }
 
