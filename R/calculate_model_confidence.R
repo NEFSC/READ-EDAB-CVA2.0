@@ -17,7 +17,7 @@
 #' #this combines the list of vectors into a data.frame
 #' }
 
-model.confidence <- function(species){
+calculate_model_confidence <- function(species){
   #calculate mean data quality
   meanConf <- mean(species$Score, na.rm = T)
   sdConf <- sd(species$Score, na.rm = T)

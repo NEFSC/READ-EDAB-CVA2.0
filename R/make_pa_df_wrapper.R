@@ -30,8 +30,8 @@ make_pa_df_wrapper <- function(name, skip, m_min, m_max, y_min, y_max){
       my <- expand.grid(m_min:m_max, y_min:y_max)
       names(combinedRasts) <- paste(sprintf("%02d", my$Var1), my$Var2, sep = '.')
 
-      print(paste0(name, '- merging spp and env data -', Sys.time()))
-      df <- merge_spp_env(rastStack = combinedRasts, envData = norm, addStatic = TRUE, staticVars = staticVars)
+      print(paste0(name, '- merging pa and model data -', Sys.time()))
+      df <- match_pa_model_rasters(pa_rasters = combinedRasts, model_data = norm, add_static = TRUE, static_variables = staticVars)
       save(df, file = paste(file.path(getwd(),name), 'presence_absence_environment.RData', sep = '/'))
 
       print(paste0(name, '- matching guild -', Sys.time()))
@@ -53,8 +53,8 @@ make_pa_df_wrapper <- function(name, skip, m_min, m_max, y_min, y_max){
     my <- expand.grid(m_min:m_max, y_min:y_max)
     names(combinedRasts) <- paste(sprintf("%02d", my$Var1), my$Var2, sep = '.')
 
-    print(paste0(name, '- merging spp and env data -', Sys.time()))
-    df <- merge_spp_env(rastStack = combinedRasts, envData = norm, addStatic = TRUE, staticVars = staticVars)
+    print(paste0(name, '- merging pa and model data -', Sys.time()))
+    df <- match_pa_model_rasters(pa_rasters = combinedRasts, model_data = norm, add_static = TRUE, static_variables = staticVars)
     save(df, file = paste(file.path(getwd(),name), 'presence_absence_environment.RData', sep = '/'))
 
     print(paste0(name, '- matching guild -', Sys.time()))
