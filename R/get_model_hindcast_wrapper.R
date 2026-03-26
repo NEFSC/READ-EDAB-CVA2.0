@@ -71,13 +71,13 @@ get_model_hindcast_wrapper <- function(var_df, in_par = TRUE, json_url, release)
     doParallel::registerDoParallel(cluster)
     norm <- foreach::foreach(x = 1:nrow(var_df), .packages = c("ncdf4", 'raster', 'jsonlite', 'abind')) %dopar% {
     #for(y in 1:nrow(var.list)){
-      n <- norm_env(rawList = raw[[x]], avgList = avg[[x]], sdList = sds[[x]], shortNames = var_df$Short.Name[x])
+      n <- normalize_model_data(raw_list = raw[[x]], avg_list = avg[[x]], sd_list = sds[[x]], short_names = var_df$Short.Name[x])
       norm[[x]] <- n
     }
     parallel::stopCluster(cluster)
   } else {
     for(y in 1:nrow(var_df)){
-      n <- norm_env(rawList = raw[[y]], avgList = avg[[y]], sdList = sds[[y]], shortNames = var_df$Short.Name[y])
+      n <- normalize_model_data(raw_list = raw[[x]], avg_list = avg[[x]], sd_list = sds[[x]], short_names = var_df$Short.Name[x])
       norm[[y]] <- n
     }
   }
