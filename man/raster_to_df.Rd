@@ -21,3 +21,18 @@ a data.frame containing all of the environmental data in \code{rasts} for all ti
 \description{
 Make a data frame out of environmental data to be used for predictions. Helps speed up sdmTMB predictions.
 }
+\examples{
+\dontrun{
+#create data frame of environmental data
+allDF <- raster_to_df(rasts = rasts, static_variables = staticVars,
+bathy_raster = bathyR, bathy_max = 1000, mask = T)
+
+#predict sdmTMB model for all data; not for each timestep as in \code{make_sdm_predictions}
+#this generates the \code{est} column
+pred <- predict(mod, newdata = allDF, type = 'response')
+
+#add appropriate month.year (my) column to create rasters
+pred$my <- paste(pred$month, pred$year, sep = '.')
+abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
+}
+}

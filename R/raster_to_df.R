@@ -7,6 +7,21 @@
 #' @param bathy_raster,bathy_max a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.
 #'
 #' @return a data.frame containing all of the environmental data in \code{rasts} for all timesteps. It will be big depending on the length of your time series. This is meant to be used to help predict sdmTMB models.
+#'
+#' @examples
+#' \dontrun{
+#' #create data frame of environmental data
+#' allDF <- raster_to_df(rasts = rasts, static_variables = staticVars,
+#' bathy_raster = bathyR, bathy_max = 1000, mask = T)
+#'
+#' #predict sdmTMB model for all data; not for each timestep as in \code{make_sdm_predictions}
+#' #this generates the \code{est} column
+#' pred <- predict(mod, newdata = allDF, type = 'response')
+#'
+#' #add appropriate month.year (my) column to create rasters
+#' pred$my <- paste(pred$month, pred$year, sep = '.')
+#' abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
+#' }
 
 raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask){
 
@@ -53,8 +68,7 @@ raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask)
     srDF <- srDF[complete.cases(srDF),]
     allDF <- rbind(allDF, srDF)
   }
-  save(allDF, file = paste0('prediction_dataframe_', min(allDF$year, na.rm = T), '_', max(allDF$year, na.rm = T), '.RData'))
-  print('DF created and saved in working directory')
+
   return(allDF)
 } #end function
 
