@@ -2,13 +2,13 @@
 #' @description Make a data frame out of environmental data to be used for predictions. Helps speed up sdmTMB predictions.
 #'
 #' @param rasts list of rasterStacks corresponding to the environmental covariates used to build the models. The number of layers in each rasterStack should be the same and correspond to the length of the timeseries for the models to be predicted on
-#' @param staticVars list of rasters containing the static variables used in model. Should be the same object used in \code{merge_spp_env}.
+#' @param static_variables list of rasters containing the static variables used in model. Should be the same object used in \code{merge_spp_env}.
 #' @param mask TRUE/FALSE indicating whether to mask off certain depths (i.e. waters deeper than 1000 m)
-#' @param bathyR,bathy_max a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.
+#' @param bathy_raster,bathy_max a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.
 #'
 #' @return a data.frame containing all of the environmental data in \code{rasts} for all timesteps. It will be big depending on the length of your time series. This is meant to be used to help predict sdmTMB models.
 
-makePredDF <- function(rasts, staticVars, bathyR, bathy_max, mask){
+raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask){
 
   #make static vars (month/year) into rasters
   r <- raster::subset(rasts[[1]][[1]], 1)
@@ -33,9 +33,9 @@ makePredDF <- function(rasts, staticVars, bathyR, bathy_max, mask){
     for(n in 1:length(rasts)){
       nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
     }
-    nStack <- c(nStack, staticVars)
+    nStack <- c(nStack, static_variables)
     nStack <- raster::stack(nStack)
-    names(nStack) <- c(names(rasts), names(staticVars))
+    names(nStack) <- c(names(rasts), names(static_variables))
     raster::crs(nStack) <- raster::crs(rasts[[1]][[1]])
     raster::extent(nStack) <- raster::extent(rasts[[1]][[1]])
 
@@ -45,7 +45,7 @@ makePredDF <- function(rasts, staticVars, bathyR, bathy_max, mask){
     if(mask){ #if mask == T
       #mask off waters deeper than 1000 m
       #i <- which(names(sr) == bathy_nm)
-      sr <- replace(sr, abs(bathyR) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
+      sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
     }
 
     ##convert rasterStack to dataframe to play well with model
@@ -53,8 +53,8 @@ makePredDF <- function(rasts, staticVars, bathyR, bathy_max, mask){
     srDF <- srDF[complete.cases(srDF),]
     allDF <- rbind(allDF, srDF)
   }
-  save(allDF, file = paste0('./Data/prediction_dataframe_', min(allDF$year, na.rm = T), '_', max(allDF$year, na.rm = T), '.RData'))
-  print('allDF created and saved in Data directory')
+  save(allDF, file = paste0('prediction_dataframe_', min(allDF$year, na.rm = T), '_', max(allDF$year, na.rm = T), '.RData'))
+  print('DF created and saved in working directory')
   return(allDF)
 } #end function
 
