@@ -10,7 +10,7 @@
 #'
 #' @return a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
 
-sdm_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
+calculate_sdm_variable_importance <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
 
   if(model == 'gam'){ #build gam model
     #extract relative deviance explained

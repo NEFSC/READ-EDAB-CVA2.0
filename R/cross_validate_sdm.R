@@ -1,7 +1,7 @@
 #' @title Component Model Cross-Validation
 #' @description Perform cross-validation on one of the five component model types. k is 5 for all models.
 #'
-#' @param mod the output from \code{make_sdm}
+#' @param mod the output from \code{build_sdm}
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param pa_col column name for presence/absence column
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
@@ -11,7 +11,7 @@
 #' @return the cross-validation results from the desired model. Objects will differ slightly depending on model type.
 
 
-sdm_cv <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
+cross_validate_sdm <- function(mod, se, pa_col, xy_col, month_col, year_col, model){
 
   if(model == 'gam'){ #build gam model
     #cross validation

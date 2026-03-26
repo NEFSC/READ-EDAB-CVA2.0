@@ -48,13 +48,13 @@ build_evaluate_models_wrapper <- function(spp, model, skip){
     } else {
       print(paste0(spp, '- performing CV - ', Sys.time()))
       load(paste0(file.path(getwd(),spp, 'model_output', 'models'), '/', toupper(model), '.RData'))
-      cv <- sdm_cv(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
+      cv <- cross_validate_sdm(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
       save(cv, file = paste0(file.path(getwd(),spp, 'model_output', 'cvs'), '/', toupper(model), '.RData'))
     }
   } else {
     print(paste0(spp, '- performing CV - ', Sys.time()))
     load(paste0(file.path(getwd(),spp, 'model_output', 'models'), '/', toupper(model), '.RData'))
-    cv <- sdm_cv(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
+    cv <- cross_validate_sdm(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
     save(cv, file = paste0(file.path(getwd(),spp, 'model_output', 'cvs'), '/', toupper(model), '.RData'))
   }
 
@@ -65,13 +65,13 @@ build_evaluate_models_wrapper <- function(spp, model, skip){
     } else {
       print(paste0(spp, '- Getting Preds - ', Sys.time()))
       load(paste0(file.path(getwd(),spp, 'model_output', 'cvs'), '/', toupper(model), '.RData'))
-      preds <- sdm_preds(cv = cv, model = model)
+      preds <- pull_sdm_preds(cv = cv, model = model)
       save(preds, file = paste0(file.path(getwd(),spp, 'model_output', 'preds'), '/',toupper(model), '.RData'))
     }
   } else {
     print(paste0(spp, '- Getting Preds - ', Sys.time()))
     load(paste0(file.path(getwd(),spp, 'model_output', 'cvs'), '/', toupper(model), '.RData'))
-    preds <- sdm_preds(cv = cv, model = model)
+    preds <- pull_sdm_preds(cv = cv, model = model)
     save(preds, file = paste0(file.path(getwd(),spp, 'model_output', 'preds'), '/',toupper(model), '.RData'))
   }
 
@@ -82,13 +82,13 @@ build_evaluate_models_wrapper <- function(spp, model, skip){
     } else {
       print(paste0(spp, '- Evaluating Model - ', Sys.time()))
       load(paste0(file.path(getwd(),spp, 'model_output', 'preds'), '/',toupper(model), '.RData'))
-      ev <- sdm_eval(preds = preds, metric = 'auc', model = model)
+      ev <- evaluate_sdm(preds = preds, metric = 'auc', model = model)
       save(ev, file = paste0(file.path(getwd(),spp, 'model_output', 'eval_metrics'), '/',toupper(model), '.RData'))
     }
   } else {
     print(paste0(spp, '- Evaluating Model - ', Sys.time()))
     load(paste0(file.path(getwd(),spp, 'model_output', 'preds'), '/',toupper(model), '.RData'))
-    ev <- sdm_eval(preds = preds, metric = 'auc', model = model)
+    ev <- evaluate_sdm(preds = preds, metric = 'auc', model = model)
     save(ev, file = paste0(file.path(getwd(),spp, 'model_output', 'eval_metrics'), '/',toupper(model), '.RData'))
   }
 
@@ -99,13 +99,13 @@ build_evaluate_models_wrapper <- function(spp, model, skip){
     } else {
       print(paste0(spp, '- Getting Variable Importance - ', Sys.time()))
       load(paste0(file.path(getwd(),spp, 'model_output', 'models'), '/', toupper(model), '.RData'))
-      imp <- sdm_importance(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
+      imp <- calculate_sdm_variable_importance(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
       save(imp, file = paste0(file.path(getwd(),spp, 'model_output', 'importance'), '/',toupper(model), '.RData'))
     }
   } else {
     print(paste0(spp, '- Getting Variable Importance - ', Sys.time()))
     load(paste0(file.path(getwd(),spp, 'model_output', 'models'), '/', toupper(model), '.RData'))
-    imp <- sdm_importance(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
+    imp <- calculate_sdm_variable_importance(mod = mod, se = dfC, pa_col = 'value', xy_col = c('x', 'y'), month_col = 'month', year_col = 'year', model = model)
     save(imp, file = paste0(file.path(getwd(),spp, 'model_output', 'importance'), '/',toupper(model), '.RData'))
   }
 
