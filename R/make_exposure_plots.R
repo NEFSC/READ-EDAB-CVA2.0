@@ -4,14 +4,14 @@
 #'
 #' @param species names of the species to plot. Must match folder name to pull correct data and save figures correctly.
 #' @param type at least one of the following: 'variable', 'total', 'important', 'radar. Used to determine what to plot. Defaults to all.
-#' @param presentTime,futureTime character strings indicating the present and future time series to compare. Example: '1993-2019'. Used to pull correct calculations and save the data properly
-#' @param variableDF a data.frame containing all possible environmental variables, such as from the MOM6 model. Must contain columns \code{Long.Name} and \code{Short.Name}, containing the full names and abbreviated names of the variables. Abbreviated names should correspond to those in the weights vector produced by \code{combineWeights}
+#' @param present_time,future_time character strings indicating the present and future time series to compare. Example: '1993-2019'. Used to pull correct calculations and save the data properly
+#' @param variable_df a data.frame containing all possible environmental variables, such as from the MOM6 model. Must contain columns \code{Long.Name} and \code{Short.Name}, containing the full names and abbreviated names of the variables. Abbreviated names should correspond to those in the weights vector produced by \code{combineWeights}
 #' @param coastline shapefile used to plot land in model prediction plots
 #'
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 
 
-plot_Exposure <- function(species, type = c('variable', 'total', 'important', 'radar'), presentTime, futureTime, variableDF, coastline){
+make_exposure_plots <- function(species, type = c('variable', 'total', 'important', 'radar'), present_time, future_time, variable_df, coastline){
 
   #determine what to plot
   ind <- c('variable', 'total', 'important', 'radar') %in% type
@@ -26,19 +26,19 @@ plot_Exposure <- function(species, type = c('variable', 'total', 'important', 'r
       load(paste0(file.path(getwd(),x, 'Data'), '/combined_variable_weights.RData')) #cW
 
       #load maps
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/variable_exposure_maps.RData')) #mapExp
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_maps.RData')) #mapExp
       #subset timeseries matrix by rownames
       i <- names(mapExp) %in% names(cW)
       mapSub <- raster::subset(mapExp, which(i == T))
 
       #load timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/variable_exposure_timeseries.RData')) #vecExp
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_timeseries.RData')) #vecExp
       #subset timeseries matrix by rownames
       i <- rownames(vecExp) %in% names(cW)
       vecSub <- vecExp[i,]
 
         #plot
-        pdf(paste0(file.path(getwd(),x, 'Figures'), '/', presentTime, ' vs ', futureTime, '/variable_exposure_maps_inset_timeseries.pdf'), width = 8, height = 11)
+        pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/variable_exposure_maps_inset_timeseries.pdf'), width = 8, height = 11)
         #set up panels according to the number of variables
         if(raster::nlayers(mapSub) < 6){
           par(mfrow=c(2,3))
@@ -48,11 +48,11 @@ plot_Exposure <- function(species, type = c('variable', 'total', 'important', 'r
 
         for(y in 1:raster::nlayers(mapSub)){
           #get full name of variable
-          i <- variableDF$Short.Name %in% names(mapSub)[y]
+          i <- variable_df$Short.Name %in% names(mapSub)[y]
 
           #map
           par(plt = c(0.2, 0.9, 0.15, 0.875))
-          plot(raster::subset(mapSub, y), zlim = c(1,4), col = cmocean::cmocean('matter')(4), legend = F, legend.mar = 0, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', main = variableDF$Long.Name[i])
+          plot(raster::subset(mapSub, y), zlim = c(1,4), col = cmocean::cmocean('matter')(4), legend = F, legend.mar = 0, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', main = variable_df$Long.Name[i])
           axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
           axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
           plot(coastline['id'], col = 'grey', add = T)
@@ -86,13 +86,13 @@ plot_Exposure <- function(species, type = c('variable', 'total', 'important', 'r
       message(paste("Plotting Total Exposure with All Variables..."))
       ##TOTAL EXPOSURE - ALL VARIABLES
       #load total map
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/total_exposure_maps_all.RData')) #totalM
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_all.RData')) #totalM
 
       #load total timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/total_exposure_timeseries_all.RData')) #totalT
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_all.RData')) #totalT
 
       #plot
-      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', presentTime, ' vs ', futureTime, '/total_exposure_maps_inset_timeseries_allvars.pdf'), width = 8, height = 11)
+      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_inset_timeseries_allvars.pdf'), width = 8, height = 11)
       #map
       par(fig = c(0, 1, 0, 1))
       plot(totalM, zlim = c(1,4), col = cmocean::cmocean('matter')(4), ylim = c(35,45), legend = F, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', legend.mar = 0)
@@ -115,13 +115,13 @@ plot_Exposure <- function(species, type = c('variable', 'total', 'important', 'r
       message(paste("Plotting Total Exposure with Important Variables..."))
       ### ONLY IMPORTANT VARS
       #load total map
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/total_exposure_maps_subset.RData')) #totalM
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_subset.RData')) #totalM
 
       #load total timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', presentTime, ' vs ', futureTime, '/total_exposure_timeseries_subset.RData')) #totalT
+      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_subset.RData')) #totalT
 
       #plot
-      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', presentTime, ' vs ', futureTime, '/total_exposure_maps_inset_timeseries_impvars.pdf'), width = 8, height = 11)
+      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_inset_timeseries_impvars.pdf'), width = 8, height = 11)
       #map
       par(fig = c(0, 1, 0, 1))
       plot(totalM, zlim = c(1,4), col = cmocean::cmocean('matter')(4), ylim = c(35,45), legend = F, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', legend.mar = 0)
