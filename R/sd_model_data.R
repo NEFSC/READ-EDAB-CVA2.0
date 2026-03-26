@@ -1,17 +1,17 @@
 #' @title Calculate Standard Deviation on MOM6 Data
 #' @description
-#' Calculate monthly standard deviation from raw MOM6 data across the entire provided timeseries
+#' Calculate monthly standard deviations from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any rasterStack of gridded data.
 #'
-#' @param rawList List of output rasters from \code{pull_hind} or \code{pull_forecast}
+#' @param raw_list List of output rasters from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
-sd_env <- function(rawList){
+sd_model_data <- function(raw_list){
 
-  sdList <- vector(mode = 'list', length = length(rawList))
+  sdList <- vector(mode = 'list', length = length(raw_list))
 
-  for(x in 1:length(rawList)){
-    v <- rawList[[x]]
+  for(x in 1:length(raw_list)){
+    v <- raw_list[[x]]
 
     ## create monthly averages
     sds <- NULL

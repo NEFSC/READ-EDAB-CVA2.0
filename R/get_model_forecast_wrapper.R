@@ -55,13 +55,13 @@ get_model_forecast_wrapper <- function(var_df, in_par = TRUE, json_url, release,
     doParallel::registerDoParallel(cluster)
     sds <- foreach::foreach(y = 1:nrow(var_df), .packages = c("ncdf4", 'raster', 'jsonlite')) %do% {
       #for(y in 1:nrow(var_df)){
-      s <- sd_env(raw[[y]])
+      s <- sd_model_data(raw[[y]])
       sds[[y]] <- s
     }
     parallel::stopCluster(cluster)
   } else {
     for(y in 1:nrow(var_df)){
-      s <- sd_env(raw[[y]])
+      s <- sd_model_data(raw[[y]])
       sds[[y]] <- s
     }
   }

@@ -1,8 +1,8 @@
 #' @title Average Model Data
 #' @description
-#' Calculate monthly average from raw model data across the entire provided timeseries. This is built specificially for MOM6 output, but would work on any rasterStack of gridded data.
+#' Calculate monthly average from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any rasterStack of gridded data.
 #'
-#' @param raw_list List of output rasters from \code{pull_hind} or \code{pull_forecast}
+#' @param raw_list List of output rasters from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
