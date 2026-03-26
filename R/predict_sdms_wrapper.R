@@ -1,14 +1,14 @@
 #' @title Predict Models
-#' @description The wrapper function for \code{make_predictions}. This function produces log files and has skip functionality to assist in running multiple species in parallel.
+#' @description The wrapper function for \code{make_sdm_predictions}. This function produces log files and has skip functionality to assist in running multiple species in parallel.
 
 #' @param spp Species name to add to log files and save data to correct directory (see vignette for recommended directory set up)
 #' @param model Component model name. One of the following: gam, maxent, rf, brt, sdmtmb
-#' @param yrMin,yrMax start/end of year range of predictions; adds range to resulting file name and helps pull appropriate timeseries for plotting and exposure analysis
+#' @param yr_min,yr_max start/end of year range of predictions; adds range to resulting file name and helps pull appropriate timeseries for plotting and exposure analysis
 #' @param skip TRUE/FALSE indicating whether to skip creating the raster file if file already exists
 
 #' @return returns the file path of the saved predictions. Outputs are saved within specific directories. See the vignette for recommended directory set up.
 
-predictMods <- function(spp, model, yrMin, yrMax, skip){
+predict_sdms_wrapper <- function(spp, model, yr_min, yr_max, skip){
   #open log file
   sink(file = file.path(getwd(), 'logs', paste0(model, '_prediction.log')), append = T)
   #sink(file = file.path(getwd(), 'logs', paste0(csvName, '.log')), append = T, type = 'message')
@@ -26,19 +26,19 @@ predictMods <- function(spp, model, yrMin, yrMax, skip){
   load(paste(file.path(getwd(),spp), 'pa_clean.RData', sep = '/')) #load data - dfC
 
   if(skip){
-    if(file.exists(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))){
+    if(file.exists(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yr_min, '_', yr_max, '.RData', sep = ''))){
       print('prediction already exists & skip == T, so skipping')
     } else {
       #predict model
       print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
       abund <- make_sdm_predictions(mod = mod, model = model, rasts = norm, mask = T, bathy_raster = bathyR, bathy_max = 1000, se = dfC,  static_variables = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
-      save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
+      save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yr_min, '_', yr_max, '.RData', sep = ''))
     }
   } else {
     #predict model
     print(paste0(spp, '- predicting ', model, ' - ', Sys.time()))
     abund <- make_sdm_predictions(mod = mod, model = model, rasts = norm, mask = T, bathy_raster = bathyR, bathy_max = 1000, se = dfC,  static_variables = staticVars, xy_col = c('x', 'y'), month_col = 'month', year_col = 'year')
-    save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yrMin, '_', yrMax, '.RData', sep = ''))
+    save(abund, file = paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '_', yr_min, '_', yr_max, '.RData', sep = ''))
   }
 
   return(paste(file.path(getwd(),spp, 'output_rasters'), '/', toupper(model), '.RData', sep = ''))
