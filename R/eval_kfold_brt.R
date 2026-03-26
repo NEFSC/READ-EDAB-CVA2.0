@@ -15,7 +15,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' eval_kfold_brt(data_input_Fit, gbm.x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
+#' eval_kfold_brt(data_input_Fit, gbm_x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
 #' }
 
 eval_kfold_brt <- function(data_input, gbm_x, gbm_y, learning_rate = 0.05, k_folds = 5, tree_complexity = 3, bag_fraction = 0.6, is_fixed = TRUE, max_trees = 2000){

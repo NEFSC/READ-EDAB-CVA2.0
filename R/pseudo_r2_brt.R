@@ -7,7 +7,7 @@
 #'
 #' @source https://github.com/elhazen/EcoCast-SciAdv
 
-pseudoR2.brt <- function(x) {
+pseudo_r2_brt <- function(x) {
   if ("null.deviance" %in% names(x$self.statistics)){
     d2 <- 1 - (x$self.statistics$resid.deviance / x$self.statistics$null.deviance)
   } else{

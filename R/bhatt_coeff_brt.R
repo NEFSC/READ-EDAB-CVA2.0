@@ -16,7 +16,7 @@
 #-R 3
 ##########################
 
-bhatt_coeff<-function(x,y, bw=bw.nrd0, ...) {
+bhatt_coeff_brt <-function(x,y, bw=bw.nrd0, ...) {
   #SANITIZING
   #x
   if(!is.numeric(x)) {

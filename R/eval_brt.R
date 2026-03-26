@@ -24,7 +24,7 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
                      type = 'response',
                      na.rm = FALSE)
 
-  summarystats$R_squared <- pseudoR2.brt(model)
+  summarystats$R_squared <- pseudo_r2_brt(model)
   summarystats$AUCval <- unlist(saveAUC(test_data[,response], pred))
   summarystats$TSSval <- saveTSS(test_data[,response], pred)
   cm <- caret::confusionMatrix(factor((test_data[,response])), factor(round(pred)))
@@ -46,7 +46,7 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
     #dev.off()
   }
 
-  bhvals <- bhattacharyya_stat(test_data, response, model$var.names)
+  bhvals <- bhattacharyya_stat_brt(test_data, response, model$var.names)
   summarystats$MeanBH <- mean(unlist(bhvals))
   #if (i==1) bhvect<-bhvals else bhvect<-rbind(bhvect,bhvals)
 
