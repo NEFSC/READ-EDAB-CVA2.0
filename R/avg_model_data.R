@@ -1,13 +1,13 @@
-#' @title Average MOM6 Data
+#' @title Average Model Data
 #' @description
-#' Calculate monthly average from raw MOM6 data across the entire provided timeseries
+#' Calculate monthly average from raw model data across the entire provided timeseries. This is built specificially for MOM6 output, but would work on any rasterStack of gridded data.
 #'
 #' @param raw_list List of output rasters from \code{pull_hind} or \code{pull_forecast}
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
 
-avg_env <- function(raw_list){
+avg_model_data <- function(raw_list){
 
   avgList <- vector(mode = 'list', length = length(raw_list))
 
