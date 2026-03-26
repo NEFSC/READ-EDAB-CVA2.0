@@ -25,8 +25,8 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
                      na.rm = FALSE)
 
   summarystats$R_squared <- pseudo_r2_brt(model)
-  summarystats$AUCval <- unlist(saveAUC(test_data[,response], pred))
-  summarystats$TSSval <- saveTSS(test_data[,response], pred)
+  summarystats$AUCval <- unlist(save_auc_brt(test_data[,response], pred))
+  summarystats$TSSval <- save_tss_brt(test_data[,response], pred)
   cm <- caret::confusionMatrix(factor((test_data[,response])), factor(round(pred)))
   ## proportion of true negatives that are correctly predicted
   summarystats$Specificity <- cm$byClass['Specificity']
