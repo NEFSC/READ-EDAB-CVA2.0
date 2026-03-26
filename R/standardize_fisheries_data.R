@@ -2,21 +2,21 @@
 #' @description
 #' Pulls and standardizes fisheries independent and dependent datasets from the NEFSC survey and observer programs using ROracle. The function also can open a local CSV file and standardize the output.
 #'
-#' @param dataType type of data to be standardize. Must be one of the following: 'NESurveys', 'NEObserver', or 'CSV'
+#' @param data_type type of data to be standardize. Must be one of the following: 'NESurveys', 'NEObserver', or 'CSV'
 #' @param channel connection to remote databases. Only required for 'NESurveys' or 'NEObserver'
 #' @param csv path to local CSV file
-#' @param csvCols Column names in csv file in the following order: 'towid', 'longitude', 'latitude', 'date', 'count (can be count/abundance/density, etc)', 'name'. Date must be in a format that can be converted to POSIX with as.POSIXct
-#' @param yrRange A vector with length of 2 indicating the start and end, inclusive, year of the desired time series
+#' @param csv_columns Column names in csv file in the following order: 'towid', 'longitude', 'latitude', 'date', 'count (can be count/abundance/density, etc)', 'name'. Date must be in a format that can be converted to POSIX with as.POSIXct
+#' @param yr_range A vector with length of 2 indicating the start and end, inclusive, year of the desired time series
 #'
 #' @return a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time
 #'
 
-standardize_data <- function(dataType, channel = channel, csv, csvCols, yrRange){
+standardize_fisheries_data <- function(data_type, channel = channel, csv, csv_columns, yr_range){
 
-  if(dataType %in% c('NESurveys', 'NEObserver', 'CSV')){
+  if(data_type %in% c('NESurveys', 'NEObserver', 'CSV')){
 
     ##now move onto different processing pipelines
-    if(dataType == 'Surveys'){
+    if(data_type == 'Surveys'){
       print('Standardizing Survey Data...')
       ## pull fisheries-independent data
       data <- survdat::get_survdat_data(channel, getWeightLength = F, getLengths = F, getBio = F, conversion.factor = T)
@@ -34,16 +34,16 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols, yrRange)
       surv$towID <- paste(surv$CRUISE6, surv$STRATUM, surv$TOW, surv$STATION)
       dat <- surv[,c('towID', 'YEAR', "MONTH", "LON", "LAT", "ABUNDANCE", "SCINAME")] #subset to necessary columns
       names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
-      dat <- dat[dat$year >= yrRange[1] & dat$year <= yrRange[2],]
+      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2],]
     } #end if survey
 
-    if(dataType == 'Observer'){
+    if(data_type == 'Observer'){
       print('Standardizing Observer Data...')
       ## pull fisheries-dependent data - a bit more intense since there isn't a nice function to do it, and needs to be subset, but follows the same basic steps as survdat
       #observer data
       obs.qry <-  paste0("select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
         from obdbs.OBSPP
-        where YEAR between ", yrRange[1], " and ", yrRange[2], "
+        where YEAR between ", yr_range[1], " and ", yr_range[2], "
         order by YEAR, MONTH, TRIPID")
       obs <- data.table::as.data.table(DBI::dbGetQuery(channel, obs.qry))
 
@@ -94,24 +94,24 @@ standardize_data <- function(dataType, channel = channel, csv, csvCols, yrRange)
       names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
     } #end if observer
 
-    if(dataType == 'CSV'){
+    if(data_type == 'CSV'){
       ### build raster from CSV data from state/other surveys
       print('Standardizing CSV Data...')
 
       s <- read.csv(csv) #read in each csv
-      s$time <- as.POSIXct(s[,csvCols[4]]) #pull time
+      s$time <- as.POSIXct(s[,csv_columns[4]]) #pull time
       s$month <- lubridate::month(s$time) #make month
       s$year <- lubridate::year(s$time) #make year
 
-      dat <- s[,c('time', 'month', 'year', csvCols)] #subset to important columns
+      dat <- s[,c('time', 'month', 'year', csv_columns)] #subset to important columns
       colnames(dat) <- c('time', 'month', 'year', 'towID', 'lon', 'lat', 'date', 'count', 'name')
-      dat <- dat[dat$year >= yrRange[1] & dat$year <= yrRange[2],]
+      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2],]
     }
 
     return(dat)
 
   }  else {
-    stop('dataType is not NESurveys, NEObserver, or CSV')
+    stop('data_type is not NESurveys, NEObserver, or CSV')
   }
 
 }
