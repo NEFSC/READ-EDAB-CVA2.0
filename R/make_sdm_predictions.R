@@ -379,7 +379,11 @@ make_sdm_predictions <- function(mod, model, rasts, static_variables, bathy_rast
       }
     } #end if ensemble
 
-    names(hsm) <- names(rasts[[1]][[1]])
+    if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb')){
+      names(hsm) <- names(rasts[[1]][[1]])
+    } else {
+      names(hsm) <- names(rasts[[1]])
+    }
 
     return(raster::stack(hsm))
   } else {
