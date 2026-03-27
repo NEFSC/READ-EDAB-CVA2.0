@@ -88,7 +88,7 @@ build_ensemble_wrapper <- function(spp, yr_min, yr_max, build_ens = T){
   abds <- vector(mode = 'list', length = length(abundFlist))
   for(y in 1:length(abundFlist)){
     load(abundFlist[y])
-    abds[[y]] <- abund
+    abds[[y]] <- raster::stack(abund)
   }
 
   abund <- make_sdm_predictions(model = 'ens', rasts = abds, weights = weights, static_variables = NULL, mask = F, bathy_raster = NULL, bathy_max = NULL, se = NULL, month_col = NULL, year_col = NULL, xy_col = NULL)

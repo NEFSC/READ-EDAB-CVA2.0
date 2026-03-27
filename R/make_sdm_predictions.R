@@ -18,15 +18,26 @@ make_sdm_predictions <- function(mod, model, rasts, static_variables, bathy_rast
   if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb', 'ens')){
 
 
-    #make static vars (month/year) into rasters
-    r <- raster::subset(rasts[[1]][[1]], 1)
-    rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
-    xy<-raster::xyFromCell(r,1:length(r)) #matrix of longitudes (x) and latitudes(y)
-    rlon[]<-xy[,1] #raster of longitudes
-    rlat[]<-xy[,2] #raster of latitudes
-    rMonth <- rYear <- r
-
-    hsm <- vector(mode = 'list', length = length(rasts[[1]]))
+    if(model %in% c('gam', 'maxent', 'rf', 'brt', 'sdmtmb')){
+      #make static vars (month/year) into rasters
+      r <- raster::subset(rasts[[1]][[1]], 1)
+      rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
+      xy<-raster::xyFromCell(r,1:length(r)) #matrix of longitudes (x) and latitudes(y)
+      rlon[]<-xy[,1] #raster of longitudes
+      rlat[]<-xy[,2] #raster of latitudes
+      rMonth <- rYear <- r
+      hsm <- vector(mode = 'list', length = length(rasts[[1]]))
+    } else {
+      #have to subset slightly differently for ensemble
+      #make static vars (month/year) into rasters
+      r <- raster::subset(rasts[[1]], 1)
+      rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
+      xy<-raster::xyFromCell(r,1:length(r)) #matrix of longitudes (x) and latitudes(y)
+      rlon[]<-xy[,1] #raster of longitudes
+      rlat[]<-xy[,2] #raster of latitudes
+      rMonth <- rYear <- r
+      hsm <- vector(mode = 'list', length = raster::nlayers(rasts[[1]]))
+    }
 
     #slightly different models depending on the model
     if(model == 'gam'){
