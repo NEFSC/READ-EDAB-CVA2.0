@@ -1,15 +1,44 @@
+# spatialcva (Climate Vulnerability Assessment 2.0)
 
+[![gitleaks](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml)
+[![R-CMD-check](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml)
+[![format-check.yaml](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml/badge.svg?branch=main)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml)
 [![pkgdown](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml)
 
-### About this package 
-This package performs the analysis - building species distribution models, performing exposure, and sensitivity calculations - for the Climate Vulnerability Assessment 2.0 - the spatially explicit version of the Climate Vulnerability Assessment.
+## Overview
 
-### Disclaimer
+This package performs the analysis - building species distribution models,
+performing exposure, and sensitivity calculations - for the Climate Vulnerability Assessment 
+2.0 - the spatially explicit version of the Climate Vulnerability Assessment.
 
-This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project content is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.
+### Please consult the [CVA2.0 Manual](https://nefsc.github.io/READ-EDAB-CVA2.0Manual/) for the methods used in CVA2.0.
 
-### License
+## Installation
 
-This content was created by U.S. Government employees as part of their official duties. This content is not subject to copyright in the United States (17 U.S.C. §105) and is in the public domain within the United States of America. Additionally, copyright is waived worldwide through the CC0 1.0 Universal public domain dedication.
+The `spatialcva` package can be installed using the following code:
 
-<hr>
+``` r
+pak::pak("NEFSC/spatialcva")
+```
+
+## Contact
+
+| [Katherine Gallagher](https://github.com/KGallagher7)
+|--------------------------------
+| [![](https://avatars.githubusercontent.com/u/203711305?v=4)](https://github.com/KGallagher7) |
+
+#### Legal disclaimer
+
+*This repository is a scientific product and is not official
+communication of the National Oceanic and Atmospheric Administration, or
+the United States Department of Commerce. All NOAA GitHub project code
+is provided on an 'as is' basis and the user assumes responsibility for
+its use. Any claims against the Department of Commerce or Department of
+Commerce bureaus stemming from the use of this GitHub project will be
+governed by all applicable Federal law. Any reference to specific
+commercial products, processes, or services by service mark, trademark,
+manufacturer, or otherwise, does not constitute or imply their
+endorsement, recommendation or favoring by the Department of Commerce.
+The Department of Commerce seal and logo, or the seal and logo of a DOC
+bureau, shall not be used in any manner to imply endorsement of any
+commercial product or activity by DOC or the United States Government.*
