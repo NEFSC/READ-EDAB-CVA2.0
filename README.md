@@ -1,3 +1,10 @@
+# spatialcva
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
+
 ### About this package 
 This package performs the analysis - building species distribution models, performing exposure, and sensitivity calculations - for the Climate Vulnerability Assessment 2.0 - the spatially explicit version of the Climate Vulnerability Assessment.
 
