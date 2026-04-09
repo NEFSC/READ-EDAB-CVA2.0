@@ -1,3 +1,6 @@
+
+[![pkgdown](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml)
+
 ### About this package 
 This package performs the analysis - building species distribution models, performing exposure, and sensitivity calculations - for the Climate Vulnerability Assessment 2.0 - the spatially explicit version of the Climate Vulnerability Assessment.
 
