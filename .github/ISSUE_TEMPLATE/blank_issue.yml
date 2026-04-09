@@ -1,0 +1,17 @@
+name: Blank issue
+description: Create a new issue from scratch
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing an issue to our project!
+  - type: markdown
+    attributes:
+      value: |
+        If you are reporting a bug, please use our [Bug Report template](https://github.com/NEFSC/READ-EDAB-CVA2.0/issues/new?template=bug_report.yml). If you are requesting a feature, please use our [Feature Request template](https://github.com/NEFSC/READ-EDAB-CVA2.0/issues/new?template=feature_request.yml).
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
