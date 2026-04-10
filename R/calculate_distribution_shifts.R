@@ -7,22 +7,29 @@
 #'
 #' @return a data.frame with three columns: 1) timestamp, equal to the names of the layers in \code{abund}; 2) COG; 3) Area of probabilities greater than the \code{area.threshold}
 
-calculate_distribution_shifts <- function(abund, area_threshold = 0.75, cell_area = 8*8){
+calculate_distribution_shifts <- function(
+  abund,
+  area_threshold = 0.75,
+  cell_area = 8 * 8
+) {
   #calculates both center of gravity and area for each time step in abund
   #returns a data.frame
 
   #center of gravity - modeled after DiSMAP
   mDF <- as.data.frame(raster::rasterToPoints(abund))
   cog <- vector(length = ncol(mDF))
-  for(x in 3:ncol(mDF)){
-    wt <- mDF$y * mDF[,x]
-    cog[x] <- sum(wt, na.rm = T) / sum(mDF[,x], na.rm = T)
+  for (x in 3:ncol(mDF)) {
+    wt <- mDF$y * mDF[, x]
+    cog[x] <- sum(wt, na.rm = T) / sum(mDF[, x], na.rm = T)
   }
   cog <- cog[-c(1:2)]
 
   #area at each timestamp
   val <- raster::values(abund) #extract all values
-  area <- apply(val, 2, FUN = function(x){length(which(x >= area_threshold))}) * cell_area
+  area <- apply(val, 2, FUN = function(x) {
+    length(which(x >= area_threshold))
+  }) *
+    cell_area
 
   #make data.frame
   df <- as.data.frame(cbind(names(abund), as.numeric(cog), as.numeric(area)))
@@ -32,9 +39,3 @@ calculate_distribution_shifts <- function(abund, area_threshold = 0.75, cell_are
 
   return(df)
 }
-
-
-
-
-
-

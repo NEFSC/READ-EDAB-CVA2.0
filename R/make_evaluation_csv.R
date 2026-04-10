@@ -25,51 +25,84 @@
 #' }
 #'
 
-make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max){
-#spp_list is the csv of species lists including alternative names to help with matching in test_ens
+make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
+  #spp_list is the csv of species lists including alternative names to help with matching in test_ens
 
   #subset spp_list to serve as base for csv
-  sppEval <- spp_list[,colnames(spp_list) %in% c('Common.Name', 'Managing.Body', 'Feeding.Guild', 'Habitat.Guild')]
+  sppEval <- spp_list[,
+    colnames(spp_list) %in%
+      c('Common.Name', 'Managing.Body', 'Feeding.Guild', 'Habitat.Guild')
+  ]
 
   message(paste("Pulling Evaluation Metrics..."))
-#create null object to append to sppEval
+  #create null object to append to sppEval
   sEval <- NULL
   #pull existing metrics calculated and saved in workflow
-  for(x in 1:nrow(spp_list)){
+  for (x in 1:nrow(spp_list)) {
     #load in data frame to get the number of presences/absences
-    load(paste(file.path(getwd(),spp_list$Name[x]), 'pa_clean.RData', sep = '/')) #load data - dfC
+    load(paste(
+      file.path(getwd(), spp_list$Name[x]),
+      'pa_clean.RData',
+      sep = '/'
+    )) #load data - dfC
     n.pres <- length(which(dfC$value == 1))
     n.abs <- length(which(dfC$value == 0))
 
     #pull in other model AUCs
     #load in evaluation metrics
-    evalFlist <- dir(file.path(getwd(),spp_list$Name[x], 'model_output', 'eval_metrics'), pattern = '.RData', full.names = T)
+    evalFlist <- dir(
+      file.path(getwd(), spp_list$Name[x], 'model_output', 'eval_metrics'),
+      pattern = '.RData',
+      full.names = T
+    )
     eval <- vector(length = length(evalFlist))
-    for(y in 1:length(evalFlist)){
+    for (y in 1:length(evalFlist)) {
       load(evalFlist[y])
       eval[y] <- ev
     } #eval is a vector of the component model AUCS
 
     #load in ensemble and calculate raw aucs from weighted sum predictions from component models
-    load(paste0(file.path(getwd(),spp_list$Name[x], 'model_output', 'models'), '/ENSEMBLE.RData')) #ens
+    load(paste0(
+      file.path(getwd(), spp_list$Name[x], 'model_output', 'models'),
+      '/ENSEMBLE.RData'
+    )) #ens
     #calculate auc
     Pred <- ROCR::prediction(ens$pred, ens$abund)
     Perf <- ROCR::performance(Pred, 'auc')
     auc <- Perf@y.values[[1]]
 
     #create weighted average auc
-    load(paste0(file.path(getwd(),spp_list$Name[x], 'model_output'), '/ensemble_weights.RData')) #weights
+    load(paste0(
+      file.path(getwd(), spp_list$Name[x], 'model_output'),
+      '/ensemble_weights.RData'
+    )) #weights
     aucW <- weighted.mean(eval, weights)
 
     #correct length of eval if SDMTMB didn't converge (doing this now because if SDMTMB didn't converge, the length of both weights and eval will be right so we don't need to correct until now)
-    if(!any(grepl('SDMTMB', evalFlist))){ #if sdmtmb does not converge
+    if (!any(grepl('SDMTMB', evalFlist))) {
+      #if sdmtmb does not converge
       eval[5] <- NA #add a placeholder to both eval and weights
       weights[5] <- NA
     }
 
     #put it all together and add names
     eval <- c(n.pres, n.abs, eval, weights, auc, aucW)
-    names(eval) <- c('N.PRESENCE', 'N.ABSENCE', 'BRT', 'GAM', "MAXENT", "RF", 'SDMTMB', 'BRT.WT', 'GAM.WT', "MAXENT.WT", "RF.WT", 'SDMTMB.WT', 'ENS.AUC', 'WAVG.ENS.AUC')
+    names(eval) <- c(
+      'N.PRESENCE',
+      'N.ABSENCE',
+      'BRT',
+      'GAM',
+      "MAXENT",
+      "RF",
+      'SDMTMB',
+      'BRT.WT',
+      'GAM.WT',
+      "MAXENT.WT",
+      "RF.WT",
+      'SDMTMB.WT',
+      'ENS.AUC',
+      'WAVG.ENS.AUC'
+    )
 
     #add to sEval
     sEval <- rbind(sEval, eval)
@@ -78,42 +111,68 @@ make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max){
 
   #now we test the ensemble on the external dataset, if desired
 
-  if(test_ens){
+  if (test_ens) {
     message(paste("Testing Ensemble on new data..."))
     #create altNames vector for test_ens
-    altNames <- paste(spp_list$Common.Name, spp_list$COM_NAME, spp_list$Scientific.Name, spp_list$Alternate.Name, spp_list$SCI_NAME, spp_list$SCI_NAME_ALT, spp_list$SCI_NAME_ALT2, sep = ',')
+    altNames <- paste(
+      spp_list$Common.Name,
+      spp_list$COM_NAME,
+      spp_list$Scientific.Name,
+      spp_list$Alternate.Name,
+      spp_list$SCI_NAME,
+      spp_list$SCI_NAME_ALT,
+      spp_list$SCI_NAME_ALT2,
+      sep = ','
+    )
 
     #predict on external dataset
     evalTest <- vector(length = nrow(sppEval)) #using sppEval as the base
-    for(y in 1:nrow(spp_list)){
+    for (y in 1:nrow(spp_list)) {
       ##make source list - we have both rasters and csv files, but for some reason this was easier to do with the csv files. But the raster file list includes all of the data used in the model building (some sources were excluded due to low counts or methods that didn't match the species [i.e. a longline survey would not catch shellfish]). So we use the raster list to subset the csv list appropriately for each species.
       #grab list of standardized csvs
-      csvFlist <- dir('./Data/csvs/standardized', pattern = paste(yr_min, yr_max, sep = "_"))
+      csvFlist <- dir(
+        './Data/csvs/standardized',
+        pattern = paste(yr_min, yr_max, sep = "_")
+      )
       csvFlist <- gsub('.csv', '', csvFlist) #isolate to names only
 
       #grab species-specific list of rasters
-      rastFlist <- dir(file.path(getwd(),spp_list$Name[y], 'input_rasters'), pattern = paste(yr_min, yr_max, sep = "_"))
+      rastFlist <- dir(
+        file.path(getwd(), spp_list$Name[y], 'input_rasters'),
+        pattern = paste(yr_min, yr_max, sep = "_")
+      )
       rastFlist <- gsub('.nc', '', rastFlist) #isolate to names only
       i <- grep('combined_rasters', rastFlist) #remove combined raster if present
-      if(length(i) != 0){
+      if (length(i) != 0) {
         rastFlist <- rastFlist[-i]
       }
 
       csvFlist <- csvFlist[csvFlist %in% rastFlist] #subset csvFlist to just datasets used for species
       csvFlist <- paste0('./Data/csvs/standardized/', csvFlist, '.csv') #recreate full paths
       #test ensemble
-      evalTest[y] <- test_ens(spp = spp_list$Name[y], sppNames = altNames[y], sources = csvFlist, yr_min = yr_min, yr_max = yr_max)
+      evalTest[y] <- test_ens(
+        spp = spp_list$Name[y],
+        sppNames = altNames[y],
+        sources = csvFlist,
+        yr_min = yr_min,
+        yr_max = yr_max
+      )
       print(y)
     }
   } #end test_ens
 
   #combine and save spreadsheet
-  if(test_ens){ #if test_ens is true, add result and rename column
+  if (test_ens) {
+    #if test_ens is true, add result and rename column
     sppEval <- cbind(sppEval, sEval, evalTest)
     names(sppEval)[ncol(sppEval)] <- paste('AUC', yr_min, yr_max, sep = '.')
-  } else { #if test_ens is FALSE
+  } else {
+    #if test_ens is FALSE
     sppEval <- cbind(sppEval, sEval) #just combine everything you made in the first for loop
   }
-  utils::write.csv(sppEval, file = 'species_evaluation_metrics.csv', row.names = F)
-
+  utils::write.csv(
+    sppEval,
+    file = 'species_evaluation_metrics.csv',
+    row.names = F
+  )
 } #end function

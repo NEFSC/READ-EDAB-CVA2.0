@@ -18,33 +18,65 @@
 #' eval_kfold_brt(data_input_Fit, gbm_x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
 #' }
 
-eval_kfold_brt <- function(data_input, gbm_x, gbm_y, learning_rate = 0.05, k_folds = 5, tree_complexity = 3, bag_fraction = 0.6, is_fixed = TRUE, max_trees = 2000){
+eval_kfold_brt <- function(
+  data_input,
+  gbm_x,
+  gbm_y,
+  learning_rate = 0.05,
+  k_folds = 5,
+  tree_complexity = 3,
+  bag_fraction = 0.6,
+  is_fixed = TRUE,
+  max_trees = 2000
+) {
   data_input$Kset <- dismo::kfold(data_input, k_folds) #randomly allocate k groups
 
   summary_stats <- list()
   kRes <- NULL
-  for (i in 1:k_folds){
+  for (i in 1:k_folds) {
     print(i)
-    train <- data_input[data_input$Kset!=i,]
-    test <- data_input[data_input$Kset==i,]
-    if (is_fixed){
-      brt.k <- dismo::gbm.fixed(data=train, gbm.x= gbm_x, gbm.y = gbm_y,
-                                family="bernoulli", tree.complexity = tree_complexity,
-                                learning.rate = learning_rate, bag.fraction = bag_fraction, max.trees = max_trees)
-    } else{
-      brt.k <- dismo::gbm.step(data=train, gbm.x= gbm_x, gbm.y = gbm_y,
-                               family="bernoulli", tree.complexity = tree_complexity,
-                               learning.rate = learning_rate, bag.fraction = bag_fraction, max.trees = max_trees)
+    train <- data_input[data_input$Kset != i, ]
+    test <- data_input[data_input$Kset == i, ]
+    if (is_fixed) {
+      brt.k <- dismo::gbm.fixed(
+        data = train,
+        gbm.x = gbm_x,
+        gbm.y = gbm_y,
+        family = "bernoulli",
+        tree.complexity = tree_complexity,
+        learning.rate = learning_rate,
+        bag.fraction = bag_fraction,
+        max.trees = max_trees
+      )
+    } else {
+      brt.k <- dismo::gbm.step(
+        data = train,
+        gbm.x = gbm_x,
+        gbm.y = gbm_y,
+        family = "bernoulli",
+        tree.complexity = tree_complexity,
+        learning.rate = learning_rate,
+        bag.fraction = bag_fraction,
+        max.trees = max_trees
+      )
     }
-    preds <- gbm::predict.gbm(brt.k, test,
-                              n.trees=brt.k$gbm.call$best.trees, type="response")
+    preds <- gbm::predict.gbm(
+      brt.k,
+      test,
+      n.trees = brt.k$gbm.call$best.trees,
+      type = "response"
+    )
 
-    summary_stats[[i]] <- as.data.frame(eval_brt(brt.k, test, response = gbm_y, plot = FALSE))
+    summary_stats[[i]] <- as.data.frame(eval_brt(
+      brt.k,
+      test,
+      response = gbm_y,
+      plot = FALSE
+    ))
 
     ###add training values and predictions to calculate RMSE - written by KLG & added 6/20/2025
     res <- cbind(test, preds)
     kRes <- rbind(kRes, res)
-
   }
   return(list(summary_stats, kRes))
 }

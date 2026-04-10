@@ -12,37 +12,55 @@
 #' @source Much of this code is derived from https://github.com/elhazen/PA-paper
 
 eval_brt <- function(model, test_data, response, plot = TRUE) {
-
-  if (!(response %in% names(test_data))) stop('Column name specified in input response object is not available in input data.')
+  if (!(response %in% names(test_data))) {
+    stop(
+      'Column name specified in input response object is not available in input data.'
+    )
+  }
 
   summarystats <- list()
 
   pred <-
-    gbm::predict.gbm(model,
-                     test_data,
-                     n.trees = model$gbm.call$best.trees,
-                     type = 'response',
-                     na.rm = FALSE)
+    gbm::predict.gbm(
+      model,
+      test_data,
+      n.trees = model$gbm.call$best.trees,
+      type = 'response',
+      na.rm = FALSE
+    )
 
   summarystats$R_squared <- pseudo_r2_brt(model)
-  summarystats$AUCval <- unlist(save_auc_brt(test_data[,response], pred))
-  summarystats$TSSval <- save_tss_brt(test_data[,response], pred)
-  cm <- caret::confusionMatrix(factor((test_data[,response])), factor(round(pred)))
+  summarystats$AUCval <- unlist(save_auc_brt(test_data[, response], pred))
+  summarystats$TSSval <- save_tss_brt(test_data[, response], pred)
+  cm <- caret::confusionMatrix(
+    factor((test_data[, response])),
+    factor(round(pred))
+  )
   ## proportion of true negatives that are correctly predicted
   summarystats$Specificity <- cm$byClass['Specificity']
   ## proportion of true positives that are correctly predicted
   summarystats$Sensitivity <- cm$byClass['Sensitivity']
 
-  summarystats$FalsePos <- mean(pred[test_data[,response] == 0])
-  summarystats$FalseNeg <- mean(pred[test_data[,response] == 1])
+  summarystats$FalsePos <- mean(pred[test_data[, response] == 0])
+  summarystats$FalseNeg <- mean(pred[test_data[, response] == 1])
   summarystats$Accuracy <- unname(cm$overall['Accuracy'])
 
-  summarystats$median_pred_at_pres <- median(gbm::predict.gbm(model, test_data[which(test_data[,response] == 1),], n.trees = model$gbm.call$best.trees, type="response"))
-  summarystats$median_pred_at_abs <- median(gbm::predict.gbm(model, test_data[which(test_data[,response] == 0),], n.trees = model$gbm.call$best.trees, type="response"))
+  summarystats$median_pred_at_pres <- median(gbm::predict.gbm(
+    model,
+    test_data[which(test_data[, response] == 1), ],
+    n.trees = model$gbm.call$best.trees,
+    type = "response"
+  ))
+  summarystats$median_pred_at_abs <- median(gbm::predict.gbm(
+    model,
+    test_data[which(test_data[, response] == 0), ],
+    n.trees = model$gbm.call$best.trees,
+    type = "response"
+  ))
 
-  if (plot){
+  if (plot) {
     #pdf(paste("BRT_ROCR_",listnames[i],".pdf",sep=''))
-    PredictABEL::plotROC(test_data[,response], pred, colorize = TRUE)
+    PredictABEL::plotROC(test_data[, response], pred, colorize = TRUE)
     #dev.off()
   }
 
