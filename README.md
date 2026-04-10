@@ -1,8 +1,9 @@
-# Climate Vulnerability Assessment 2.0
+# spatialcva (Climate Vulnerability Assessment 2.0)
 
 [![gitleaks](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml)
 [![R-CMD-check](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml)
 [![format-check.yaml](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml/badge.svg?branch=main)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml)
+[![pkgdown](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml)
 
 ## Overview
 

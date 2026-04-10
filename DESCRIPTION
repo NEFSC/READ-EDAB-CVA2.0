@@ -34,3 +34,4 @@ Suggests: DBI, survdat, foreach, parallel, doParallel, ROCR, jsonlite, data.tabl
 Remotes:
     NOAA-EDAB/survdat,
     EFHSDM=noaa-akro/alaska-efh-ensemble-sdm
+URL: https://nefsc.github.io/READ-EDAB-CVA2.0/
