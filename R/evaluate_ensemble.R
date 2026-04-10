@@ -10,14 +10,12 @@
 #'
 #' @return returns the AUC value for the given model on the new data
 
-
-evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max){
-
+evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
   nms <- strsplit(spp_names, split = ',')[[1]] #seperate out species names
 
   #combine csvs
   paDF <- NULL
-  for(x in sources){
+  for (x in sources) {
     csv <- read.csv(x)
 
     ind <- csv$name %in% nms
@@ -28,20 +26,20 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max){
 
     #combining the csvs sometimes results in weird column names which then makes it so the csvs can't get combined, so these checks just remove those
     i <- grep("X", names(csv))
-    if(length(i) != 0){
-      csv <- csv[,-i]
+    if (length(i) != 0) {
+      csv <- csv[, -i]
     }
     i <- grep("...1", names(csv))
-    if(length(i) != 0){
-      csv <- csv[,-i]
+    if (length(i) != 0) {
+      csv <- csv[, -i]
     }
     i <- grep("time", names(csv))
-    if(length(i) != 0){
-      csv <- csv[,-i]
+    if (length(i) != 0) {
+      csv <- csv[, -i]
     }
     i <- grep("date", names(csv))
-    if(length(i) != 0){
-      csv <- csv[,-i]
+    if (length(i) != 0) {
+      csv <- csv[, -i]
     }
     paDF <- rbind(paDF, csv)
   }
@@ -49,23 +47,33 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max){
   paDF$month.year <- paste(paDF$month, paDF$year, sep = '.')
 
   #load in ensemble predictions
-  load(paste0(file.path(getwd(),spp, 'output_rasters'), '/ENSEMBLE_', yr_min, '_', yr_max, '.RData'))
+  load(paste0(
+    file.path(getwd(), spp, 'output_rasters'),
+    '/ENSEMBLE_',
+    yr_min,
+    '_',
+    yr_max,
+    '.RData'
+  ))
   abund <- raster::stack(abund)
 
   #extract predicted values at observation locations
   paPred <- NULL
-  for(x in 1:raster::nlayers(abund)){ #nlayers(abund) should equal number of unique names in paDF
-    sub <- paDF[paDF$month.year == names(abund)[x],]
-    sub$pred <- raster::extract(raster::subset(abund,x), sub[,c('lon', 'lat')])
+  for (x in 1:raster::nlayers(abund)) {
+    #nlayers(abund) should equal number of unique names in paDF
+    sub <- paDF[paDF$month.year == names(abund)[x], ]
+    sub$pred <- raster::extract(
+      raster::subset(abund, x),
+      sub[, c('lon', 'lat')]
+    )
     paPred <- rbind(paPred, sub)
     #print(x)
   }
-  paPred <- paPred[complete.cases(paPred),]
+  paPred <- paPred[complete.cases(paPred), ]
 
   #calculate AUC
   Pred <- ROCR::prediction(paPred$pred, paPred$pa)
   Perf <- ROCR::performance(Pred, 'auc')
   auc <- Perf@y.values[[1]]
   return(auc)
-
 }

@@ -6,16 +6,15 @@
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
-sd_model_data <- function(raw_list){
-
+sd_model_data <- function(raw_list) {
   sdList <- vector(mode = 'list', length = length(raw_list))
 
-  for(x in 1:length(raw_list)){
+  for (x in 1:length(raw_list)) {
     v <- raw_list[[x]]
 
     ## create monthly averages
     sds <- NULL
-    for(m in 1:12){
+    for (m in 1:12) {
       mn <- seq(m, raster::nlayers(v), by = 12) #grab all month xs from timeseries by creating a sequence
       MNS <- raster::subset(v, mn) #subset raster brick
       mm <- raster::calc(MNS, fun = sd, na.rm = T) #average
@@ -29,7 +28,6 @@ sd_model_data <- function(raw_list){
     raster::crs(sds) <- raster::crs(v)
     names(sds) <- 1:12
     sdList[[x]] <- sds
-
   } #end x
 
   #names(sdList) <- names(rastList)

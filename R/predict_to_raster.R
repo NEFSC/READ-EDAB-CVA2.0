@@ -21,14 +21,17 @@
 #' abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
 #' }
 
-predict_to_raster <- function(df, static_variables){
-
+predict_to_raster <- function(df, static_variables) {
   hsm <- vector(mode = 'list', length = length(unique(df$my)))
-  for(x in 1:length(unique(df$my))){
-    sub <- df[df$my == unique(df$my)[x],]
-    sp::coordinates(sub) <- ~x + y
+  for (x in 1:length(unique(df$my))) {
+    sub <- df[df$my == unique(df$my)[x], ]
+    sp::coordinates(sub) <- ~ x + y
     sp::proj4string(sub) <- sp::CRS("+proj=longlat +datum=WGS84 +no_defs ")
-    hsm[[x]] <- raster::rasterize(x = sub, y = static_variables[[1]], field = sub$est)
+    hsm[[x]] <- raster::rasterize(
+      x = sub,
+      y = static_variables[[1]],
+      field = sub$est
+    )
     print(x)
   }
 

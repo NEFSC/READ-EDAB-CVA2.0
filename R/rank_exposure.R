@@ -8,22 +8,26 @@
 #'
 #' @return A list of rasterStacks with each layer containing ranked values between 1 - 4. The length of the list is equal to the length of the lists supplied as \code{exposure}
 
-rank_exposure <- function(exposure, flip = T, no_flip_vars = c('bottomT', 'surfaceT', 'bottomArg', 'MLD')){
+rank_exposure <- function(
+  exposure,
+  flip = T,
+  no_flip_vars = c('bottomT', 'surfaceT', 'bottomArg', 'MLD')
+) {
   rankE <- vector(mode = 'list', length = length(exposure)) #list of vectors for
-  for(x in 1:length(exposure)){
+  for (x in 1:length(exposure)) {
     s <- exposure[[x]]
 
     #change sign - negative = exposure to worse habitat?
-    if(flip){
-      if(names(exposure)[x] %in% no_flip_vars){
+    if (flip) {
+      if (names(exposure)[x] %in% no_flip_vars) {
         s <- s
       } else {
-        s <- s*-1
+        s <- s * -1
       }
     }
 
     mapE <- vector(mode = 'list', length = 12) #list for maps
-    for(m in 1:12){
+    for (m in 1:12) {
       r <- raster::subset(s, m)
       #rank
       QR <- replace(r, r <= 0.5, 1)
@@ -35,7 +39,6 @@ rank_exposure <- function(exposure, flip = T, no_flip_vars = c('bottomT', 'surfa
     }
 
     rankE[[x]] <- raster::stack(mapE)
-
   }
   names(rankE) <- names(exposure)
   return(rankE)

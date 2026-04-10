@@ -11,55 +11,85 @@
 #' @return a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time
 #'
 
-standardize_fisheries_data <- function(data_type, channel = channel, csv, csv_columns, yr_range){
-
-  if(data_type %in% c('NESurveys', 'NEObserver', 'CSV')){
-
+standardize_fisheries_data <- function(
+  data_type,
+  channel = channel,
+  csv,
+  csv_columns,
+  yr_range
+) {
+  if (data_type %in% c('NESurveys', 'NEObserver', 'CSV')) {
     ##now move onto different processing pipelines
-    if(data_type == 'Surveys'){
+    if (data_type == 'Surveys') {
       print('Standardizing Survey Data...')
       ## pull fisheries-independent data
-      data <- survdat::get_survdat_data(channel, getWeightLength = F, getLengths = F, getBio = F, conversion.factor = T)
+      data <- survdat::get_survdat_data(
+        channel,
+        getWeightLength = F,
+        getLengths = F,
+        getBio = F,
+        conversion.factor = T
+      )
       surv <- data$survdat
       rm(data) #we only need surv, so clearing out everything else to save room
 
       #pull species list to help with matching
-      spp.qry <-  paste0("select SCINAME, COMNAME, SVSPP
+      spp.qry <- paste0(
+        "select SCINAME, COMNAME, SVSPP
         from svdbs.SVSPECIES_LIST
-        order by SVSPP")
+        order by SVSPP"
+      )
       survSPP <- data.table::as.data.table(DBI::dbGetQuery(channel, spp.qry))
 
       surv <- merge(surv, survSPP)
       surv$MONTH <- lubridate::month(surv$EST_TOWDATE) #create month column since surv data doesn't come with one
       surv$towID <- paste(surv$CRUISE6, surv$STRATUM, surv$TOW, surv$STATION)
-      dat <- surv[,c('towID', 'YEAR', "MONTH", "LON", "LAT", "ABUNDANCE", "SCINAME")] #subset to necessary columns
+      dat <- surv[, c(
+        'towID',
+        'YEAR',
+        "MONTH",
+        "LON",
+        "LAT",
+        "ABUNDANCE",
+        "SCINAME"
+      )] #subset to necessary columns
       names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
-      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2],]
+      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2], ]
     } #end if survey
 
-    if(data_type == 'Observer'){
+    if (data_type == 'Observer') {
       print('Standardizing Observer Data...')
       ## pull fisheries-dependent data - a bit more intense since there isn't a nice function to do it, and needs to be subset, but follows the same basic steps as survdat
       #observer data
-      obs.qry <-  paste0("select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
+      obs.qry <- paste0(
+        "select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
         from obdbs.OBSPP
-        where YEAR between ", yr_range[1], " and ", yr_range[2], "
-        order by YEAR, MONTH, TRIPID")
+        where YEAR between ",
+        yr_range[1],
+        " and ",
+        yr_range[2],
+        "
+        order by YEAR, MONTH, TRIPID"
+      )
       obs <- data.table::as.data.table(DBI::dbGetQuery(channel, obs.qry))
 
       #at sea monitor data
-      asm.qry <- paste0("select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
+      asm.qry <- paste0(
+        "select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
         from obdbs.ASMSPP
         where YEAR between 1993 and 2019
-        order by YEAR, MONTH, TRIPID")
+        order by YEAR, MONTH, TRIPID"
+      )
       asm <- data.table::as.data.table(DBI::dbGetQuery(channel, asm.qry))
 
       #combine them
       ob.asm <- rbind(obs, asm)
 
       #species query
-      spp.qry <- paste0("select NESPP4, COMNAME, SCINAME
-        from obdbs.OBSPEC")
+      spp.qry <- paste0(
+        "select NESPP4, COMNAME, SCINAME
+        from obdbs.OBSPEC"
+      )
       obsSPP <- data.table::as.data.table(DBI::dbGetQuery(channel, spp.qry))
 
       #merge datasets
@@ -78,7 +108,11 @@ standardize_fisheries_data <- function(data_type, channel = channel, csv, csv_co
       obsdat$LON_MIN <- substr(obsdat$LONHBEG, 3, 4)
       obsdat$LON_SEC <- substr(obsdat$LONHBEG, 5, 6)
       #convert to decimal degrees
-      obsdat$LONDD <- as.numeric(measurements::conv_unit(paste(obsdat$LON_DEG, obsdat$LON_MIN, obsdat$LON_SEC, sep = ' '), from = 'deg_min_sec', to = 'dec_deg'))
+      obsdat$LONDD <- as.numeric(measurements::conv_unit(
+        paste(obsdat$LON_DEG, obsdat$LON_MIN, obsdat$LON_SEC, sep = ' '),
+        from = 'deg_min_sec',
+        to = 'dec_deg'
+      ))
       obsdat$LONDD <- obsdat$LONDD * -1 #multiply by negative 1 to get W
 
       #latitude
@@ -86,32 +120,52 @@ standardize_fisheries_data <- function(data_type, channel = channel, csv, csv_co
       obsdat$LAT_MIN <- substr(obsdat$LATHBEG, 3, 4)
       obsdat$LAT_SEC <- substr(obsdat$LATHBEG, 5, 6)
       #convert to decimal degrees
-      obsdat$LATDD <- as.numeric(measurements::conv_unit(paste(obsdat$LAT_DEG, obsdat$LAT_MIN, obsdat$LAT_SEC, sep = ' '), from = 'deg_min_sec', to = 'dec_deg'))
+      obsdat$LATDD <- as.numeric(measurements::conv_unit(
+        paste(obsdat$LAT_DEG, obsdat$LAT_MIN, obsdat$LAT_SEC, sep = ' '),
+        from = 'deg_min_sec',
+        to = 'dec_deg'
+      ))
 
       obsdat$ID <- paste0(obsdat$TRIPID, obsdat$HAULNUM)
 
-      dat <- obsdat[,c('ID', 'YEAR', "MONTH", 'LONDD', 'LATDD', 'HAILWT', 'SCINAME')] #subset to important columns
+      dat <- obsdat[, c(
+        'ID',
+        'YEAR',
+        "MONTH",
+        'LONDD',
+        'LATDD',
+        'HAILWT',
+        'SCINAME'
+      )] #subset to important columns
       names(dat) <- c('towID', 'year', 'month', 'lon', 'lat', 'count', 'name') #standardize names
     } #end if observer
 
-    if(data_type == 'CSV'){
+    if (data_type == 'CSV') {
       ### build raster from CSV data from state/other surveys
       print('Standardizing CSV Data...')
 
       s <- read.csv(csv) #read in each csv
-      s$time <- as.POSIXct(s[,csv_columns[4]]) #pull time
+      s$time <- as.POSIXct(s[, csv_columns[4]]) #pull time
       s$month <- lubridate::month(s$time) #make month
       s$year <- lubridate::year(s$time) #make year
 
-      dat <- s[,c('time', 'month', 'year', csv_columns)] #subset to important columns
-      colnames(dat) <- c('time', 'month', 'year', 'towID', 'lon', 'lat', 'date', 'count', 'name')
-      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2],]
+      dat <- s[, c('time', 'month', 'year', csv_columns)] #subset to important columns
+      colnames(dat) <- c(
+        'time',
+        'month',
+        'year',
+        'towID',
+        'lon',
+        'lat',
+        'date',
+        'count',
+        'name'
+      )
+      dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2], ]
     }
 
     return(dat)
-
-  }  else {
+  } else {
     stop('data_type is not NESurveys, NEObserver, or CSV')
   }
-
 }

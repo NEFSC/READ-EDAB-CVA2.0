@@ -12,12 +12,21 @@
 #'
 #' @return Function does not return anything. Reports are saved to \code{report_path}
 
-make_sdm_reports <- function(species_list, yr_min, yr_max, model_metrics, feeding_key, habitat_key, variable_key, template, report_path){
+make_sdm_reports <- function(
+  species_list,
+  yr_min,
+  yr_max,
+  model_metrics,
+  feeding_key,
+  habitat_key,
+  variable_key,
+  template,
+  report_path
+) {
   #create 'clean' names
   species_list$Name <- gsub(' ', '', species_list$Common.Name)
 
   for (i in 1:nrow(species_list)) {
-
     # Extract the current row as a list
     row <- species_list[i, ]
 
@@ -27,13 +36,13 @@ make_sdm_reports <- function(species_list, yr_min, yr_max, model_metrics, feedin
     clean_name <- row$Name
 
     #match to metrics
-    mrow <- model_metrics[which(model_metrics$Common.Name == row$Common.Name),]
+    mrow <- model_metrics[which(model_metrics$Common.Name == row$Common.Name), ]
 
     ##get list of variables from guilds
-    fList <- feeding_key[,which(names(feeding_key) == row$Feeding.Guild)]
-    fTab <- variable_key[variable_key$Short.Name %in% fList,]
-    hList <- habitat_key[,which(names(habitat_key) == row$Habitat.Guild)]
-    hTab <- variable_key[variable_key$Short.Name %in% hList,]
+    fList <- feeding_key[, which(names(feeding_key) == row$Feeding.Guild)]
+    fTab <- variable_key[variable_key$Short.Name %in% fList, ]
+    hList <- habitat_key[, which(names(habitat_key) == row$Habitat.Guild)]
+    hTab <- variable_key[variable_key$Short.Name %in% hList, ]
     #fhTab <- c(fTab, hTab)
 
     # 3. Render the report
@@ -46,16 +55,43 @@ make_sdm_reports <- function(species_list, yr_min, yr_max, model_metrics, feedin
         hGuild = row$Habitat.Guild,
         fTab = as.data.frame(fTab),
         hTab = as.data.frame(hTab),
-        n_pres       = mrow$N.PRESENCE,
-        n_abs        = mrow$N.ABSENCE,
-        aucWI          = round(mrow$ENS.AUC, digits = 3),
+        n_pres = mrow$N.PRESENCE,
+        n_abs = mrow$N.ABSENCE,
+        aucWI = round(mrow$ENS.AUC, digits = 3),
         aucOUT = round(mrow$AUC.2020.2023, digits = 3),
         # Assuming your PDFs follow a naming convention:
-        weight_plot_pdf = paste0(file.path(getwd(),clean_name, 'figures'), '/component_model_weights.pdf'),
-        imp_plot_pdf = paste0(file.path(getwd(),clean_name, 'figures'), '/variable_importance_radars.pdf'),
-        results_pdf  = paste0(file.path(getwd(),clean_name, 'figures'), '/mean_SDM_', yr_min, '_', yr_max, '_vert.pdf'),
-        resid_hist    = paste0(file.path(getwd(),clean_name, 'figures'), '/histogram_residuals_' , yr_min, '_', yr_max, '.pdf'),
-        resid_map    = paste0(file.path(getwd(),clean_name, 'figures'), '/mean_residuals_', yr_min, '_', yr_max, '.pdf')
+        weight_plot_pdf = paste0(
+          file.path(getwd(), clean_name, 'figures'),
+          '/component_model_weights.pdf'
+        ),
+        imp_plot_pdf = paste0(
+          file.path(getwd(), clean_name, 'figures'),
+          '/variable_importance_radars.pdf'
+        ),
+        results_pdf = paste0(
+          file.path(getwd(), clean_name, 'figures'),
+          '/mean_SDM_',
+          yr_min,
+          '_',
+          yr_max,
+          '_vert.pdf'
+        ),
+        resid_hist = paste0(
+          file.path(getwd(), clean_name, 'figures'),
+          '/histogram_residuals_',
+          yr_min,
+          '_',
+          yr_max,
+          '.pdf'
+        ),
+        resid_map = paste0(
+          file.path(getwd(), clean_name, 'figures'),
+          '/mean_residuals_',
+          yr_min,
+          '_',
+          yr_max,
+          '.pdf'
+        )
       )
     )
 
@@ -65,6 +101,4 @@ make_sdm_reports <- function(species_list, yr_min, yr_max, model_metrics, feedin
       to = file.path(report_path, paste0("SDM_Report_", clean_name, ".pdf"))
     )
   } #end i
-
-
 } #end function

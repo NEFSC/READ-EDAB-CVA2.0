@@ -11,37 +11,73 @@
 #'
 #' @return Function does not return anything. The table is saved to species- and timeframe-specific \code{figures} folder. See manual for directory set up.
 
-make_exposure_table <- function(species, present_time, future_time, variable_df, model_metrics, auc_col, model_confidence){
-
-  for(s in species){
-
+make_exposure_table <- function(
+  species,
+  present_time,
+  future_time,
+  variable_df,
+  model_metrics,
+  auc_col,
+  model_confidence
+) {
+  for (s in species) {
     #### this section is currently untested
     #pull metrics
     #auc
-    mod.auc <- model_metrics[which(model_metrics$Common.Name == s),auc_col]
+    mod.auc <- model_metrics[which(model_metrics$Common.Name == s), auc_col]
 
     #model_confidence
-    mc.mean <- model_confidence[which(model_confidence$Species == s), 'meanConfidence']
-    mc.sd <- model_confidence[which(model_confidence$Species == s), 'sdConfidence']
+    mc.mean <- model_confidence[
+      which(model_confidence$Species == s),
+      'meanConfidence'
+    ]
+    mc.sd <- model_confidence[
+      which(model_confidence$Species == s),
+      'sdConfidence'
+    ]
     ####
 
     ###load data for each species
     #load variable weights
-    load(paste0(file.path(getwd(),s, 'Data'), '/combined_variable_weights.RData')) #cW
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/combined_variable_weights.RData'
+    )) #cW
 
     ####TIMESERIES
     #load timeseries
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_timeseries.RData')) #vecExp
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/variable_exposure_timeseries.RData'
+    )) #vecExp
     #subset timeseries matrix by rownames
     i <- rownames(vecExp) %in% names(cW)
-    vecSub <- vecExp[i,]
+    vecSub <- vecExp[i, ]
 
     #load total exposure timeseries - all vars
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_all.RData')) #totalT
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/total_exposure_timeseries_all.RData'
+    )) #totalT
     totalAll <- totalT
 
     #load total exposure timeseries - important vars
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_subset.RData')) #totalT
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/total_exposure_timeseries_subset.RData'
+    )) #totalT
     totalImp <- totalT
 
     ##create means and standard deviations
@@ -50,8 +86,10 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
     impMean <- mean(totalImp, na.rm = T)
     impSD <- sd(totalImp, na.rm = T)
     timeMean <- c(apply(vecSub, 1, FUN = mean, na.rm = T), allMean, impMean)
-    timeSD <- c(apply(vecSub, 1, FUN = sd, na.rm =T), allSD, impSD)
-    names(timeMean)[(length(timeMean)-1):length(timeMean)] <- names(timeSD)[(length(timeSD)-1):length(timeSD)] <- c('expAll', 'expImp')
+    timeSD <- c(apply(vecSub, 1, FUN = sd, na.rm = T), allSD, impSD)
+    names(timeMean)[(length(timeMean) - 1):length(timeMean)] <- names(timeSD)[
+      (length(timeSD) - 1):length(timeSD)
+    ] <- c('expAll', 'expImp')
 
     #make summary table
     timeTab <- as.data.frame(cbind(timeMean, timeSD))
@@ -59,13 +97,15 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
     #clean up
     timeTab$Factor.Name <- rownames(timeTab)
     rownames(timeTab) <- NULL
-    timeTab <- timeTab[,c(3,1,2)]
+    timeTab <- timeTab[, c(3, 1, 2)]
     colnames(timeTab)[2:3] <- c("Mean", 'Std.Dev.')
 
-    for(x in 1:(nrow(timeTab)-2)){
-      timeTab$Factor.Name[x] <- variable_df$Long.Name[which(variable_df$Short.Name == timeTab$Factor.Name[x])]
+    for (x in 1:(nrow(timeTab) - 2)) {
+      timeTab$Factor.Name[x] <- variable_df$Long.Name[which(
+        variable_df$Short.Name == timeTab$Factor.Name[x]
+      )]
     }
-    timeTab$Factor.Name[nrow(timeTab)-1] <- 'Exposure - All Variables'
+    timeTab$Factor.Name[nrow(timeTab) - 1] <- 'Exposure - All Variables'
     timeTab$Factor.Name[nrow(timeTab)] <- 'Exposure - Important Variables'
 
     #make plots
@@ -92,7 +132,7 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
           guide = "none"
         ) +
         ggplot2::scale_x_continuous(limits = c(0.5, 4.5)) +
-        ggplot2::theme_void()+
+        ggplot2::theme_void() +
         ggplot2::theme(
           plot.margin = ggplot2::margin(0, 0, 0, 0) # Remove all internal ggplot whitespace
         )
@@ -100,17 +140,38 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
 
     ##### MAPS
     #load maps
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_maps.RData')) #mapExp
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/variable_exposure_maps.RData'
+    )) #mapExp
     #subset timeseries matrix by rownames
     i <- names(mapExp) %in% names(cW)
     mapSub <- raster::subset(mapExp, which(i == T))
 
     #load total exposure maps - all vars
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_all.RData')) #totalM
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/total_exposure_maps_all.RData'
+    )) #totalM
     totalAll <- totalM
 
     #load total exposure maps - important vars
-    load(paste0(file.path(getwd(),s, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_subset.RData')) #totalM
+    load(paste0(
+      file.path(getwd(), s, 'Data'),
+      '/',
+      present_time,
+      ' vs ',
+      future_time,
+      '/total_exposure_maps_subset.RData'
+    )) #totalM
     totalImp <- totalM
 
     ##create means and standard deviations
@@ -120,14 +181,16 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
     impSD <- sd(totalImp[], na.rm = T)
 
     spaceMean <- spaceSD <- vector(length = raster::nlayers(mapSub))
-    for(x in 1:raster::nlayers(mapSub)){
+    for (x in 1:raster::nlayers(mapSub)) {
       spaceMean[x] <- mean(raster::subset(mapSub, x)[], na.rm = T)
       spaceSD[x] <- sd(raster::subset(mapSub, x)[], na.rm = T)
     }
     names(spaceMean) <- names(spaceSD) <- names(mapSub)
     spaceMean <- c(spaceMean, allMean, impMean)
     spaceSD <- c(spaceSD, allSD, impSD)
-    names(spaceMean)[(length(spaceMean)-1):length(spaceMean)] <- names(spaceSD)[(length(spaceSD)-1):length(spaceSD)] <- c('expAll', 'expImp')
+    names(spaceMean)[(length(spaceMean) - 1):length(spaceMean)] <- names(
+      spaceSD
+    )[(length(spaceSD) - 1):length(spaceSD)] <- c('expAll', 'expImp')
 
     #make summary table
     spaceTab <- as.data.frame(cbind(spaceMean, spaceSD))
@@ -135,13 +198,15 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
     #clean up
     spaceTab$Factor.Name <- rownames(spaceTab)
     rownames(spaceTab) <- NULL
-    spaceTab <- spaceTab[,c(3,1,2)]
+    spaceTab <- spaceTab[, c(3, 1, 2)]
     colnames(spaceTab)[2:3] <- c("Mean", 'Std.Dev.')
 
-    for(x in 1:(nrow(spaceTab)-2)){
-      spaceTab$Factor.Name[x] <- variable_df$Long.Name[which(variable_df$Short.Name == spaceTab$Factor.Name[x])]
+    for (x in 1:(nrow(spaceTab) - 2)) {
+      spaceTab$Factor.Name[x] <- variable_df$Long.Name[which(
+        variable_df$Short.Name == spaceTab$Factor.Name[x]
+      )]
     }
-    spaceTab$Factor.Name[nrow(spaceTab)-1] <- 'Exposure - All Variables'
+    spaceTab$Factor.Name[nrow(spaceTab) - 1] <- 'Exposure - All Variables'
     spaceTab$Factor.Name[nrow(spaceTab)] <- 'Exposure - Important Variables'
 
     #make plots
@@ -151,7 +216,10 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
       # Extract values from each raster layer
       vals <- lyr[]
 
-      ggplot2::ggplot(data.frame(v = vals), ggplot2::aes(x = v, fill = ggplot2::after_stat(x))) +
+      ggplot2::ggplot(
+        data.frame(v = vals),
+        ggplot2::aes(x = v, fill = ggplot2::after_stat(x))
+      ) +
         ggplot2::geom_histogram(
           breaks = seq(0.5, 4.5, by = 1), # Force exactly 4 bins at 1, 2, 3, 4
           color = "grey25",
@@ -195,7 +263,7 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
         title = "Exposure"
       ) %>%
       gt::tab_options(
-        data_row.padding = gt::px(1)       # force minimal padding between rows
+        data_row.padding = gt::px(1) # force minimal padding between rows
       ) %>%
       # Center all text columns
       gt::cols_align(
@@ -205,13 +273,13 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
       #force plot columns to be bottom aligned
       # Force a specific width so the aspect ratio calculates the height correctly
       gt::cols_width(
-        Factor.Name ~ gt::px(150),                    # Give the labels enough room
-        gt::starts_with("mean") ~ gt::px(60),          # Forces all Mean columns to 80px
-        gt::starts_with("sd") ~ gt::px(60),            # Forces all SD columns to 80px
+        Factor.Name ~ gt::px(150), # Give the labels enough room
+        gt::starts_with("mean") ~ gt::px(60), # Forces all Mean columns to 80px
+        gt::starts_with("sd") ~ gt::px(60), # Forces all SD columns to 80px
         gt::starts_with("dist") ~ gt::px(120)
       ) %>%
       gt::tab_options(
-        heading.padding = gt::px(2),      # Tightens space around title
+        heading.padding = gt::px(2), # Tightens space around title
         column_labels.padding = gt::px(2) # Tightens space around Mean/SD labels
       ) %>%
       gt::tab_style(
@@ -228,7 +296,7 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
           gt::cell_fill(color = "grey75"),
           gt::cell_text(weight = "bold")
         ),
-        locations = gt::cells_body(rows = c(nrow(tabAll)-1, nrow(tabAll)))
+        locations = gt::cells_body(rows = c(nrow(tabAll) - 1, nrow(tabAll)))
       ) %>%
       # highlight the important variables
       gt::tab_style(
@@ -244,7 +312,7 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
           color = "black",
           weight = gt::px(4)
         ),
-        locations = gt::cells_body(rows = c(nrow(tabAll)-1))
+        locations = gt::cells_body(rows = c(nrow(tabAll) - 1))
       ) %>%
       #add "headers" (aka spanners) to distinguish time/space columns
       gt::tab_spanner(
@@ -263,7 +331,9 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
           color = "black",
           weight = gt::px(2)
         ),
-        locations = gt::cells_body(columns = c('Factor.Name', 'dist_time', 'dist_space'))
+        locations = gt::cells_body(
+          columns = c('Factor.Name', 'dist_time', 'dist_space')
+        )
       ) %>%
       #thinner lines everywhere else
       gt::tab_style(
@@ -272,7 +342,9 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
           color = "grey25",
           weight = gt::px(1)
         ),
-        locations = gt::cells_body(columns = c('mean_time', 'sd_time', 'mean_space', 'sd_space'))
+        locations = gt::cells_body(
+          columns = c('mean_time', 'sd_time', 'mean_space', 'sd_space')
+        )
       ) %>%
       #make the column labels pretty
       gt::cols_label(
@@ -290,14 +362,22 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
         locations = gt::cells_body(columns = dist_time),
         fn = function(x) {
           # Increase the height here to px(80) to fill the cell
-          plots <- purrr::map(plot_dist_time, gt::ggplot_image, height = gt::px(40), aspect_ratio = 2.5)
+          plots <- purrr::map(
+            plot_dist_time,
+            gt::ggplot_image,
+            height = gt::px(40),
+            aspect_ratio = 2.5
+          )
 
           # Wrap EACH plot in a bottom-aligned flex container
-          purrr::map(plots, ~gt::html(as.character(paste0(
-            "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42px;'>",
-            .x,
-            "</div>"
-          ))))
+          purrr::map(
+            plots,
+            ~ gt::html(as.character(paste0(
+              "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42px;'>",
+              .x,
+              "</div>"
+            )))
+          )
         }
       ) %>%
       # Apply the Raster Plots to the 7th column
@@ -305,14 +385,22 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
         locations = gt::cells_body(columns = dist_space),
         fn = function(x) {
           # Increase the height here to px(80) to fill the cell
-          plots <- purrr::map(plot_dist_rast, gt::ggplot_image, height = gt::px(40), aspect_ratio = 2.5)
+          plots <- purrr::map(
+            plot_dist_rast,
+            gt::ggplot_image,
+            height = gt::px(40),
+            aspect_ratio = 2.5
+          )
 
           # Wrap EACH plot in a bottom-aligned flex container
-          purrr::map(plots, ~gt::html(as.character(paste0(
-            "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42;'>",
-            .x,
-            "</div>"
-          ))))
+          purrr::map(
+            plots,
+            ~ gt::html(as.character(paste0(
+              "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42;'>",
+              .x,
+              "</div>"
+            )))
+          )
         }
       ) %>%
       #Ensure the vertical-align is still bottom
@@ -324,7 +412,13 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
       gt::tab_source_note(
         source_note = gt::html(paste0(
           "<div style='text-align: center; font-size: 18px; width: 100%; font-weight: bold;'>",
-          "Model Confidence: ", mc.mean, " ( SD:", mc.sd, ") | AUC: ", round(mod.auc,2), "</div>"
+          "Model Confidence: ",
+          mc.mean,
+          " ( SD:",
+          mc.sd,
+          ") | AUC: ",
+          round(mod.auc, 2),
+          "</div>"
         ))
       ) %>%
       #add box
@@ -348,8 +442,16 @@ make_exposure_table <- function(species, present_time, future_time, variable_df,
       )
 
     #Save
-    gt::gtsave(summary.table, paste0(file.path(getwd(),s, 'Figures'), '/', present_time, ' vs ', future_time, '/exposure_summary_table.pdf'))
-
+    gt::gtsave(
+      summary.table,
+      paste0(
+        file.path(getwd(), s, 'Figures'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/exposure_summary_table.pdf'
+      )
+    )
   } #end s
-
 }

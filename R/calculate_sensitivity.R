@@ -23,14 +23,23 @@
 #' #this combines the list of vectors into a data.frame
 #' }
 
-calculate_sensitivity <- function(species_attributes, bootstrap = TRUE, samples = 10000){
+calculate_sensitivity <- function(
+  species_attributes,
+  bootstrap = TRUE,
+  samples = 10000
+) {
   #species_attributes is a list of dataframes, with one data frame per species
   #bootstrap is boolean TRUE/FALSE to trigger bootstrapping
   #samples is the number of samples to use in bootstrapping
 
   #subset by attribute
   attribute.list <- split(species_attributes, species_attributes$Attribute.Name) #make list of data frames with one data frame per list
-  a.scores <- lapply(attribute.list, calculate_attribute_score, bootstrap = bootstrap, samples = samples) #calculate scores for attributes via weighted mean
+  a.scores <- lapply(
+    attribute.list,
+    calculate_attribute_score,
+    bootstrap = bootstrap,
+    samples = samples
+  ) #calculate scores for attributes via weighted mean
   out <- do.call(cbind, a.scores) #combine scores into vector
 
   #apply logic rule and add to vector
@@ -38,6 +47,8 @@ calculate_sensitivity <- function(species_attributes, bootstrap = TRUE, samples 
 
   #clean up vector
   sensitivity.attributes <- as.data.frame(cbind(out, total))
-  colnames(sensitivity.attributes)[dim(sensitivity.attributes)[2]] <- 'Total Sensitivity'
+  colnames(sensitivity.attributes)[dim(sensitivity.attributes)[
+    2
+  ]] <- 'Total Sensitivity'
   return(sensitivity.attributes)
 }

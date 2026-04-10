@@ -14,52 +14,82 @@
 #'
 #' @return No returns. Saves pdf file containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
 
-
-make_sensitivity_table <- function(species, species_col, attribute_names_raw, attribute_names_clean, total_sens_col, certainty_col, raw_data, sensitivity, data_quality, table_dir){
+make_sensitivity_table <- function(
+  species,
+  species_col,
+  attribute_names_raw,
+  attribute_names_clean,
+  total_sens_col,
+  certainty_col,
+  raw_data,
+  sensitivity,
+  data_quality,
+  table_dir
+) {
   #raw_data is a data.frame of sensitivity data from the portal - used for tally counts/distribution plot
   #sensitivity - data.frame with attribute scores, overall sensitivity, and certainty
   #data_quality - data.frame of data quality scores for each attribute
 
-  for(x in species){
+  for (x in species) {
     #subset each data.frame
-    spRaw <- raw_data[raw_data[,species_col] == x,] #raw_data
-    spSens <- sensitivity[sensitivity[,species_col] == x,] #sensitivity
-    spDQ <- data_quality[data_quality[,species_col] == x,] #data_quality
+    spRaw <- raw_data[raw_data[, species_col] == x, ] #raw_data
+    spSens <- sensitivity[sensitivity[, species_col] == x, ] #sensitivity
+    spDQ <- data_quality[data_quality[, species_col] == x, ] #data_quality
 
     #replace final sensitivity with low/moderate/high/v high
-    sens.score <- switch(as.character(spSens[total_sens_col]), '1' = 'Low', '2' = 'Moderate', '3' = "High", '4' = "Very High")
+    sens.score <- switch(
+      as.character(spSens[total_sens_col]),
+      '1' = 'Low',
+      '2' = 'Moderate',
+      '3' = "High",
+      '4' = "Very High"
+    )
 
     #sum tallies (keeping this seperate to help check)
     tally.count <- spRaw %>%
       dplyr::group_by(Attribute.Name) %>%
       dplyr::summarise(
-        A = sum(Scoring.Rank1,na.rm = T), B = sum(Scoring.Rank2,na.rm = T), C = sum(Scoring.Rank3,na.rm = T), D = sum(Scoring.Rank4,na.rm = T)
+        A = sum(Scoring.Rank1, na.rm = T),
+        B = sum(Scoring.Rank2, na.rm = T),
+        C = sum(Scoring.Rank3, na.rm = T),
+        D = sum(Scoring.Rank4, na.rm = T)
       ) %>%
       dplyr::arrange(Attribute.Name) %>%
       dplyr::rowwise()
 
     #format for matching/plotting
     plot_data <- tally.count %>%
-      dplyr::mutate(p = list(
-        data.frame(x=c("A","B","C","D"), y=c(A,B,C,D)) %>%
-          ggplot2::ggplot(ggplot2::aes(x, y, fill=x)) +
-          ggplot2::geom_col(show.legend=FALSE, width = 0.95, color = 'grey25', linewidth = 4) +
-          ggplot2::scale_fill_manual(values=c("green", "yellow", "orange", "red")) +
-          ggplot2::theme_void()+
-          ggplot2::theme(
-            plot.margin = ggplot2::margin(0, 0, 0, 0) # Remove all internal ggplot whitespace
-          )
-      )
+      dplyr::mutate(
+        p = list(
+          data.frame(x = c("A", "B", "C", "D"), y = c(A, B, C, D)) %>%
+            ggplot2::ggplot(ggplot2::aes(x, y, fill = x)) +
+            ggplot2::geom_col(
+              show.legend = FALSE,
+              width = 0.95,
+              color = 'grey25',
+              linewidth = 4
+            ) +
+            ggplot2::scale_fill_manual(
+              values = c("green", "yellow", "orange", "red")
+            ) +
+            ggplot2::theme_void() +
+            ggplot2::theme(
+              plot.margin = ggplot2::margin(0, 0, 0, 0) # Remove all internal ggplot whitespace
+            )
+        )
       ) %>%
       dplyr::pull(p)
 
     #make summary table
-    tab <- as.data.frame(cbind(t(spSens[,attribute_names_raw]), t(spDQ[,attribute_names_raw])))
+    tab <- as.data.frame(cbind(
+      t(spSens[, attribute_names_raw]),
+      t(spDQ[, attribute_names_raw])
+    ))
     tab <- round(tab, 2)
     #clean up
     tab$Attribute.Name <- rownames(tab)
     rownames(tab) <- NULL
-    tab <- tab[,c(3,1,2)]
+    tab <- tab[, c(3, 1, 2)]
     colnames(tab)[2:3] <- c("expert.scores", 'data_quality')
     tab$Attribute.Name <- attribute_names_clean #clean up attribute names for table
 
@@ -72,7 +102,7 @@ make_sensitivity_table <- function(species, species_col, attribute_names_raw, at
         title = 'Sensitivity',
       ) %>%
       gt::tab_options(
-        data_row.padding = gt::px(1)       # force minimal padding between rows
+        data_row.padding = gt::px(1) # force minimal padding between rows
       ) %>%
       # Center all text columns
       gt::cols_align(
@@ -82,13 +112,13 @@ make_sensitivity_table <- function(species, species_col, attribute_names_raw, at
       #force plot columns to be bottom aligned
       # Force a specific width so the aspect ratio calculates the height correctly
       gt::cols_width(
-        Attribute.Name ~ gt::px(240),                    # Give the labels enough room
-        expert.scores ~ gt::px(60),          # Forces all Mean columns to 80px
-        data_quality ~ gt::px(60),            # Forces all SD columns to 80px
+        Attribute.Name ~ gt::px(240), # Give the labels enough room
+        expert.scores ~ gt::px(60), # Forces all Mean columns to 80px
+        data_quality ~ gt::px(60), # Forces all SD columns to 80px
         dist_chart ~ gt::px(120)
       ) %>%
       gt::tab_options(
-        heading.padding = gt::px(2),      # Tightens space around title
+        heading.padding = gt::px(2), # Tightens space around title
         column_labels.padding = gt::px(2) # Tightens space around Mean/SD labels
       ) %>%
       gt::tab_style(
@@ -121,14 +151,22 @@ make_sensitivity_table <- function(species, species_col, attribute_names_raw, at
       gt::text_transform(
         locations = gt::cells_body(columns = dist_chart),
         fn = function(x) {
-         plots <- purrr::map(plot_data, gt::ggplot_image, height = gt::px(40), aspect_ratio = 2.5)
+          plots <- purrr::map(
+            plot_data,
+            gt::ggplot_image,
+            height = gt::px(40),
+            aspect_ratio = 2.5
+          )
 
           # Wrap EACH plot in a bottom-aligned flex container
-          purrr::map(plots, ~gt::html(as.character(paste0(
-            "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42px;'>",
-            .x,
-            "</div>"
-          ))))
+          purrr::map(
+            plots,
+            ~ gt::html(as.character(paste0(
+              "<div style='display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 42px;'>",
+              .x,
+              "</div>"
+            )))
+          )
         }
       ) %>%
       gt::cols_label(
@@ -145,8 +183,14 @@ make_sensitivity_table <- function(species, species_col, attribute_names_raw, at
       gt::tab_source_note(
         source_note = gt::html(paste0(
           "<div style='text-align: center; font-size: 18px; width: 100%; font-weight: bold;'>",
-          "Total Sensitivity: ", sens.score, " (", spSens[,total_sens_col], ") | Certainty: ", round(spSens[,certainty_col],2), "</div>"
-      ))
+          "Total Sensitivity: ",
+          sens.score,
+          " (",
+          spSens[, total_sens_col],
+          ") | Certainty: ",
+          round(spSens[, certainty_col], 2),
+          "</div>"
+        ))
       ) %>%
       gt::tab_options(
         # Change the font size (standard is usually 9px or 10px)
@@ -184,7 +228,9 @@ make_sensitivity_table <- function(species, species_col, attribute_names_raw, at
       )
 
     #save
-    gt::gtsave(summary.table, paste0(table_dir, '/sensitivity_table_', gsub(' ', '', x), '.pdf'))
-} #end x
-
+    gt::gtsave(
+      summary.table,
+      paste0(table_dir, '/sensitivity_table_', gsub(' ', '', x), '.pdf')
+    )
+  } #end x
 }

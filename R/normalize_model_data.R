@@ -8,24 +8,23 @@
 #'
 #' @return a list whose length is equal to the length of \code{raw_list}, where each item in the list is a rasterStack of normalized data associated with that variable
 
-
-normalize_model_data <- function(raw_list, avg_list, sd_list, short_names){
+normalize_model_data <- function(raw_list, avg_list, sd_list, short_names) {
   normList <- vector(mode = 'list', length = length(raw_list))
 
-  for(x in 1:length(raw_list)){
+  for (x in 1:length(raw_list)) {
     v <- raw_list[[x]]
     avgs <- avg_list[[x]]
     sds <- sd_list[[x]]
 
     ##normalize data to monthly averages
-    mth <- rep(1:12, times = raster::nlayers(v)/12) #creates repeating list of 1:12 for each year
+    mth <- rep(1:12, times = raster::nlayers(v) / 12) #creates repeating list of 1:12 for each year
     #normalize data
     norm <- NULL
-    for(m in 1:raster::nlayers(v)){
+    for (m in 1:raster::nlayers(v)) {
       #subset both rasterbricks
-      subX <- raster::subset(v,m)
-      subA <- raster::subset(avgs,mth[m])
-      subS <- raster::subset(sds,mth[m])
+      subX <- raster::subset(v, m)
+      subA <- raster::subset(avgs, mth[m])
+      subS <- raster::subset(sds, mth[m])
 
       nm <- (subX - subA) / subS
       norm <- abind::abind(as.array(nm), norm, along = 3)
@@ -40,5 +39,4 @@ normalize_model_data <- function(raw_list, avg_list, sd_list, short_names){
   names(normList) <- short_names #set names of lists
 
   return(normList)
-
 } #end function

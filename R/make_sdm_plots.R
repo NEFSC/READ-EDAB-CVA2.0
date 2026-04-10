@@ -11,176 +11,335 @@
 #'
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 
-
-make_sdm_plots <- function(species, type = c('ensemble', 'weights', 'importance', 'residuals'), yr_min, yr_max, coastline, bathy, model_metrics){
-
+make_sdm_plots <- function(
+  species,
+  type = c('ensemble', 'weights', 'importance', 'residuals'),
+  yr_min,
+  yr_max,
+  coastline,
+  bathy,
+  model_metrics
+) {
   #determine what to plot
   ind <- c('ensemble', 'weights', 'importance', 'residuals') %in% type
 
-  for(s in species){
-
+  for (s in species) {
     message(paste0("Plotting SDM Plots for ", s, "..."))
 
-      if(ind[1]){
-        message(paste("Plotting Ensemble SDM..."))
-        #plot ensemble model results
-          load(paste0(getwd(), '/', s, '/output_rasters/ENSEMBLE_', yr_min, '_', yr_max, '.RData')) #abund
+    if (ind[1]) {
+      message(paste("Plotting Ensemble SDM..."))
+      #plot ensemble model results
+      load(paste0(
+        getwd(),
+        '/',
+        s,
+        '/output_rasters/ENSEMBLE_',
+        yr_min,
+        '_',
+        yr_max,
+        '.RData'
+      )) #abund
 
-          #avg ensemble HSM
-          avgHSM <- vector(mode = 'list', length = 12)
-          for(y in 1:12){
-            mn <- seq(y, length(abund), by = 12)
-            MNS <- raster::stack(abund[mn])
-            avgHSM[[y]] <- raster::calc(MNS, fun = mean, na.rm = T)
-          } #end for
-          avgHSM <- raster::stack(avgHSM)
-          names(avgHSM) <- month.abb
+      #avg ensemble HSM
+      avgHSM <- vector(mode = 'list', length = 12)
+      for (y in 1:12) {
+        mn <- seq(y, length(abund), by = 12)
+        MNS <- raster::stack(abund[mn])
+        avgHSM[[y]] <- raster::calc(MNS, fun = mean, na.rm = T)
+      } #end for
+      avgHSM <- raster::stack(avgHSM)
+      names(avgHSM) <- month.abb
 
-          avgHSM <- replace(avgHSM, abs(bathy) > 1000, NA)
+      avgHSM <- replace(avgHSM, abs(bathy) > 1000, NA)
 
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/mean_SDM_', yr_min, '_', yr_max, '.pdf'), width = 8, height = 11)
-          par(mfrow=c(4,3), mar = c(3,3,1,0))
-          for(y in 1:12){
-            plot(raster::subset(avgHSM, y), zlim = c(0,1), col = cmocean::cmocean('matter')(64), legend = F, legend.mar = 0)
-            plot(coastline['id'], col = 'grey', add = T)
-            legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
-          }
-          fields::image.plot(matrix(seq(0,1,by = 0.1), 11,11), legend.only = T, horizontal = T, legend.shrink = 0.7,
-                             smallplot = c(0.4, 0.8, 0.25, 0.35),
-                             legend.args = list(text = 'Probability of\nOccurance', cex = 0.75, side = 3, line = 0.1),
-                             axis.args = list(cex.axis =1, mgp = c(3, 0.5, 0)), col = cmocean::cmocean('matter')(64))
-          dev.off()
+      pdf(
+        paste0(
+          file.path(getwd(), s, 'figures'),
+          '/mean_SDM_',
+          yr_min,
+          '_',
+          yr_max,
+          '.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      for (y in 1:12) {
+        plot(
+          raster::subset(avgHSM, y),
+          zlim = c(0, 1),
+          col = cmocean::cmocean('matter')(64),
+          legend = F,
+          legend.mar = 0
+        )
+        plot(coastline['id'], col = 'grey', add = T)
+        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+      }
+      fields::image.plot(
+        matrix(seq(0, 1, by = 0.1), 11, 11),
+        legend.only = T,
+        horizontal = T,
+        legend.shrink = 0.7,
+        smallplot = c(0.4, 0.8, 0.25, 0.35),
+        legend.args = list(
+          text = 'Probability of\nOccurance',
+          cex = 0.75,
+          side = 3,
+          line = 0.1
+        ),
+        axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
+        col = cmocean::cmocean('matter')(64)
+      )
+      dev.off()
 
-          #clear large objects to help with memory
-          rm(abund)
+      #clear large objects to help with memory
+      rm(abund)
     } #end sdm results
 
-      if(ind[2]){
-        message(paste("Plotting component model weights & AUC..."))
+    if (ind[2]) {
+      message(paste("Plotting component model weights & AUC..."))
 
-        #create 'clean' names
-        model_metrics$Name <- gsub(' ', '', model_metrics$Common.Name)
+      #create 'clean' names
+      model_metrics$Name <- gsub(' ', '', model_metrics$Common.Name)
 
-        #make model weight barplots
-          m <- as.matrix(model_metrics[which(model_metrics$Name == s), c(12:16)])
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/component_model_weights.pdf'), width = 6, height = 6)
-          barplot(m, names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'), ylab = 'Weight', xlab = 'Component Model', ylim = c(0, 0.3))
-          box()
-          dev.off()
+      #make model weight barplots
+      m <- as.matrix(model_metrics[which(model_metrics$Name == s), c(12:16)])
+      pdf(
+        paste0(
+          file.path(getwd(), s, 'figures'),
+          '/component_model_weights.pdf'
+        ),
+        width = 6,
+        height = 6
+      )
+      barplot(
+        m,
+        names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
+        ylab = 'Weight',
+        xlab = 'Component Model',
+        ylim = c(0, 0.3)
+      )
+      box()
+      dev.off()
 
-          aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/component_model_aucs.pdf'), width = 6, height = 6)
-          barplot(aucs, names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'), ylab = 'AUC', xlab = 'Component Model', ylim = c(0, 1))
-          box()
-          dev.off()
+      aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
+      pdf(
+        paste0(file.path(getwd(), s, 'figures'), '/component_model_aucs.pdf'),
+        width = 6,
+        height = 6
+      )
+      barplot(
+        aucs,
+        names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
+        ylab = 'AUC',
+        xlab = 'Component Model',
+        ylim = c(0, 1)
+      )
+      box()
+      dev.off()
     } #end weights
 
-      if(ind[3]){
-        message(paste("Plotting variable importance..."))
-        #make radar importance plots
-          load(paste0(getwd(), '/', s,'/pa_clean.RData')) #dfC
-          flist <- dir(paste0(getwd(), '/', s, '/model_output/importance'), full.names = T)
-          flistClean <- dir(paste0(getwd(), '/', s, '/model_output/importance/'), full.names = F)
+    if (ind[3]) {
+      message(paste("Plotting variable importance..."))
+      #make radar importance plots
+      load(paste0(getwd(), '/', s, '/pa_clean.RData')) #dfC
+      flist <- dir(
+        paste0(getwd(), '/', s, '/model_output/importance'),
+        full.names = T
+      )
+      flistClean <- dir(
+        paste0(getwd(), '/', s, '/model_output/importance/'),
+        full.names = F
+      )
 
-          #set up data frame
-          vars <- names(dfC)[-c(1:3)]
-          dfI <- as.data.frame(matrix(nrow = length(flist), ncol = length(vars)))
-          colnames(dfI) <- vars
+      #set up data frame
+      vars <- names(dfC)[-c(1:3)]
+      dfI <- as.data.frame(matrix(nrow = length(flist), ncol = length(vars)))
+      colnames(dfI) <- vars
 
-          for(x in 1:length(flist)){
-            load(flist[x]) #imp
-            if(inherits(imp,'data.frame')){
-              imp.vec <- imp$rel.inf ### need to remove spatial variables
-              names(imp.vec) <- imp$var
-              for(y in 1:length(names(imp.vec))){
-                if(names(imp.vec)[y] %in% vars){
-                  i <- which(vars == names(imp.vec)[y])
-                  dfI[x,i] <- imp.vec[y]
-                }
-              }
-            } else {
-              for(y in 1:length(names(imp))){
-                if(names(imp)[y] %in% vars){
-                  i <- which(vars == names(imp)[y])
-                  dfI[x,i] <- imp[y]
-                }
-              }
+      for (x in 1:length(flist)) {
+        load(flist[x]) #imp
+        if (inherits(imp, 'data.frame')) {
+          imp.vec <- imp$rel.inf ### need to remove spatial variables
+          names(imp.vec) <- imp$var
+          for (y in 1:length(names(imp.vec))) {
+            if (names(imp.vec)[y] %in% vars) {
+              i <- which(vars == names(imp.vec)[y])
+              dfI[x, i] <- imp.vec[y]
             }
-            #print(x)
           }
+        } else {
+          for (y in 1:length(names(imp))) {
+            if (names(imp)[y] %in% vars) {
+              i <- which(vars == names(imp)[y])
+              dfI[x, i] <- imp[y]
+            }
+          }
+        }
+        #print(x)
+      }
 
-          rownames(dfI) <- gsub('.RData', '', flistClean)
+      rownames(dfI) <- gsub('.RData', '', flistClean)
 
-          dfI <- replace(dfI, is.na(dfI), 0)
+      dfI <- replace(dfI, is.na(dfI), 0)
 
-          dfI <- t(apply(dfI, 1, FUN = function(x){x/sum(x)}))
+      dfI <- t(apply(dfI, 1, FUN = function(x) {
+        x / sum(x)
+      }))
 
-          dfI <- rbind(rep(max(dfI,na.rm = T), ncol(dfI)), rep(0, ncol(dfI)), dfI)
+      dfI <- rbind(rep(max(dfI, na.rm = T), ncol(dfI)), rep(0, ncol(dfI)), dfI)
 
-          pal <- RColorBrewer::brewer.pal(n = 5, 'Set1')
+      pal <- RColorBrewer::brewer.pal(n = 5, 'Set1')
 
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/variable_importance_radars.pdf'), width = 8, height = 11)
-          par(mfrow=c(2,1), mar = c(1,4,1,4))
-          fmsb::radarchart(as.data.frame(dfI), pfcol = scales::alpha(pal, 0.1), pty = 15:19, pcol = scales::alpha(pal, 1), plty = 1, title = "Component Models", vlcex = 1.25)
-          legend('topleft', legend = rownames(dfI)[3:7], lty = 1, col = pal, pch = 15:19, bty = 'n')
-          #}
-          #add weighted mean from ensemble
-          load(paste0(getwd(), '/', s, '/model_output/ensemble_weights.RData'))
-          dfW <- dfI[-c(1,2), ]
-          ws <- apply(dfW, MARGIN = 2, FUN = weighted.mean, w = weights, na.rm = T)
-          ws <- rbind(dfI[1:2,], ws)
-          fmsb::radarchart(as.data.frame(ws), pfcol = scales::alpha(pal, 0.5), pty = 19, pcol = scales::alpha(pal, 1), plty = 1, title = 'ENSEMBLE', vlcex = 1.25)
-          dev.off()
+      pdf(
+        paste0(
+          file.path(getwd(), s, 'figures'),
+          '/variable_importance_radars.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
+      fmsb::radarchart(
+        as.data.frame(dfI),
+        pfcol = scales::alpha(pal, 0.1),
+        pty = 15:19,
+        pcol = scales::alpha(pal, 1),
+        plty = 1,
+        title = "Component Models",
+        vlcex = 1.25
+      )
+      legend(
+        'topleft',
+        legend = rownames(dfI)[3:7],
+        lty = 1,
+        col = pal,
+        pch = 15:19,
+        bty = 'n'
+      )
+      #}
+      #add weighted mean from ensemble
+      load(paste0(getwd(), '/', s, '/model_output/ensemble_weights.RData'))
+      dfW <- dfI[-c(1, 2), ]
+      ws <- apply(dfW, MARGIN = 2, FUN = weighted.mean, w = weights, na.rm = T)
+      ws <- rbind(dfI[1:2, ], ws)
+      fmsb::radarchart(
+        as.data.frame(ws),
+        pfcol = scales::alpha(pal, 0.5),
+        pty = 19,
+        pcol = scales::alpha(pal, 1),
+        plty = 1,
+        title = 'ENSEMBLE',
+        vlcex = 1.25
+      )
+      dev.off()
     } #end variable importance plots
 
-      if(ind[4]){
-        message(paste("Plotting residuals..."))
-        #residual plots
-          #model predictions
-          load(paste0(getwd(), '/', s, '/output_rasters/ENSEMBLE_', yr_min, '_', yr_max, '.RData')) #abund
-          abund <- raster::stack(abund)
+    if (ind[4]) {
+      message(paste("Plotting residuals..."))
+      #residual plots
+      #model predictions
+      load(paste0(
+        getwd(),
+        '/',
+        s,
+        '/output_rasters/ENSEMBLE_',
+        yr_min,
+        '_',
+        yr_max,
+        '.RData'
+      )) #abund
+      abund <- raster::stack(abund)
 
-          #observations
-          obs <- raster::stack(paste0(getwd(), '/', s, '/input_rasters/combined_rasters_', yr_min, '_', yr_max, '.nc'))
+      #observations
+      obs <- raster::stack(paste0(
+        getwd(),
+        '/',
+        s,
+        '/input_rasters/combined_rasters_',
+        yr_min,
+        '_',
+        yr_max,
+        '.nc'
+      ))
 
-          #manipulate obs a bit to clean it up
-          names(obs) <- names(abund)
-          obsC <- raster::crop(obs, raster::extent(abund))
-          obsC[obsC == 0] <- NA
-          obsC[obsC == 1] <- 0
-          obsC[obsC == 2] <- 1
+      #manipulate obs a bit to clean it up
+      names(obs) <- names(abund)
+      obsC <- raster::crop(obs, raster::extent(abund))
+      obsC[obsC == 0] <- NA
+      obsC[obsC == 1] <- 0
+      obsC[obsC == 2] <- 1
 
-          resids <- obsC - abund
+      resids <- obsC - abund
 
-          #avg residuals
-          avgR <- vector(mode = 'list', length = 12)
-          for(y in 1:12){
-            mn <- seq(y, raster::nlayers(resids), by = 12)
-            MNS <- raster::subset(resids, mn)
-            avgR[[y]] <- raster::calc(MNS, fun = mean, na.rm = T)
-          } #end for
-          avgR <- raster::stack(avgR)
-          names(avgR) <- month.abb
+      #avg residuals
+      avgR <- vector(mode = 'list', length = 12)
+      for (y in 1:12) {
+        mn <- seq(y, raster::nlayers(resids), by = 12)
+        MNS <- raster::subset(resids, mn)
+        avgR[[y]] <- raster::calc(MNS, fun = mean, na.rm = T)
+      } #end for
+      avgR <- raster::stack(avgR)
+      names(avgR) <- month.abb
 
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/mean_residuals_', yr_min, '_', yr_max, '.pdf'), width = 8, height = 11)
-          par(mfrow=c(4,3), mar = c(3,3,1,0))
-          for(y in 1:12){
-            plot(raster::subset(avgR, y), zlim = c(-1,1), col = cmocean::cmocean('balance')(64), legend = F, legend.mar = 0)
-            plot(coastline['id'], col = 'grey', add = T)
-            legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
-          }
-          fields::image.plot(matrix(seq(-1,1,by = 0.1), 11,11), legend.only = T, horizontal = T, legend.shrink = 0.7,
-                             smallplot = c(0.4, 0.8, 0.25, 0.35),
-                             legend.args = list(text = 'Residuals', cex = 0.75, side = 3, line = 0.1),
-                             axis.args = list(cex.axis =1, mgp = c(3, 0.5, 0)), col = cmocean::cmocean('balance')(64))
-          dev.off()
+      pdf(
+        paste0(
+          file.path(getwd(), s, 'figures'),
+          '/mean_residuals_',
+          yr_min,
+          '_',
+          yr_max,
+          '.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      for (y in 1:12) {
+        plot(
+          raster::subset(avgR, y),
+          zlim = c(-1, 1),
+          col = cmocean::cmocean('balance')(64),
+          legend = F,
+          legend.mar = 0
+        )
+        plot(coastline['id'], col = 'grey', add = T)
+        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+      }
+      fields::image.plot(
+        matrix(seq(-1, 1, by = 0.1), 11, 11),
+        legend.only = T,
+        horizontal = T,
+        legend.shrink = 0.7,
+        smallplot = c(0.4, 0.8, 0.25, 0.35),
+        legend.args = list(
+          text = 'Residuals',
+          cex = 0.75,
+          side = 3,
+          line = 0.1
+        ),
+        axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
+        col = cmocean::cmocean('balance')(64)
+      )
+      dev.off()
 
-          pdf(paste0(file.path(getwd(),s, 'figures'), '/histogram_residuals_', yr_min, '_', yr_max, '.pdf'), width = 6, height = 6)
-          hist(resids[], main = '', xlab = 'Residuals')
-          dev.off()
+      pdf(
+        paste0(
+          file.path(getwd(), s, 'figures'),
+          '/histogram_residuals_',
+          yr_min,
+          '_',
+          yr_max,
+          '.pdf'
+        ),
+        width = 6,
+        height = 6
+      )
+      hist(resids[], main = '', xlab = 'Residuals')
+      dev.off()
 
-          rm(abund, obs) #clear out large data objects to help with looping
+      rm(abund, obs) #clear out large data objects to help with looping
     } #end residuals
   }
-
 }
