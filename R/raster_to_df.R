@@ -23,18 +23,24 @@
 #' abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
 #' }
 
-raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask){
-
+raster_to_df <- function(
+  rasts,
+  static_variables,
+  bathy_raster,
+  bathy_max,
+  mask
+) {
   #make static vars (month/year) into rasters
   r <- raster::subset(rasts[[1]][[1]], 1)
-  rlon<-rlat<-r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
-  xy<- raster::xyFromCell(r,1:length(r)) #matrix of longitudes (x) and latitudes(y)
-  rlon[]<-xy[,1] #raster of longitudes
-  rlat[]<-xy[,2] #raster of latitides
+  rlon <- rlat <- r #copy r to rlon and rlat rasters [1]][1]which will contain the longitude and latitude
+  xy <- raster::xyFromCell(r, 1:length(r)) #matrix of longitudes (x) and latitudes(y)
+  rlon[] <- xy[, 1] #raster of longitudes
+  rlat[] <- xy[, 2] #raster of latitides
   rMonth <- rYear <- r
 
   allDF <- NULL
-  for(x in 1:raster::nlayers(rasts[[1]][[1]])){ #all the rasters in rasts have the same number of layers so it doesn't matter which one we call
+  for (x in 1:raster::nlayers(rasts[[1]][[1]])) {
+    #all the rasters in rasts have the same number of layers so it doesn't matter which one we call
 
     #may need to change if names aren't always going to be month.year
     mm.year <- strsplit(names(rasts[[1]][[1]])[x], split = '[.]') #all the rasterbricks in normVars also have the same names so again, doesn't matter which one we call
@@ -45,7 +51,7 @@ raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask)
     rYear[] <- yr
 
     nStack <- vector(mode = 'list', length = length(rasts))
-    for(n in 1:length(rasts)){
+    for (n in 1:length(rasts)) {
       nStack[[n]] <- raster::subset(rasts[[n]][[1]], x)
     }
     nStack <- c(nStack, static_variables)
@@ -57,19 +63,18 @@ raster_to_df <- function(rasts, static_variables, bathy_raster, bathy_max, mask)
     sr <- raster::stack(rlon, rlat, rMonth, rYear, nStack)
     names(sr)[1:4] <- c("x", "y", "month", "year")
 
-    if(mask){ #if mask == T
+    if (mask) {
+      #if mask == T
       #mask off waters deeper than 1000 m
       #i <- which(names(sr) == bathy_nm)
       sr <- replace(sr, abs(bathy_raster) > bathy_max, NA) #replace values with an absolute value greater than bathy_max with NA
     }
 
     ##convert rasterStack to dataframe to play well with model
-    srDF <- as.data.frame(raster::rasterToPoints(sr)[,-c(1:2)])
-    srDF <- srDF[complete.cases(srDF),]
+    srDF <- as.data.frame(raster::rasterToPoints(sr)[, -c(1:2)])
+    srDF <- srDF[complete.cases(srDF), ]
     allDF <- rbind(allDF, srDF)
   }
 
   return(allDF)
 } #end function
-
-

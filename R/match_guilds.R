@@ -13,12 +13,21 @@
 #'
 #' @return a data frame that contains the static variables listed and only environmental covariates associated with the species' feeding and habitat guilds
 
-
-match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key, feeding_col = 'Feeding.Guild', habitat_key,  habitat_col = 'Habitat.Guild', static_vars = c('x', 'y', 'month', 'year', 'bathy', 'rugosity', 'dist2coast'), pa_col = 'value'){
-
+match_guilds <- function(
+  spp_env,
+  spp,
+  spp_col = 'name',
+  spp_guild,
+  feeding_key,
+  feeding_col = 'Feeding.Guild',
+  habitat_key,
+  habitat_col = 'Habitat.Guild',
+  static_vars = c('x', 'y', 'month', 'year', 'bathy', 'rugosity', 'dist2coast'),
+  pa_col = 'value'
+) {
   guilds <- read.csv(spp_guild) #load in species list
 
-  g <- which(guilds[,spp_col] %in% spp) #find row associated with target species
+  g <- which(guilds[, spp_col] %in% spp) #find row associated with target species
 
   #isolate feeding guild
   fGuild <- guilds[g, feeding_col]
@@ -30,18 +39,16 @@ match_guilds <- function(spp_env, spp, spp_col = 'name', spp_guild, feeding_key,
   #Feeding guilds:
   feeding <- read.csv(feeding_key)
   i <- which(colnames(feeding) == fGuild)
-  fInd <- feeding[nzchar(feeding[,i]), i] #get covariates
-
+  fInd <- feeding[nzchar(feeding[, i]), i] #get covariates
 
   #Habitat guilds:
   habitat <- read.csv(habitat_key)
   i <- which(colnames(habitat) == hGuild)
-  hInd <- habitat[nzchar(habitat[,i]), i] #get covariates
+  hInd <- habitat[nzchar(habitat[, i]), i] #get covariates
 
   ### subset spp_env
   ind <- colnames(spp_env) %in% c(pa_col, static_vars, fInd, hInd)
-  se <- spp_env[,ind]
+  se <- spp_env[, ind]
 
   return(se)
-
 }

@@ -8,9 +8,10 @@
 #' @source https://github.com/elhazen/EcoCast-SciAdv
 
 pseudo_r2_brt <- function(x) {
-  if ("null.deviance" %in% names(x$self.statistics)){
-    d2 <- 1 - (x$self.statistics$resid.deviance / x$self.statistics$null.deviance)
-  } else{
+  if ("null.deviance" %in% names(x$self.statistics)) {
+    d2 <- 1 -
+      (x$self.statistics$resid.deviance / x$self.statistics$null.deviance)
+  } else {
     d2 <- 1 - (x$self.statistics$mean.resid / x$self.statistics$mean.null)
   }
   return(d2)

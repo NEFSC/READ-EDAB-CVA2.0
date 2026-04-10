@@ -17,11 +17,15 @@
 #' #this combines the list of vectors into a data.frame
 #' }
 
-calculate_model_confidence <- function(species){
+calculate_model_confidence <- function(species) {
   #calculate mean data quality
   meanConf <- mean(species$Score, na.rm = T)
   sdConf <- sd(species$Score, na.rm = T)
   #format data to fit into eventual csv
-  cn <- as.data.frame(Species = species$Species[1], meanConfidence = meanConf, sdConfidence = sdConf)
+  cn <- as.data.frame(
+    Species = species$Species[1],
+    meanConfidence = meanConf,
+    sdConfidence = sdConf
+  )
   return(cn)
 }

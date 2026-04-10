@@ -10,16 +10,15 @@
 #'
 #' @return vector of Bhattacharyya's coefficients for each variable
 
-bhattacharyya_stat_brt <- function(data, response, vars){
-
+bhattacharyya_stat_brt <- function(data, response, vars) {
   bh <- list()
-  for (i in 1:length(vars)){
-    idx.pres <- which(data[,response] == 1)
-    data.pres <- data[idx.pres,] %>% dplyr::select(vars[i])
+  for (i in 1:length(vars)) {
+    idx.pres <- which(data[, response] == 1)
+    data.pres <- data[idx.pres, ] %>% dplyr::select(vars[i])
     data.pres <- data.pres[!is.na(data.pres)]
 
-    idx.abs <- which(data[,response] == 0)
-    data.abs <- data[idx.abs,] %>% dplyr::select(vars[i])
+    idx.abs <- which(data[, response] == 0)
+    data.abs <- data[idx.abs, ] %>% dplyr::select(vars[i])
     data.abs <- data.abs[!is.na(data.abs)]
 
     bh[[i]] <- bhatt_coeff_brt(data.pres, data.abs)
@@ -28,5 +27,3 @@ bhattacharyya_stat_brt <- function(data, response, vars){
 
   return(bh)
 }
-
-

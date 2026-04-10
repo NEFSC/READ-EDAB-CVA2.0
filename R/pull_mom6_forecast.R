@@ -15,13 +15,22 @@
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
 
-
-pull_mom6_forecast <- function(var_url, req_vars, short_names, gt = 'regrid', of = 'monthly', bounds = c(-78,-65, 35,45), static, release, init, ens){
-
+pull_mom6_forecast <- function(
+  var_url,
+  req_vars,
+  short_names,
+  gt = 'regrid',
+  of = 'monthly',
+  bounds = c(-78, -65, 35, 45),
+  static,
+  release,
+  init,
+  ens
+) {
   vars <- jsonlite::fromJSON(var_url) #turn json file into a list
 
-  long.name <- url <- grid.type <- out.freq <- rl <- init.date <- NULL  #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull
-  for(x in 1:length(vars)){
+  long.name <- url <- grid.type <- out.freq <- rl <- init.date <- NULL #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull
+  for (x in 1:length(vars)) {
     long.name <- c(long.name, vars[[x]]$cefi_long_name)
     grid.type <- c(grid.type, vars[[x]]$cefi_grid_type)
     out.freq <- c(out.freq, vars[[x]]$cefi_output_frequency)
@@ -42,17 +51,28 @@ pull_mom6_forecast <- function(var_url, req_vars, short_names, gt = 'regrid', of
   e <- raster::extent(min(lon), max(lon), min(lat), max(lat)) #extent
   se <- raster::extent(bounds) #extent to subset to
 
-  for(y in 1:length(req_vars)){
-    ind <- which(long.name == req_vars[y] & grid.type == gt & out.freq == of  & rl == release & init.date == init) #find appropriate url for the variable
+  for (y in 1:length(req_vars)) {
+    ind <- which(
+      long.name == req_vars[y] &
+        grid.type == gt &
+        out.freq == of &
+        rl == release &
+        init.date == init
+    ) #find appropriate url for the variable
 
     #load url with netcdf to account for ensemble members
     var <- NULL
     r <- ncdf4::nc_open(url[ind])
     tm <- ncdf4::ncvar_get(r, 'lead')
-    for(m in 1:10){
+    for (m in 1:10) {
       vm <- NULL
-      for(z in 1:length(tm)){
-        v <- ncdf4::ncvar_get(r, names(r$var), start = c(1, 1, z, m), count = c(-1, -1, 1, 1))
+      for (z in 1:length(tm)) {
+        v <- ncdf4::ncvar_get(
+          r,
+          names(r$var),
+          start = c(1, 1, z, m),
+          count = c(-1, -1, 1, 1)
+        )
         vm <- abind::abind(vm, v, along = 3)
       } #end z
       var <- abind::abind(var, vm, along = 4)
@@ -73,10 +93,10 @@ pull_mom6_forecast <- function(var_url, req_vars, short_names, gt = 'regrid', of
 
     #create and set names
     yr <- as.numeric(substr(init, 2, 5))
-    yr10 <- yr+9
+    yr10 <- yr + 9
     nms <- expand.grid(1:12, yr:yr10)
 
-    names(v) <- paste(nms[,1], nms[,2], sep = '.') #set names
+    names(v) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
     raster::extent(v) <- e #set extent
     #subset
     v <- raster::crop(v, se) #this is the rate limiting step
@@ -86,4 +106,3 @@ pull_mom6_forecast <- function(var_url, req_vars, short_names, gt = 'regrid', of
   names(rawList) <- short_names
   return(rawList)
 }
-

@@ -6,26 +6,25 @@
 #'
 #' @return a data.frame containing the prediction outputs from the cross-validation necessary to calculate evaluation metric
 
-
-pull_sdm_preds <- function(cv, model){
-
-  if(model == 'gam' | model == 'maxent'){ #get preds for gam or maxent
+pull_sdm_preds <- function(cv, model) {
+  if (model == 'gam' | model == 'maxent') {
+    #get preds for gam or maxent
     #get evaluation metrics (RMSE & AUC)
-    preds <-cv[[1]]
+    preds <- cv[[1]]
   } #end if gam/maxent
 
-  if(model == 'rf'){
+  if (model == 'rf') {
     preds <- cv #the output from cv is also preds here
     colnames(preds)[6:7] <- c('abund', 'pred')
   } #end if RF
 
-  if(model == 'brt'){
+  if (model == 'brt') {
     ##put obs and predicted together for ensemble
     preds <- data.frame(abund = cv$value, pred = cv$preds)
     #names(preds) <- c('abund', 'pred')
   } #end if BRT
 
-  if(model == 'sdmtmb'){
+  if (model == 'sdmtmb') {
     #change names from sdmTMB preds to make it work with EFHSDM
     #preds <- cv$data
     preds <- cv
@@ -33,5 +32,4 @@ pull_sdm_preds <- function(cv, model){
   } #end if ensemble
 
   return(preds)
-
 }

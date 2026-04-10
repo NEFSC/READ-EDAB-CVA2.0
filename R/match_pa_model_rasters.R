@@ -16,8 +16,12 @@
 #' }
 #'
 
-match_pa_model_rasters <- function(pa_rasters, model_data, add_static = TRUE, static_variables){
-
+match_pa_model_rasters <- function(
+  pa_rasters,
+  model_data,
+  add_static = TRUE,
+  static_variables
+) {
   ###step 1 - convert rasterstack to DF
   ##rasterStacks are bigger than environmental covariates, so subset to match
   rastSub <- raster::crop(pa_rasters, raster::extent(model_data[[1]][[1]]))
@@ -28,20 +32,24 @@ match_pa_model_rasters <- function(pa_rasters, model_data, add_static = TRUE, st
   #split out month and year
   sppDF$variable <- as.character(sppDF$variable)
   my <- strsplit(x = sppDF$variable, split = '[.]')
-  sppDF$month <- unlist(lapply(my, FUN = function(x){x[1]}))
+  sppDF$month <- unlist(lapply(my, FUN = function(x) {
+    x[1]
+  }))
   sppDF$month <- as.numeric(gsub('X', '', sppDF$month))
-  sppDF$year <- as.numeric(unlist(lapply(my, FUN = function(x){x[2]})))
+  sppDF$year <- as.numeric(unlist(lapply(my, FUN = function(x) {
+    x[2]
+  })))
 
   #step 2 - match to environmental data
   nms <- vector(length = length(model_data))
-  for(x in 1:length(model_data)){
+  for (x in 1:length(model_data)) {
     v <- model_data[[x]][[1]] #isolate one environmental variable
 
     vc <- vector(length = nrow(sppDF)) #create empty vector
     #matching by layer
-    for(y in 1:raster::nlayers(v)){
-      i <- which(sppDF[,'variable'] == names(v)[y])#match name of raster layer [which correlates to time] to variable (raster name from spp stack)
-      vc[i] <- raster::extract(subset(v,y), sppDF[i,c('x','y')], fun = mean) #extract value
+    for (y in 1:raster::nlayers(v)) {
+      i <- which(sppDF[, 'variable'] == names(v)[y]) #match name of raster layer [which correlates to time] to variable (raster name from spp stack)
+      vc[i] <- raster::extract(subset(v, y), sppDF[i, c('x', 'y')], fun = mean) #extract value
       #print(x)
     } #end y
     nms[x] <- names(model_data[[x]]) #name vector with name of rasterStack
@@ -50,10 +58,16 @@ match_pa_model_rasters <- function(pa_rasters, model_data, add_static = TRUE, st
   } #end x
   colnames(sppDF)[which(colnames(sppDF) == 'vc')] <- nms
 
-  if(add_static){ #if add_static == True
+  if (add_static) {
+    #if add_static == True
     nmSD <- vector(length = length(static_variables))
-    for(x in 1:length(static_variables)){
-      s <- raster::extract(x = static_variables[[x]], y = sppDF[,c('x','y')], fun = 'mean', method = 'simple')
+    for (x in 1:length(static_variables)) {
+      s <- raster::extract(
+        x = static_variables[[x]],
+        y = sppDF[, c('x', 'y')],
+        fun = 'mean',
+        method = 'simple'
+      )
       nmSD[x] <- names(static_variables)[x]
       sppDF <- cbind(sppDF, s)
       print(names(static_variables)[x])
@@ -62,5 +76,4 @@ match_pa_model_rasters <- function(pa_rasters, model_data, add_static = TRUE, st
   } #end if(add_static)
 
   return(sppDF)
-
 } #end function

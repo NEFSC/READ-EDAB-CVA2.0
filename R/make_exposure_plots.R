@@ -10,150 +10,405 @@
 #'
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 
-
-make_exposure_plots <- function(species, type = c('variable', 'total', 'important', 'radar'), present_time, future_time, variable_df, coastline){
-
+make_exposure_plots <- function(
+  species,
+  type = c('variable', 'total', 'important', 'radar'),
+  present_time,
+  future_time,
+  variable_df,
+  coastline
+) {
   #determine what to plot
   ind <- c('variable', 'total', 'important', 'radar') %in% type
 
-  for(x in species){
-    message(paste0('Plotting ', x , ' Exposure...'))
+  for (x in species) {
+    message(paste0('Plotting ', x, ' Exposure...'))
 
-    if(ind[1]){
+    if (ind[1]) {
       message(paste("Plotting Variable-Specific Exposure..."))
-        ###VARIABLE-LEVEL EXPOSURE
+      ###VARIABLE-LEVEL EXPOSURE
       #load variable weights
-      load(paste0(file.path(getwd(),x, 'Data'), '/combined_variable_weights.RData')) #cW
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/combined_variable_weights.RData'
+      )) #cW
 
       #load maps
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_maps.RData')) #mapExp
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/variable_exposure_maps.RData'
+      )) #mapExp
       #subset timeseries matrix by rownames
       i <- names(mapExp) %in% names(cW)
       mapSub <- raster::subset(mapExp, which(i == T))
 
       #load timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/variable_exposure_timeseries.RData')) #vecExp
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/variable_exposure_timeseries.RData'
+      )) #vecExp
       #subset timeseries matrix by rownames
       i <- rownames(vecExp) %in% names(cW)
-      vecSub <- vecExp[i,]
-
-        #plot
-        pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/variable_exposure_maps_inset_timeseries.pdf'), width = 8, height = 11)
-        #set up panels according to the number of variables
-        if(raster::nlayers(mapSub) < 6){
-          par(mfrow=c(2,3))
-        } else {
-          par(mfrow=c(3,3))
-        }
-
-        for(y in 1:raster::nlayers(mapSub)){
-          #get full name of variable
-          i <- variable_df$Short.Name %in% names(mapSub)[y]
-
-          #map
-          par(plt = c(0.2, 0.9, 0.15, 0.875))
-          plot(raster::subset(mapSub, y), zlim = c(1,4), col = cmocean::cmocean('matter')(4), legend = F, legend.mar = 0, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', main = variable_df$Long.Name[i])
-          axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-          axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
-          plot(coastline['id'], col = 'grey', add = T)
-
-          #inset timeseries
-          par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
-          plot(vecSub[y,], t = 'b', lty = 8, lwd = 0.8, cex = 0.8, pch = y, ylim = c(1, 4), ylab = "", xlab = "", yaxt = 'n', xaxt = 'n')
-          axis(1, at = 1:12, labels = month.abb, las = 2)
-          axis(2, at = 1:4, labels = c('L', "M", "H", "VH"), las = 2, cex.lab = 0.75)
-        }
-
-        if(raster::nlayers(mapSub) != 6){ #add legend on the last one if the number of variables is not 6
-          plot(1:10, t = 'n', axes = F, xaxt = 'n', yaxt = 'n', xlab = '', ylab = '')
-          fields::image.plot(matrix(seq(1,4,length.out = 16), 4,4), legend.only = T, horizontal = F, legend.shrink = 0.7,
-                             smallplot = c(0.4, 0.6, 0.2, 0.8),
-                             legend.args = list(text = 'Exposure', cex = 1.25, side = 3, line = 0.1),
-                             axis.args = list(cex.axis =1, at = 1:4, labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"), mgp = c(3, 0.5, 0)), col = cmocean::cmocean('matter')(4))
-        } else { #if the number of variables is 6, it will still be a 3x3 grid, so put legend in the middle by adding an extra plot
-          plot(1:10, t = 'n', axes = F, xaxt = 'n', yaxt = 'n', xlab = '', ylab = '')
-          plot(1:10, t = 'n', axes = F, xaxt = 'n', yaxt = 'n', xlab = '', ylab = '')
-          fields::image.plot(matrix(seq(1,4,length.out = 16), 4,4), legend.only = T, horizontal = F, legend.shrink = 0.7,
-                             smallplot = c(0.4, 0.6, 0.2, 0.8),
-                             legend.args = list(text = 'Exposure', cex = 1.25, side = 3, line = 0.1),
-                             axis.args = list(cex.axis =1, at = 1:4, labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"), mgp = c(3, 0.5, 0)), col = cmocean::cmocean('matter')(4))
-        }
-
-        dev.off()
-  }
-
-    if(ind[2]){
-      message(paste("Plotting Total Exposure with All Variables..."))
-      ##TOTAL EXPOSURE - ALL VARIABLES
-      #load total map
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_all.RData')) #totalM
-
-      #load total timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_all.RData')) #totalT
+      vecSub <- vecExp[i, ]
 
       #plot
-      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_inset_timeseries_allvars.pdf'), width = 8, height = 11)
-      #map
-      par(fig = c(0, 1, 0, 1))
-      plot(totalM, zlim = c(1,4), col = cmocean::cmocean('matter')(4), ylim = c(35,45), legend = F, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', legend.mar = 0)
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
-      plot(coastline['id'], col = 'grey', add = T)
-      fields::image.plot(matrix(seq(1,4,length.out = 16), 4,4), legend.only = T, horizontal = T, legend.shrink = 0.7,
-                         smallplot = c(0.5, 0.9, 0.15, 0.2),
-                         legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-                         axis.args = list(cex.axis =1, at = 1:4, labels = c('Low', "Moderate", "High", "Very High"), mgp = c(3, 0.5, 0)), col = cmocean::cmocean('matter')(4))
+      pdf(
+        paste0(
+          file.path(getwd(), x, 'Figures'),
+          '/',
+          present_time,
+          ' vs ',
+          future_time,
+          '/variable_exposure_maps_inset_timeseries.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      #set up panels according to the number of variables
+      if (raster::nlayers(mapSub) < 6) {
+        par(mfrow = c(2, 3))
+      } else {
+        par(mfrow = c(3, 3))
+      }
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
-      plot(totalT, t = 'b', lty = 8, lwd = 1.5, pch = 19, ylim = c(1, 4), ylab = "", xlab = "Month", yaxt = 'n', xaxt = 'n')
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(2, at = 1:4, labels = c('Low', "Moderate", "High", "Very High"), las = 2, cex.lab = 0.75)
-      dev.off()
-  }
+      for (y in 1:raster::nlayers(mapSub)) {
+        #get full name of variable
+        i <- variable_df$Short.Name %in% names(mapSub)[y]
 
-    if(ind[3]){
-      message(paste("Plotting Total Exposure with Important Variables..."))
-      ### ONLY IMPORTANT VARS
-      #load total map
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_subset.RData')) #totalM
+        #map
+        par(plt = c(0.2, 0.9, 0.15, 0.875))
+        plot(
+          raster::subset(mapSub, y),
+          zlim = c(1, 4),
+          col = cmocean::cmocean('matter')(4),
+          legend = F,
+          legend.mar = 0,
+          xlab = expression('Longitude (' * degree * ')'),
+          ylab = expression('Latitude (' * degree * ')'),
+          xaxt = 'n',
+          yaxt = 'n',
+          main = variable_df$Long.Name[i]
+        )
+        axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
+        axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+        plot(coastline['id'], col = 'grey', add = T)
 
-      #load total timeseries
-      load(paste0(file.path(getwd(),x, 'Data'), '/', present_time, ' vs ', future_time, '/total_exposure_timeseries_subset.RData')) #totalT
+        #inset timeseries
+        par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
+        plot(
+          vecSub[y, ],
+          t = 'b',
+          lty = 8,
+          lwd = 0.8,
+          cex = 0.8,
+          pch = y,
+          ylim = c(1, 4),
+          ylab = "",
+          xlab = "",
+          yaxt = 'n',
+          xaxt = 'n'
+        )
+        axis(1, at = 1:12, labels = month.abb, las = 2)
+        axis(
+          2,
+          at = 1:4,
+          labels = c('L', "M", "H", "VH"),
+          las = 2,
+          cex.lab = 0.75
+        )
+      }
 
-      #plot
-      pdf(paste0(file.path(getwd(),x, 'Figures'), '/', present_time, ' vs ', future_time, '/total_exposure_maps_inset_timeseries_impvars.pdf'), width = 8, height = 11)
-      #map
-      par(fig = c(0, 1, 0, 1))
-      plot(totalM, zlim = c(1,4), col = cmocean::cmocean('matter')(4), ylim = c(35,45), legend = F, xlab = expression('Longitude ('*degree*')'), ylab = expression('Latitude ('*degree*')'), xaxt = 'n', yaxt = 'n', legend.mar = 0)
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
-      plot(coastline['id'], col = 'grey', add = T)
-      fields::image.plot(matrix(seq(1,4,length.out = 16), 4,4), legend.only = T, horizontal = T, legend.shrink = 0.7,
-                         smallplot = c(0.5, 0.9, 0.15, 0.2),
-                         legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-                         axis.args = list(cex.axis =1, at = 1:4, labels = c('Low', "Moderate", "High", "Very High"), mgp = c(3, 0.5, 0)), col = cmocean::cmocean('matter')(4))
+      if (raster::nlayers(mapSub) != 6) {
+        #add legend on the last one if the number of variables is not 6
+        plot(
+          1:10,
+          t = 'n',
+          axes = F,
+          xaxt = 'n',
+          yaxt = 'n',
+          xlab = '',
+          ylab = ''
+        )
+        fields::image.plot(
+          matrix(seq(1, 4, length.out = 16), 4, 4),
+          legend.only = T,
+          horizontal = F,
+          legend.shrink = 0.7,
+          smallplot = c(0.4, 0.6, 0.2, 0.8),
+          legend.args = list(
+            text = 'Exposure',
+            cex = 1.25,
+            side = 3,
+            line = 0.1
+          ),
+          axis.args = list(
+            cex.axis = 1,
+            at = 1:4,
+            labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"),
+            mgp = c(3, 0.5, 0)
+          ),
+          col = cmocean::cmocean('matter')(4)
+        )
+      } else {
+        #if the number of variables is 6, it will still be a 3x3 grid, so put legend in the middle by adding an extra plot
+        plot(
+          1:10,
+          t = 'n',
+          axes = F,
+          xaxt = 'n',
+          yaxt = 'n',
+          xlab = '',
+          ylab = ''
+        )
+        plot(
+          1:10,
+          t = 'n',
+          axes = F,
+          xaxt = 'n',
+          yaxt = 'n',
+          xlab = '',
+          ylab = ''
+        )
+        fields::image.plot(
+          matrix(seq(1, 4, length.out = 16), 4, 4),
+          legend.only = T,
+          horizontal = F,
+          legend.shrink = 0.7,
+          smallplot = c(0.4, 0.6, 0.2, 0.8),
+          legend.args = list(
+            text = 'Exposure',
+            cex = 1.25,
+            side = 3,
+            line = 0.1
+          ),
+          axis.args = list(
+            cex.axis = 1,
+            at = 1:4,
+            labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"),
+            mgp = c(3, 0.5, 0)
+          ),
+          col = cmocean::cmocean('matter')(4)
+        )
+      }
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
-      plot(totalT, t = 'b', lty = 8, lwd = 1.5, pch = 19, ylim = c(1, 4), ylab = "", xlab = "Month", yaxt = 'n', xaxt = 'n')
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(2, at = 1:4, labels = c('Low', "Moderate", "High", "Very High"), las = 2, cex.lab = 0.75)
       dev.off()
     }
 
-    if(ind[4]){
+    if (ind[2]) {
+      message(paste("Plotting Total Exposure with All Variables..."))
+      ##TOTAL EXPOSURE - ALL VARIABLES
+      #load total map
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/total_exposure_maps_all.RData'
+      )) #totalM
+
+      #load total timeseries
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/total_exposure_timeseries_all.RData'
+      )) #totalT
+
+      #plot
+      pdf(
+        paste0(
+          file.path(getwd(), x, 'Figures'),
+          '/',
+          present_time,
+          ' vs ',
+          future_time,
+          '/total_exposure_maps_inset_timeseries_allvars.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      #map
+      par(fig = c(0, 1, 0, 1))
+      plot(
+        totalM,
+        zlim = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        ylim = c(35, 45),
+        legend = F,
+        xlab = expression('Longitude (' * degree * ')'),
+        ylab = expression('Latitude (' * degree * ')'),
+        xaxt = 'n',
+        yaxt = 'n',
+        legend.mar = 0
+      )
+      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
+      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      plot(coastline['id'], col = 'grey', add = T)
+      fields::image.plot(
+        matrix(seq(1, 4, length.out = 16), 4, 4),
+        legend.only = T,
+        horizontal = T,
+        legend.shrink = 0.7,
+        smallplot = c(0.5, 0.9, 0.15, 0.2),
+        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
+        axis.args = list(
+          cex.axis = 1,
+          at = 1:4,
+          labels = c('Low', "Moderate", "High", "Very High"),
+          mgp = c(3, 0.5, 0)
+        ),
+        col = cmocean::cmocean('matter')(4)
+      )
+
+      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      plot(
+        totalT,
+        t = 'b',
+        lty = 8,
+        lwd = 1.5,
+        pch = 19,
+        ylim = c(1, 4),
+        ylab = "",
+        xlab = "Month",
+        yaxt = 'n',
+        xaxt = 'n'
+      )
+      axis(1, at = 1:12, labels = month.abb, las = 2)
+      axis(
+        2,
+        at = 1:4,
+        labels = c('Low', "Moderate", "High", "Very High"),
+        las = 2,
+        cex.lab = 0.75
+      )
+      dev.off()
+    }
+
+    if (ind[3]) {
+      message(paste("Plotting Total Exposure with Important Variables..."))
+      ### ONLY IMPORTANT VARS
+      #load total map
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/total_exposure_maps_subset.RData'
+      )) #totalM
+
+      #load total timeseries
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/',
+        present_time,
+        ' vs ',
+        future_time,
+        '/total_exposure_timeseries_subset.RData'
+      )) #totalT
+
+      #plot
+      pdf(
+        paste0(
+          file.path(getwd(), x, 'Figures'),
+          '/',
+          present_time,
+          ' vs ',
+          future_time,
+          '/total_exposure_maps_inset_timeseries_impvars.pdf'
+        ),
+        width = 8,
+        height = 11
+      )
+      #map
+      par(fig = c(0, 1, 0, 1))
+      plot(
+        totalM,
+        zlim = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        ylim = c(35, 45),
+        legend = F,
+        xlab = expression('Longitude (' * degree * ')'),
+        ylab = expression('Latitude (' * degree * ')'),
+        xaxt = 'n',
+        yaxt = 'n',
+        legend.mar = 0
+      )
+      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
+      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      plot(coastline['id'], col = 'grey', add = T)
+      fields::image.plot(
+        matrix(seq(1, 4, length.out = 16), 4, 4),
+        legend.only = T,
+        horizontal = T,
+        legend.shrink = 0.7,
+        smallplot = c(0.5, 0.9, 0.15, 0.2),
+        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
+        axis.args = list(
+          cex.axis = 1,
+          at = 1:4,
+          labels = c('Low', "Moderate", "High", "Very High"),
+          mgp = c(3, 0.5, 0)
+        ),
+        col = cmocean::cmocean('matter')(4)
+      )
+
+      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      plot(
+        totalT,
+        t = 'b',
+        lty = 8,
+        lwd = 1.5,
+        pch = 19,
+        ylim = c(1, 4),
+        ylab = "",
+        xlab = "Month",
+        yaxt = 'n',
+        xaxt = 'n'
+      )
+      axis(1, at = 1:12, labels = month.abb, las = 2)
+      axis(
+        2,
+        at = 1:4,
+        labels = c('Low', "Moderate", "High", "Very High"),
+        las = 2,
+        cex.lab = 0.75
+      )
+      dev.off()
+    }
+
+    if (ind[4]) {
       message(paste("Plotting Radar Plot of Relative Variable Importance..."))
       #load variable weights
-      load(paste0(file.path(getwd(),x, 'Data'), '/combined_variable_weights.RData')) #cW
+      load(paste0(
+        file.path(getwd(), x, 'Data'),
+        '/combined_variable_weights.RData'
+      )) #cW
 
       cW <- rbind(rep(1, length(cW)), rep(0, length(cW)), cW)
 
       #plot
-      pdf(paste0(file.path(getwd(),x, 'Figures'), '/dynamic_variable_weights.pdf'), width = 8, height = 8)
+      pdf(
+        paste0(
+          file.path(getwd(), x, 'Figures'),
+          '/dynamic_variable_weights.pdf'
+        ),
+        width = 8,
+        height = 8
+      )
       fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5))
       dev.off()
-
     }
-
   } #end x
-
 }
