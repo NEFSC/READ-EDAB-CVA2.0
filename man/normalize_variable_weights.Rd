@@ -4,7 +4,7 @@
 \alias{normalize_variable_weights}
 \title{Normalize Dynamic Variable Weights}
 \usage{
-normalize_variable_stats::weights(vars, ens_weights, imp_flist)
+normalize_variable_weights(vars, ens_weights, imp_flist)
 }
 \arguments{
 \item{vars}{character vector of variables to generate normalized and averaged ensemble importance for}

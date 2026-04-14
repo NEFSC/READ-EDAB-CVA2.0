@@ -8,6 +8,13 @@
 \description{
 This package provides the tools to build a spatial Climate Vulnerability Assessment. This includes pulling and formatting the necessary MOM6 and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://nefsc.github.io/READ-EDAB-CVA2.0/}
+}
+
+}
 \author{
 \strong{Maintainer}: Katherine Gallagher \email{katherine.gallagher@noaa.gov}
 
