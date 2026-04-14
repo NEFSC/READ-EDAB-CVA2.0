@@ -152,7 +152,7 @@ make_sensitivity_barplots <- function(
       y.max <- length(species.attribute.scorers) * 5
 
       # plot barchart
-      barplot <- barplot(
+      barplot <- graphics::barplot(
         species.attribute.data,
         main = '',
         xlab = '',
@@ -315,7 +315,7 @@ make_sensitivity_barplots <- function(
           y.max <- length(species.attribute.scorers) * 5
 
           # plot barchart
-          barplot <- barplot(
+          barplot <- graphics::barplot(
             species.attribute.data,
             main = '',
             xlab = '',

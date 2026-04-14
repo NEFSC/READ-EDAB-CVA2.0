@@ -113,7 +113,7 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      barplot(
+      graphics::barplot(
         m,
         names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
         ylab = 'Weight',
@@ -129,7 +129,7 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      barplot(
+      graphics::barplot(
         aucs,
         names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
         ylab = 'AUC',
