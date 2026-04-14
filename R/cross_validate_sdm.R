@@ -217,7 +217,7 @@ cross_validate_sdm <- function(
           )
 
           #predict model
-          predicted <- predict(cv, newdata = test, type = "response")
+          predicted <- stats::predict(cv, newdata = test, type = "response")
           rm(cv) #to help with memory
           #return(predicted)
         }, #end expr

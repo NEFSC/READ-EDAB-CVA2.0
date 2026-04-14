@@ -396,7 +396,7 @@ make_sdm_predictions <- function(
         srDF <- as.data.frame(raster::rasterToPoints(sr)[, -c(1:2)])
         srDF <- srDF[stats::complete.cases(srDF), ]
 
-        pred <- predict(mod, newdata = srDF, type = 'response')
+        pred <- stats::predict(mod, newdata = srDF, type = 'response')
         #sdmpred$prob <- exp(sdmpred$est)/(1+exp(sdmpred$est))
         sp::coordinates(pred) <- ~ x + y
         sp::proj4string(pred) <- sp::CRS("+proj=longlat +datum=WGS84 +no_defs ")
