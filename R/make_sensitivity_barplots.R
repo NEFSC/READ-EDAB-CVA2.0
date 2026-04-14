@@ -188,12 +188,19 @@ make_sensitivity_barplots <- function(
     }
 
     # Add the plot labels
-    mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
-    mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
+    graphics::mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
+    graphics::mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
     if (preliminary == TRUE) {
-      mtext('Preliminary Results', 3, outer = T, line = 4, cex = 1, col = 'red')
+      graphics::mtext(
+        'Preliminary Results',
+        3,
+        outer = T,
+        line = 4,
+        cex = 1,
+        col = 'red'
+      )
     }
-    mtext(species[i], 3, outer = T, line = 2, cex = 1.5) # species title label
+    graphics::mtext(species[i], 3, outer = T, line = 2, cex = 1.5) # species title label
 
     # Add a legend of scorers along the top of plot if the plot_legend parameter equals TRUE
     if (plot_legend == TRUE) {
@@ -351,10 +358,10 @@ make_sensitivity_barplots <- function(
         }
 
         # Labels
-        mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
-        mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
+        graphics::mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
+        graphics::mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
         if (preliminary == TRUE) {
-          mtext(
+          graphics::mtext(
             'Preliminary Results',
             3,
             outer = T,
@@ -363,7 +370,7 @@ make_sensitivity_barplots <- function(
             col = 'red'
           )
         }
-        mtext(species.scored[j], 3, outer = T, line = 2, cex = 1.5) # species title label
+        graphics::mtext(species.scored[j], 3, outer = T, line = 2, cex = 1.5) # species title label
 
         # plot legend of scorers along top of plot
         # only plot for scorer we are giving this to
