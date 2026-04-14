@@ -126,7 +126,7 @@ calculate_sdm_variable_importance <- function(
     fit_null <- sdmTMB::sdmTMB(
       formula(paste0(pa_col, " ~ 1")),
       spatial = "off",
-      family = binomial(link = 'logit'),
+      family = stats::binomial(link = 'logit'),
       data = se,
       mesh = mesh
     )
@@ -152,7 +152,7 @@ calculate_sdm_variable_importance <- function(
         fitSub <- sdmTMB::sdmTMB(
           formula = formula(formSub),
           spatial = "off",
-          family = binomial(link = 'logit'),
+          family = stats::binomial(link = 'logit'),
           data = se,
           mesh = mesh
         )

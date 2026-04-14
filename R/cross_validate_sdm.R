@@ -206,7 +206,7 @@ cross_validate_sdm <- function(
             formula = formula(mod$formula[[1]]),
             data = train,
             mesh = mesh,
-            family = binomial(link = 'logit'),
+            family = stats::binomial(link = 'logit'),
             #spatial = "on",
             spatiotemporal = 'iid',
             time = 'year',
