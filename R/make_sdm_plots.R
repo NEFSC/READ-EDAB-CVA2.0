@@ -120,7 +120,7 @@ make_sdm_plots <- function(
         xlab = 'Component Model',
         ylim = c(0, 0.3)
       )
-      box()
+      graphics::box()
       dev.off()
 
       aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
@@ -136,7 +136,7 @@ make_sdm_plots <- function(
         xlab = 'Component Model',
         ylim = c(0, 1)
       )
-      box()
+      graphics::box()
       dev.off()
     } #end weights
 
