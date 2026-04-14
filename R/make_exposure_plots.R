@@ -97,8 +97,17 @@ make_exposure_plots <- function(
           yaxt = 'n',
           main = variable_df$Long.Name[i]
         )
-        axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-        axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+        graphics::axis(
+          2,
+          at = seq(30, 50, by = 1),
+          labels = seq(30, 50, by = 1),
+          las = 2
+        )
+        graphics::axis(
+          1,
+          at = seq(-85, -65, by = 1),
+          labels = seq(-85, -65, by = 1)
+        )
         plot(coastline['id'], col = 'grey', add = T)
 
         #inset timeseries
@@ -116,8 +125,8 @@ make_exposure_plots <- function(
           yaxt = 'n',
           xaxt = 'n'
         )
-        axis(1, at = 1:12, labels = month.abb, las = 2)
-        axis(
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+        graphics::axis(
           2,
           at = 1:4,
           labels = c('L', "M", "H", "VH"),
@@ -252,8 +261,17 @@ make_exposure_plots <- function(
         yaxt = 'n',
         legend.mar = 0
       )
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      graphics::axis(
+        2,
+        at = seq(30, 50, by = 1),
+        labels = seq(30, 50, by = 1),
+        las = 2
+      )
+      graphics::axis(
+        1,
+        at = seq(-85, -65, by = 1),
+        labels = seq(-85, -65, by = 1)
+      )
       plot(coastline['id'], col = 'grey', add = T)
       fields::image.plot(
         matrix(seq(1, 4, length.out = 16), 4, 4),
@@ -284,8 +302,8 @@ make_exposure_plots <- function(
         yaxt = 'n',
         xaxt = 'n'
       )
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(
+      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+      graphics::axis(
         2,
         at = 1:4,
         labels = c('Low', "Moderate", "High", "Very High"),
@@ -345,8 +363,17 @@ make_exposure_plots <- function(
         yaxt = 'n',
         legend.mar = 0
       )
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      graphics::axis(
+        2,
+        at = seq(30, 50, by = 1),
+        labels = seq(30, 50, by = 1),
+        las = 2
+      )
+      graphics::axis(
+        1,
+        at = seq(-85, -65, by = 1),
+        labels = seq(-85, -65, by = 1)
+      )
       plot(coastline['id'], col = 'grey', add = T)
       fields::image.plot(
         matrix(seq(1, 4, length.out = 16), 4, 4),
@@ -377,8 +404,8 @@ make_exposure_plots <- function(
         yaxt = 'n',
         xaxt = 'n'
       )
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(
+      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+      graphics::axis(
         2,
         at = 1:4,
         labels = c('Low', "Moderate", "High", "Very High"),
