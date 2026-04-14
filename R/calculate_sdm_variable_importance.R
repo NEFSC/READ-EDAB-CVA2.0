@@ -104,7 +104,7 @@ calculate_sdm_variable_importance <- function(
     RDE <- ranger::importance(
       x = mod,
       method = 'altmann',
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF
     )
   } #end if RF
@@ -124,7 +124,7 @@ calculate_sdm_variable_importance <- function(
     ### get relative importance of model using type 3 anova method
     # model with *only* intercept and no random fields:
     fit_null <- sdmTMB::sdmTMB(
-      formula(paste0(pa_col, " ~ 1")),
+      stats::formula(paste0(pa_col, " ~ 1")),
       spatial = "off",
       family = stats::binomial(link = 'logit'),
       data = se,
@@ -150,7 +150,7 @@ calculate_sdm_variable_importance <- function(
 
         # model with *only* variable of choice and no random fields (can get random fields later):
         fitSub <- sdmTMB::sdmTMB(
-          formula = formula(formSub),
+          formula = stats::formula(formSub),
           spatial = "off",
           family = stats::binomial(link = 'logit'),
           data = se,

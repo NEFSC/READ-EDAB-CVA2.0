@@ -133,7 +133,7 @@ cross_validate_sdm <- function(
 
     # cross-validate (this will also run tune.rfsi, but it doesn't give you to the output like the raw code suggests! #rude)
     cv <- meteo::cv.rfsi(
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF,
       data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
       cpus = 1,
@@ -184,7 +184,7 @@ cross_validate_sdm <- function(
 
     se2 <- se[
       stats::complete.cases(se),
-      c(all.vars(formula(mod$formula[[1]])), year_col, xy_col)
+      c(all.vars(stats::formula(mod$formula[[1]])), year_col, xy_col)
     ]
 
     #cross-validation - doing it manually for memory reasons - following format from Braun et al scripts
@@ -203,7 +203,7 @@ cross_validate_sdm <- function(
         expr = {
           #create model
           cv <- sdmTMB::sdmTMB(
-            formula = formula(mod$formula[[1]]),
+            formula = stats::formula(mod$formula[[1]]),
             data = train,
             mesh = mesh,
             family = stats::binomial(link = 'logit'),

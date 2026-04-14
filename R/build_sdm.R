@@ -66,7 +66,7 @@ build_sdm <- function(
 
     #run model
     mod <- EFHSDM::FitGAM(
-      gam.formula = formula(form),
+      gam.formula = stats::formula(form),
       data = se,
       family.gam = "binomial",
       select = T,
@@ -158,7 +158,7 @@ build_sdm <- function(
 
     #tune model
     mod <- meteo::rfsi(
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF,
       data.staid.x.y.z = c('staid', 'X', 'Y'),
       cpus = 1,
@@ -242,7 +242,7 @@ build_sdm <- function(
     tryMod <- tryCatch(
       expr = {
         mod <- sdmTMB::sdmTMB(
-          formula = formula(form),
+          formula = stats::formula(form),
           data = se,
           mesh = mesh,
           family = stats::binomial(link = 'logit'),
@@ -305,7 +305,7 @@ build_sdm <- function(
 
             #re-run sdm
             modS <- sdmTMB::sdmTMB(
-              formula = formula(form),
+              formula = stats::formula(form),
               data = se,
               mesh = mesh,
               family = stats::binomial(link = 'logit'),
