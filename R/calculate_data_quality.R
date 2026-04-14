@@ -18,7 +18,7 @@
 
 calculate_data_quality <- function(species_attributes) {
   #calculate mean data quality
-  dq <- aggregate(
+  dq <- stats::aggregate(
     Data.Quality ~ Attribute.Name,
     data = species_attributes,
     FUN = mean,
