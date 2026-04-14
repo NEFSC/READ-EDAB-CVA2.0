@@ -95,7 +95,12 @@ make_sensitivity_barplots <- function(
     set.seed(i)
 
     # start new plotting page with specified margins and plotting parameters
-    par(mfrow = c(4, 3), oma = c(3, 3, 6, 1), mar = c(2, 3, 2, 1), las = 1)
+    graphics::par(
+      mfrow = c(4, 3),
+      oma = c(3, 3, 6, 1),
+      mar = c(2, 3, 2, 1),
+      las = 1
+    )
 
     # get all the rows with scores for that species
     if (sensitivity == TRUE) {
@@ -265,7 +270,12 @@ make_sensitivity_barplots <- function(
         set.seed(match(species.scored[j], species))
 
         # start new plotting page with specified margins and plotting parameters
-        par(mfrow = c(4, 3), oma = c(3, 3, 6, 1), mar = c(2, 3, 2, 1), las = 1)
+        graphics::par(
+          mfrow = c(4, 3),
+          oma = c(3, 3, 6, 1),
+          mar = c(2, 3, 2, 1),
+          las = 1
+        )
 
         # get all the rows with scores for that species
         if (sensitivity == TRUE) {

@@ -64,7 +64,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
       for (y in 1:12) {
         plot(
           raster::subset(avgHSM, y),
@@ -200,7 +200,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
+      graphics::par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
       fmsb::radarchart(
         as.data.frame(dfI),
         pfcol = scales::alpha(pal, 0.1),
@@ -295,7 +295,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
       for (y in 1:12) {
         plot(
           raster::subset(avgR, y),

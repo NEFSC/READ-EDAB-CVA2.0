@@ -74,9 +74,9 @@ make_exposure_plots <- function(
       )
       #set up panels according to the number of variables
       if (raster::nlayers(mapSub) < 6) {
-        par(mfrow = c(2, 3))
+        graphics::par(mfrow = c(2, 3))
       } else {
-        par(mfrow = c(3, 3))
+        graphics::par(mfrow = c(3, 3))
       }
 
       for (y in 1:raster::nlayers(mapSub)) {
@@ -84,7 +84,7 @@ make_exposure_plots <- function(
         i <- variable_df$Short.Name %in% names(mapSub)[y]
 
         #map
-        par(plt = c(0.2, 0.9, 0.15, 0.875))
+        graphics::par(plt = c(0.2, 0.9, 0.15, 0.875))
         plot(
           raster::subset(mapSub, y),
           zlim = c(1, 4),
@@ -111,7 +111,7 @@ make_exposure_plots <- function(
         plot(coastline['id'], col = 'grey', add = T)
 
         #inset timeseries
-        par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
+        graphics::par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
         plot(
           vecSub[y, ],
           t = 'b',
@@ -248,7 +248,7 @@ make_exposure_plots <- function(
         height = 11
       )
       #map
-      par(fig = c(0, 1, 0, 1))
+      graphics::par(fig = c(0, 1, 0, 1))
       plot(
         totalM,
         zlim = c(1, 4),
@@ -289,7 +289,7 @@ make_exposure_plots <- function(
         col = cmocean::cmocean('matter')(4)
       )
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
       plot(
         totalT,
         t = 'b',
@@ -350,7 +350,7 @@ make_exposure_plots <- function(
         height = 11
       )
       #map
-      par(fig = c(0, 1, 0, 1))
+      graphics::par(fig = c(0, 1, 0, 1))
       plot(
         totalM,
         zlim = c(1, 4),
@@ -391,7 +391,7 @@ make_exposure_plots <- function(
         col = cmocean::cmocean('matter')(4)
       )
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
       plot(
         totalT,
         t = 'b',
