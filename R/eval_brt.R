@@ -61,7 +61,7 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
   if (plot) {
     #pdf(paste("BRT_ROCR_",listnames[i],".pdf",sep=''))
     PredictABEL::plotROC(test_data[, response], pred, colorize = TRUE)
-    #dev.off()
+    #grDevices::dev.off()
   }
 
   bhvals <- bhattacharyya_stat_brt(test_data, response, model$var.names)

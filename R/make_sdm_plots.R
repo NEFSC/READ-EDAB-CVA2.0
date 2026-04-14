@@ -91,7 +91,7 @@ make_sdm_plots <- function(
         axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
         col = cmocean::cmocean('matter')(64)
       )
-      dev.off()
+      grDevices::dev.off()
 
       #clear large objects to help with memory
       rm(abund)
@@ -121,7 +121,7 @@ make_sdm_plots <- function(
         ylim = c(0, 0.3)
       )
       graphics::box()
-      dev.off()
+      grDevices::dev.off()
 
       aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
       pdf(
@@ -137,7 +137,7 @@ make_sdm_plots <- function(
         ylim = c(0, 1)
       )
       graphics::box()
-      dev.off()
+      grDevices::dev.off()
     } #end weights
 
     if (ind[3]) {
@@ -233,7 +233,7 @@ make_sdm_plots <- function(
         title = 'ENSEMBLE',
         vlcex = 1.25
       )
-      dev.off()
+      grDevices::dev.off()
     } #end variable importance plots
 
     if (ind[4]) {
@@ -322,7 +322,7 @@ make_sdm_plots <- function(
         axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
         col = cmocean::cmocean('balance')(64)
       )
-      dev.off()
+      grDevices::dev.off()
 
       pdf(
         paste0(
@@ -337,7 +337,7 @@ make_sdm_plots <- function(
         height = 6
       )
       graphics::hist(resids[], main = '', xlab = 'Residuals')
-      dev.off()
+      grDevices::dev.off()
 
       rm(abund, obs) #clear out large data objects to help with looping
     } #end residuals

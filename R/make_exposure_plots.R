@@ -208,7 +208,7 @@ make_exposure_plots <- function(
         )
       }
 
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[2]) {
@@ -310,7 +310,7 @@ make_exposure_plots <- function(
         las = 2,
         cex.lab = 0.75
       )
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[3]) {
@@ -412,7 +412,7 @@ make_exposure_plots <- function(
         las = 2,
         cex.lab = 0.75
       )
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[4]) {
@@ -435,7 +435,7 @@ make_exposure_plots <- function(
         height = 8
       )
       fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5))
-      dev.off()
+      grDevices::dev.off()
     }
   } #end x
 }

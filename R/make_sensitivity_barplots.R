@@ -228,7 +228,7 @@ make_sensitivity_barplots <- function(
   #########################################################
   ### Close the plotting window
 
-  dev.off()
+  grDevices::dev.off()
   graphics.off()
 
   if (scorer) {
@@ -404,7 +404,7 @@ make_sensitivity_barplots <- function(
     #########################################################
     ### Close the plotting window
 
-    dev.off()
+    grDevices::dev.off()
     graphics.off()
   } #end scorer
 } # end function
