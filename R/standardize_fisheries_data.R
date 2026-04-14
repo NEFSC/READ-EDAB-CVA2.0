@@ -95,7 +95,7 @@ standardize_fisheries_data <- function(
       #merge datasets
       obsdat <- merge(ob.asm, obsSPP, by = 'NESPP4')
       #remove NAs
-      obsdat <- na.omit(obsdat)
+      obsdat <- stats::na.omit(obsdat)
 
       #fix formatting for YEAR & MONTH (other variables could/should be fixed too but these are the ones we're using at the moment)
       obsdat$YEAR <- as.numeric(obsdat$YEAR)
