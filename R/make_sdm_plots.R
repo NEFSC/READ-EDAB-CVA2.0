@@ -336,7 +336,7 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      hist(resids[], main = '', xlab = 'Residuals')
+      graphics::hist(resids[], main = '', xlab = 'Residuals')
       dev.off()
 
       rm(abund, obs) #clear out large data objects to help with looping
