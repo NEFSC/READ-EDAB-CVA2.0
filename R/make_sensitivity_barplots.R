@@ -74,7 +74,7 @@ make_sensitivity_barplots <- function(
   ### Set up plotting window
 
   # open window of specified size
-  # windows(w=8.5, h=11)
+  # grDevices::windows(w=8.5, h=11)
 
   # save plots as pdf with specified name
   grDevices::pdf(
@@ -242,7 +242,7 @@ make_sensitivity_barplots <- function(
       ### Set up plotting window
 
       # open window of specified size
-      #windows(w=8.5, h=11)
+      #grDevices::windows(w=8.5, h=11)
 
       # save plots as pdf with specified name
       grDevices::pdf(
