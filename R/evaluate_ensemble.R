@@ -16,7 +16,7 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
   #combine csvs
   paDF <- NULL
   for (x in sources) {
-    csv <- read.csv(x)
+    csv <- utils::read.csv(x)
 
     ind <- csv$name %in% nms
     csv$pa <- 0

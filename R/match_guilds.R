@@ -25,7 +25,7 @@ match_guilds <- function(
   static_vars = c('x', 'y', 'month', 'year', 'bathy', 'rugosity', 'dist2coast'),
   pa_col = 'value'
 ) {
-  guilds <- read.csv(spp_guild) #load in species list
+  guilds <- utils::read.csv(spp_guild) #load in species list
 
   g <- which(guilds[, spp_col] %in% spp) #find row associated with target species
 
@@ -37,12 +37,12 @@ match_guilds <- function(
 
   ##isolate covariates for each guild type based on keys
   #Feeding guilds:
-  feeding <- read.csv(feeding_key)
+  feeding <- utils::read.csv(feeding_key)
   i <- which(colnames(feeding) == fGuild)
   fInd <- feeding[nzchar(feeding[, i]), i] #get covariates
 
   #Habitat guilds:
-  habitat <- read.csv(habitat_key)
+  habitat <- utils::read.csv(habitat_key)
   i <- which(colnames(habitat) == hGuild)
   hInd <- habitat[nzchar(habitat[, i]), i] #get covariates
 
