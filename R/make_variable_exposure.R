@@ -14,7 +14,11 @@ make_variable_exposure <- function(type, ranked_exposure, sdm_raster) {
     for (x in 1:length(ranked_exposure)) {
       s <- ranked_exposure[[x]]
 
-      mapExp[[x]] <- weighted.mean(raster::stack(s), w = sdm_raster, na.rm = T)
+      mapExp[[x]] <- stats::weighted.mean(
+        raster::stack(s),
+        w = sdm_raster,
+        na.rm = T
+      )
       # print(x)
     }
     names(mapExp) <- names(ranked_exposure)
@@ -36,7 +40,7 @@ make_variable_exposure <- function(type, ranked_exposure, sdm_raster) {
         hDF <- raster::rasterToPoints(h)
 
         rh <- merge(hDF, rDF, by = c('x', 'y'), all.x = T)
-        meanExp[m] <- weighted.mean(rh[, 4], w = rh[, 3], na.rm = T)
+        meanExp[m] <- stats::weighted.mean(rh[, 4], w = rh[, 3], na.rm = T)
       }
       matExp[x, ] <- meanExp
       #print(x)
