@@ -197,7 +197,7 @@ make_sensitivity_barplots <- function(
 
     # Add a legend of scorers along the top of plot if the plot_legend parameter equals TRUE
     if (plot_legend == TRUE) {
-      legend(
+      graphics::legend(
         -4,
         y.max * 4.96,
         legend = species.scorers,
@@ -368,7 +368,7 @@ make_sensitivity_barplots <- function(
         # plot legend of scorers along top of plot
         # only plot for scorer we are giving this to
         color <- species.colors[match(scorers[i], species.scorers)]
-        legend(
+        graphics::legend(
           -4,
           y.max * 4.96,
           legend = scorers[i],

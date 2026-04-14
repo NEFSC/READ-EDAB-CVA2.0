@@ -74,7 +74,7 @@ make_sdm_plots <- function(
           legend.mar = 0
         )
         plot(coastline['id'], col = 'grey', add = T)
-        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
       }
       fields::image.plot(
         matrix(seq(0, 1, by = 0.1), 11, 11),
@@ -210,7 +210,7 @@ make_sdm_plots <- function(
         title = "Component Models",
         vlcex = 1.25
       )
-      legend(
+      graphics::legend(
         'topleft',
         legend = rownames(dfI)[3:7],
         lty = 1,
@@ -305,7 +305,7 @@ make_sdm_plots <- function(
           legend.mar = 0
         )
         plot(coastline['id'], col = 'grey', add = T)
-        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
       }
       fields::image.plot(
         matrix(seq(-1, 1, by = 0.1), 11, 11),
