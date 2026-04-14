@@ -179,7 +179,7 @@ build_sdm <- function(
   if (model == 'brt') {
     print('Building Boosted Regression Trees...')
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     modAll <- dismo::gbm.step(
       data = se,
@@ -228,7 +228,7 @@ build_sdm <- function(
       }
     } #end for x
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones

@@ -90,7 +90,7 @@ cross_validate_sdm <- function(
 
     #convert dataframe to spatial object
     stDF = sf::st_as_sf(
-      seSub[complete.cases(seSub), ],
+      seSub[stats::complete.cases(seSub), ],
       coords = xy_col,
       crs = 4326,
       agr = "constant"
@@ -155,7 +155,7 @@ cross_validate_sdm <- function(
     ###simplify model before k-fold validations
     #simpBRT <- mod
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
     cv <- eval_kfold_brt(
@@ -183,7 +183,7 @@ cross_validate_sdm <- function(
     #} #end for x
 
     se2 <- se[
-      complete.cases(se),
+      stats::complete.cases(se),
       c(all.vars(formula(mod$formula[[1]])), year_col, xy_col)
     ]
 

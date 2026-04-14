@@ -72,7 +72,7 @@ raster_to_df <- function(
 
     ##convert rasterStack to dataframe to play well with model
     srDF <- as.data.frame(raster::rasterToPoints(sr)[, -c(1:2)])
-    srDF <- srDF[complete.cases(srDF), ]
+    srDF <- srDF[stats::complete.cases(srDF), ]
     allDF <- rbind(allDF, srDF)
   }
 

@@ -115,7 +115,7 @@ calculate_sdm_variable_importance <- function(
   } #end if BRT
 
   if (model == 'sdmtmb') {
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones

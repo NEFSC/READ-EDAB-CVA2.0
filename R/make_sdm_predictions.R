@@ -135,7 +135,7 @@ make_sdm_predictions <- function(
 
     if (model == 'rf') {
       print('Predicting RFSI...')
-      se <- se[complete.cases(se), ]
+      se <- se[stats::complete.cases(se), ]
       se <- cbind(1:nrow(se), se) #stand in station ids
       colnames(se)[1] <- "staid"
       se$month.year <- paste(se[, month_col], se[, year_col], sep = '-')
@@ -347,7 +347,7 @@ make_sdm_predictions <- function(
         }
 
         srDF <- as.data.frame(raster::rasterToPoints(sr))
-        srDF <- srDF[complete.cases(srDF), -c(1:2)]
+        srDF <- srDF[stats::complete.cases(srDF), -c(1:2)]
         p <- gbm::predict.gbm(newdata = srDF, object = mod, type = "response")
 
         hsm[[x]] <- raster::rasterize(x = srDF[, 1:2], y = rYear, field = p)
@@ -394,7 +394,7 @@ make_sdm_predictions <- function(
 
         ##convert rasterStack to dataframe to play well with model
         srDF <- as.data.frame(raster::rasterToPoints(sr)[, -c(1:2)])
-        srDF <- srDF[complete.cases(srDF), ]
+        srDF <- srDF[stats::complete.cases(srDF), ]
 
         pred <- predict(mod, newdata = srDF, type = 'response')
         #sdmpred$prob <- exp(sdmpred$est)/(1+exp(sdmpred$est))

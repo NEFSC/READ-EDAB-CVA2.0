@@ -11,7 +11,7 @@
 evaluate_sdm <- function(preds, model, metric, mod = NULL) {
   if (model == 'gam' | model == 'maxent') {
     #get metrics for gam or maxent model
-    preds2 <- preds[complete.cases(preds), ]
+    preds2 <- preds[stats::complete.cases(preds), ]
     if (metric == 'rmse') {
       #RMSE
       met <- EFHSDM::RMSE(obs = preds2$abund, pred = preds2$cvpred)

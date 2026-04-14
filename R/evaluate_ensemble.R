@@ -69,7 +69,7 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
     paPred <- rbind(paPred, sub)
     #print(x)
   }
-  paPred <- paPred[complete.cases(paPred), ]
+  paPred <- paPred[stats::complete.cases(paPred), ]
 
   #calculate AUC
   Pred <- ROCR::prediction(paPred$pred, paPred$pa)
