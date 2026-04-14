@@ -52,7 +52,7 @@ make_sdm_plots <- function(
 
       avgHSM <- replace(avgHSM, abs(bathy) > 1000, NA)
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/mean_SDM_',
@@ -105,7 +105,7 @@ make_sdm_plots <- function(
 
       #make model weight barplots
       m <- as.matrix(model_metrics[which(model_metrics$Name == s), c(12:16)])
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/component_model_weights.pdf'
@@ -124,7 +124,7 @@ make_sdm_plots <- function(
       grDevices::dev.off()
 
       aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
-      pdf(
+      grDevices::pdf(
         paste0(file.path(getwd(), s, 'figures'), '/component_model_aucs.pdf'),
         width = 6,
         height = 6
@@ -192,7 +192,7 @@ make_sdm_plots <- function(
 
       pal <- RColorBrewer::brewer.pal(n = 5, 'Set1')
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/variable_importance_radars.pdf'
@@ -283,7 +283,7 @@ make_sdm_plots <- function(
       avgR <- raster::stack(avgR)
       names(avgR) <- month.abb
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/mean_residuals_',
@@ -324,7 +324,7 @@ make_sdm_plots <- function(
       )
       grDevices::dev.off()
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/histogram_residuals_',

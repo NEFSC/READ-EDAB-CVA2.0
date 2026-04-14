@@ -60,7 +60,7 @@ make_exposure_plots <- function(
       vecSub <- vecExp[i, ]
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -235,7 +235,7 @@ make_exposure_plots <- function(
       )) #totalT
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -337,7 +337,7 @@ make_exposure_plots <- function(
       )) #totalT
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -426,7 +426,7 @@ make_exposure_plots <- function(
       cW <- rbind(rep(1, length(cW)), rep(0, length(cW)), cW)
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/dynamic_variable_weights.pdf'

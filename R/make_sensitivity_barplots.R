@@ -77,7 +77,7 @@ make_sensitivity_barplots <- function(
   # windows(w=8.5, h=11)
 
   # save plots as pdf with specified name
-  pdf(
+  grDevices::pdf(
     paste(plots_name, '.pdf', sep = ''),
     pointsize = 12,
     width = 8.5,
@@ -245,7 +245,7 @@ make_sensitivity_barplots <- function(
       #windows(w=8.5, h=11)
 
       # save plots as pdf with specified name
-      pdf(
+      grDevices::pdf(
         paste(scorer_dir, '/', scorers[i], '.pdf', sep = ''),
         pointsize = 12,
         width = 8.5,
