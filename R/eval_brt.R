@@ -60,7 +60,7 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
 
   if (plot) {
     #grDevices::pdf(paste("BRT_ROCR_",listnames[i],".pdf",sep=''))
-    PredictABEL::plotROC(test_data[, response], pred, colorize = TRUE)
+    PredictABEL::PredictABEL::plotROC(test_data[, response], pred, colorize = TRUE)
     #grDevices::dev.off()
   }
 
