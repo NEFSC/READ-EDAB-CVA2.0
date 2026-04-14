@@ -169,7 +169,7 @@ make_sensitivity_barplots <- function(
       # print the name of the attribute/factor on the plot
       # also print the data quality score if that is specific as TRUE by the plot_data_quality parameter
       if (plot_data_quality == TRUE) {
-        title(
+        graphics::title(
           main = paste(
             attributes[j],
             "\nData quality mean=",
@@ -182,7 +182,7 @@ make_sensitivity_barplots <- function(
           line = 0.3
         )
       } else {
-        title(
+        graphics::title(
           main = attributes[j],
           adj = 0.05,
           font.main = 1,
@@ -344,7 +344,7 @@ make_sensitivity_barplots <- function(
           # print the name of the sensitivity attribute/exposure factor
           # also print the data quality score if that is specific as TRUE by the plot_data_quality parameter
           if (plot_data_quality == TRUE) {
-            title(
+            graphics::title(
               main = paste(
                 attributes[k],
                 "\nData quality mean=",
@@ -357,7 +357,7 @@ make_sensitivity_barplots <- function(
               line = 0.3
             )
           } else {
-            title(
+            graphics::title(
               main = attributes[k],
               adj = 0.05,
               font.main = 1,
