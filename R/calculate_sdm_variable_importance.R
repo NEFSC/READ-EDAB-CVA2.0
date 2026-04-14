@@ -157,7 +157,7 @@ calculate_sdm_variable_importance <- function(
           mesh = mesh
         )
 
-        RDE[y] <- 1 - deviance(fitSub) / deviance(fit_null)
+        RDE[y] <- 1 - stats::deviance(fitSub) / stats::deviance(fit_null)
         print(y)
       } #end if
     } #end for
