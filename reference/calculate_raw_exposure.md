@@ -1,0 +1,28 @@
+# Calculate Raw Exposure from Environmental Data
+
+Calculates the raw variables exposure as the ratio of the difference
+between future and present conditions, divided by present standard
+deviations (a z-score).
+
+## Usage
+
+``` r
+calculate_raw_exposure(present_rasters, future_rasters)
+```
+
+## Arguments
+
+- present_rasters, future_rasters:
+
+  lists of rasterStacks, representing the present and future timeseries
+  to calculate exposure with, with each item in the list corresponding
+  to an environmental variable. Both lists need to have the same length
+  (aka number of variables) but the lengths of the timeseries (equal to
+  the number of layers in rasterStacks) can differ. Function assumes
+  that the rasters are monthly timeseries and will average monthly.
+
+## Value
+
+a list of rasterStacks with each layer representing monthly raw
+exposure. The length of the list is equal to the length of the lists
+supplied as `present_rasters` and `future_rasters`

@@ -1,0 +1,105 @@
+# Package index
+
+## All functions
+
+- [`apply_sensitivity_logic_rule()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/apply_sensitivity_logic_rule.md)
+  : Calculate Total Sensitivity Score with the Logic Rule
+- [`avg_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/avg_model_data.md)
+  : Average Model Data
+- [`bhatt_coeff_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhatt_coeff_brt.md)
+  : Bhattacharyya Coefficient of two distributions
+- [`bhattacharyya_stat_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhattacharyya_stat_brt.md)
+  : Bhattacharyya's coefficient test
+- [`build_fisheries_raster()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/build_fisheries_raster.md)
+  : Convert Standardized Fisheries Data into Presence/Absence/Effort
+  Raster
+- [`build_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/build_sdm.md)
+  : Build Component or Ensemble Species Distribution Models
+- [`calculate_attribute_score()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_attribute_score.md)
+  : Calculate Attribute Scores
+- [`calculate_data_quality()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_data_quality.md)
+  : Calculate Data Quality Scores for each Attribute & Species
+- [`calculate_directionality()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_directionality.md)
+  : Calculate Directionality Score
+- [`calculate_directionality_certainty()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_directionality_certainty.md)
+  : Calculate Certainty on Bootstrapped Directionality Scores
+- [`calculate_distribution_shifts()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_distribution_shifts.md)
+  : Calculate Change in Distribution Metrics
+- [`calculate_model_confidence()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_model_confidence.md)
+  : Calculate Model Confidence Score for each Species
+- [`calculate_raw_exposure()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_raw_exposure.md)
+  : Calculate Raw Exposure from Environmental Data
+- [`calculate_sdm_variable_importance()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_sdm_variable_importance.md)
+  : Calculate Variable Importance
+- [`calculate_sensitivity()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_sensitivity.md)
+  : Calculate Sensitivity
+- [`calculate_sensitivity_certainty()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_sensitivity_certainty.md)
+  : Calculate Certainty on Bootstrapped Sensitivity Scores
+- [`cross_validate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/cross_validate_sdm.md)
+  : Component Model Cross-Validation
+- [`eval_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_brt.md)
+  : Calculate BRT model evaluation statistics
+- [`eval_kfold_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_kfold_brt.md)
+  : K-fold BRT fit
+- [`evaluate_ensemble()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_ensemble.md)
+  : Test the Ensemble Model with Observations
+- [`evaluate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_sdm.md)
+  : Calculate Performance Metric
+- [`make_evaluation_csv()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_evaluation_csv.md)
+  : Create a spreadsheet containing all SDM performance metrics
+- [`make_exposure_plots()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_exposure_plots.md)
+  : Make Plots of Exposure Results
+- [`make_exposure_table()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_exposure_table.md)
+  : Make Exposure Summary Table
+- [`make_sdm_plots()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_sdm_plots.md)
+  : Make Plots for Species Distribution Models
+- [`make_sdm_predictions()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_sdm_predictions.md)
+  : Predict Component or Ensemble SDM
+- [`make_sdm_reports()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_sdm_reports.md)
+  : Render Species Distribution Model (SDM) reports
+- [`make_sensitivity_barplots()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_sensitivity_barplots.md)
+  : Make Sensitivity Barplot Reports
+- [`make_sensitivity_table()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_sensitivity_table.md)
+  : Make Sensitivity Table
+- [`make_total_exposure()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_total_exposure.md)
+  : Make Map or Timeseries of Total Species-Specific Exposure
+- [`make_variable_exposure()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_variable_exposure.md)
+  : Make Maps or Timeseries of Variable-Specific Exposure
+- [`match_guilds()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/match_guilds.md)
+  : Subset Species/Environmental Dataset to Ecologically-Relevant
+  Dynamic Variables
+- [`match_pa_model_rasters()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/match_pa_model_rasters.md)
+  : Match Species and Model Rasters and Create a Data Frame
+- [`merge_fisheries_rasters()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/merge_fisheries_rasters.md)
+  : Merge Fisheries Presence/Absence/Effort Rasters
+- [`normalize_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/normalize_model_data.md)
+  : Normalize Model Data
+- [`normalize_variable_weights()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/normalize_variable_weights.md)
+  : Normalize Dynamic Variable Weights
+- [`predict_to_raster()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/predict_to_raster.md)
+  : Convert Predicted Values in Data.Frame to Rasters
+- [`pseudo_r2_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pseudo_r2_brt.md)
+  : calculate Pseudo-R2 for BRT
+- [`pull_mom6_forecast()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pull_mom6_forecast.md)
+  : Pull MOM6 Forecast Data
+- [`pull_mom6_hindcast()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pull_mom6_hindcast.md)
+  : Pull MOM6 Hindcast Data
+- [`pull_sdm_preds()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pull_sdm_preds.md)
+  : Pull Predicted Values from SDMs CV
+- [`rank_exposure()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/rank_exposure.md)
+  : Rank Raw Environmental Exposure
+- [`raster_to_df()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/raster_to_df.md)
+  : Convert Environmental Rasters to a Data.Frame
+- [`remove_corr()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/remove_corr.md)
+  : Remove Correlated Environmental Covariates from
+  Species/Environmental Data Frame
+- [`save_auc_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/save_auc_brt.md)
+  : Calculate Area under the Curve (AUC) for BRT models
+- [`save_tss_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/save_tss_brt.md)
+  : Calculate True Skill Statistic (TSS) for BRT models
+- [`sd_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/sd_model_data.md)
+  : Calculate Standard Deviation on MOM6 Data
+- [`set_binary_pa()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/set_binary_pa.md)
+  : Convert Species/Environmental Data Frame to Presence/Absence
+- [`standardize_fisheries_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/standardize_fisheries_data.md)
+  : Standardize Fisheries Dependent and Independent Datasets
