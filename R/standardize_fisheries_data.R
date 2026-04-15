@@ -95,7 +95,7 @@ standardize_fisheries_data <- function(
       #merge datasets
       obsdat <- merge(ob.asm, obsSPP, by = 'NESPP4')
       #remove NAs
-      obsdat <- na.omit(obsdat)
+      obsdat <- stats::na.omit(obsdat)
 
       #fix formatting for YEAR & MONTH (other variables could/should be fixed too but these are the ones we're using at the moment)
       obsdat$YEAR <- as.numeric(obsdat$YEAR)
@@ -144,7 +144,7 @@ standardize_fisheries_data <- function(
       ### build raster from CSV data from state/other surveys
       print('Standardizing CSV Data...')
 
-      s <- read.csv(csv) #read in each csv
+      s <- utils::read.csv(csv) #read in each csv
       s$time <- as.POSIXct(s[, csv_columns[4]]) #pull time
       s$month <- lubridate::month(s$time) #make month
       s$year <- lubridate::year(s$time) #make year

@@ -21,7 +21,7 @@ Wrapper function that calculate species sensitivity using \code{attribute_score}
 }
 \examples{
 \dontrun{
-data <-read.csv('expert_scores.csv') #sensitivity data from FSCVA Portal
+data <-utils::read.csv('expert_scores.csv') #sensitivity data from FSCVA Portal
 species.data.list <- split(data, data$Stock.Name)
 species.sensitivity <- lapply(species.data.list, calculate.sensitivity, bootstrap = F)
 speciesDF <- do.call(rbind, species.sensitivity)

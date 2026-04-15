@@ -7,7 +7,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' data <-read.csv('expert_scores.csv') #sensitivity data from FSCVA Portal
+#' data <-utils::read.csv('expert_scores.csv') #sensitivity data from FSCVA Portal
 #' species.data.list <- split(data, data$Stock.Name)
 #'
 #' species.dqs <- lapply(species.data.list, calculate_data_quality)
@@ -18,7 +18,7 @@
 
 calculate_data_quality <- function(species_attributes) {
   #calculate mean data quality
-  dq <- aggregate(
+  dq <- stats::aggregate(
     Data.Quality ~ Attribute.Name,
     data = species_attributes,
     FUN = mean,

@@ -74,10 +74,10 @@ make_sensitivity_barplots <- function(
   ### Set up plotting window
 
   # open window of specified size
-  # windows(w=8.5, h=11)
+  # grDevices::windows(w=8.5, h=11)
 
   # save plots as pdf with specified name
-  pdf(
+  grDevices::pdf(
     paste(plots_name, '.pdf', sep = ''),
     pointsize = 12,
     width = 8.5,
@@ -95,7 +95,12 @@ make_sensitivity_barplots <- function(
     set.seed(i)
 
     # start new plotting page with specified margins and plotting parameters
-    par(mfrow = c(4, 3), oma = c(3, 3, 6, 1), mar = c(2, 3, 2, 1), las = 1)
+    graphics::par(
+      mfrow = c(4, 3),
+      oma = c(3, 3, 6, 1),
+      mar = c(2, 3, 2, 1),
+      las = 1
+    )
 
     # get all the rows with scores for that species
     if (sensitivity == TRUE) {
@@ -152,7 +157,7 @@ make_sensitivity_barplots <- function(
       y.max <- length(species.attribute.scorers) * 5
 
       # plot barchart
-      barplot <- barplot(
+      barplot <- graphics::barplot(
         species.attribute.data,
         main = '',
         xlab = '',
@@ -164,7 +169,7 @@ make_sensitivity_barplots <- function(
       # print the name of the attribute/factor on the plot
       # also print the data quality score if that is specific as TRUE by the plot_data_quality parameter
       if (plot_data_quality == TRUE) {
-        title(
+        graphics::title(
           main = paste(
             attributes[j],
             "\nData quality mean=",
@@ -177,7 +182,7 @@ make_sensitivity_barplots <- function(
           line = 0.3
         )
       } else {
-        title(
+        graphics::title(
           main = attributes[j],
           adj = 0.05,
           font.main = 1,
@@ -188,16 +193,23 @@ make_sensitivity_barplots <- function(
     }
 
     # Add the plot labels
-    mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
-    mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
+    graphics::mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
+    graphics::mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
     if (preliminary == TRUE) {
-      mtext('Preliminary Results', 3, outer = T, line = 4, cex = 1, col = 'red')
+      graphics::mtext(
+        'Preliminary Results',
+        3,
+        outer = T,
+        line = 4,
+        cex = 1,
+        col = 'red'
+      )
     }
-    mtext(species[i], 3, outer = T, line = 2, cex = 1.5) # species title label
+    graphics::mtext(species[i], 3, outer = T, line = 2, cex = 1.5) # species title label
 
     # Add a legend of scorers along the top of plot if the plot_legend parameter equals TRUE
     if (plot_legend == TRUE) {
-      legend(
+      graphics::legend(
         -4,
         y.max * 4.96,
         legend = species.scorers,
@@ -216,8 +228,8 @@ make_sensitivity_barplots <- function(
   #########################################################
   ### Close the plotting window
 
-  dev.off()
-  graphics.off()
+  grDevices::dev.off()
+  grDevices::graphics.off()
 
   if (scorer) {
     ###############################################################
@@ -230,10 +242,10 @@ make_sensitivity_barplots <- function(
       ### Set up plotting window
 
       # open window of specified size
-      #windows(w=8.5, h=11)
+      #grDevices::windows(w=8.5, h=11)
 
       # save plots as pdf with specified name
-      pdf(
+      grDevices::pdf(
         paste(scorer_dir, '/', scorers[i], '.pdf', sep = ''),
         pointsize = 12,
         width = 8.5,
@@ -258,7 +270,12 @@ make_sensitivity_barplots <- function(
         set.seed(match(species.scored[j], species))
 
         # start new plotting page with specified margins and plotting parameters
-        par(mfrow = c(4, 3), oma = c(3, 3, 6, 1), mar = c(2, 3, 2, 1), las = 1)
+        graphics::par(
+          mfrow = c(4, 3),
+          oma = c(3, 3, 6, 1),
+          mar = c(2, 3, 2, 1),
+          las = 1
+        )
 
         # get all the rows with scores for that species
         if (sensitivity == TRUE) {
@@ -315,7 +332,7 @@ make_sensitivity_barplots <- function(
           y.max <- length(species.attribute.scorers) * 5
 
           # plot barchart
-          barplot <- barplot(
+          barplot <- graphics::barplot(
             species.attribute.data,
             main = '',
             xlab = '',
@@ -327,7 +344,7 @@ make_sensitivity_barplots <- function(
           # print the name of the sensitivity attribute/exposure factor
           # also print the data quality score if that is specific as TRUE by the plot_data_quality parameter
           if (plot_data_quality == TRUE) {
-            title(
+            graphics::title(
               main = paste(
                 attributes[k],
                 "\nData quality mean=",
@@ -340,7 +357,7 @@ make_sensitivity_barplots <- function(
               line = 0.3
             )
           } else {
-            title(
+            graphics::title(
               main = attributes[k],
               adj = 0.05,
               font.main = 1,
@@ -351,10 +368,10 @@ make_sensitivity_barplots <- function(
         }
 
         # Labels
-        mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
-        mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
+        graphics::mtext('Ranking', 1, outer = T, line = 0.75, cex = 1.5) # x-axis label
+        graphics::mtext('Score', 2, outer = T, line = 0.75, las = 0, cex = 1.5) # y-axis label
         if (preliminary == TRUE) {
-          mtext(
+          graphics::mtext(
             'Preliminary Results',
             3,
             outer = T,
@@ -363,12 +380,12 @@ make_sensitivity_barplots <- function(
             col = 'red'
           )
         }
-        mtext(species.scored[j], 3, outer = T, line = 2, cex = 1.5) # species title label
+        graphics::mtext(species.scored[j], 3, outer = T, line = 2, cex = 1.5) # species title label
 
         # plot legend of scorers along top of plot
         # only plot for scorer we are giving this to
         color <- species.colors[match(scorers[i], species.scorers)]
-        legend(
+        graphics::legend(
           -4,
           y.max * 4.96,
           legend = scorers[i],
@@ -387,7 +404,7 @@ make_sensitivity_barplots <- function(
     #########################################################
     ### Close the plotting window
 
-    dev.off()
-    graphics.off()
+    grDevices::dev.off()
+    grDevices::graphics.off()
   } #end scorer
 } # end function

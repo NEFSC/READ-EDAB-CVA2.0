@@ -52,7 +52,7 @@ make_sdm_plots <- function(
 
       avgHSM <- replace(avgHSM, abs(bathy) > 1000, NA)
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/mean_SDM_',
@@ -64,7 +64,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
       for (y in 1:12) {
         plot(
           raster::subset(avgHSM, y),
@@ -74,7 +74,7 @@ make_sdm_plots <- function(
           legend.mar = 0
         )
         plot(coastline['id'], col = 'grey', add = T)
-        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
       }
       fields::image.plot(
         matrix(seq(0, 1, by = 0.1), 11, 11),
@@ -91,7 +91,7 @@ make_sdm_plots <- function(
         axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
         col = cmocean::cmocean('matter')(64)
       )
-      dev.off()
+      grDevices::dev.off()
 
       #clear large objects to help with memory
       rm(abund)
@@ -105,7 +105,7 @@ make_sdm_plots <- function(
 
       #make model weight barplots
       m <- as.matrix(model_metrics[which(model_metrics$Name == s), c(12:16)])
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/component_model_weights.pdf'
@@ -113,31 +113,31 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      barplot(
+      graphics::barplot(
         m,
         names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
         ylab = 'Weight',
         xlab = 'Component Model',
         ylim = c(0, 0.3)
       )
-      box()
-      dev.off()
+      graphics::box()
+      grDevices::dev.off()
 
       aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c(7:11)])
-      pdf(
+      grDevices::pdf(
         paste0(file.path(getwd(), s, 'figures'), '/component_model_aucs.pdf'),
         width = 6,
         height = 6
       )
-      barplot(
+      graphics::barplot(
         aucs,
         names = c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'),
         ylab = 'AUC',
         xlab = 'Component Model',
         ylim = c(0, 1)
       )
-      box()
-      dev.off()
+      graphics::box()
+      grDevices::dev.off()
     } #end weights
 
     if (ind[3]) {
@@ -192,7 +192,7 @@ make_sdm_plots <- function(
 
       pal <- RColorBrewer::brewer.pal(n = 5, 'Set1')
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/variable_importance_radars.pdf'
@@ -200,7 +200,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
+      graphics::par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
       fmsb::radarchart(
         as.data.frame(dfI),
         pfcol = scales::alpha(pal, 0.1),
@@ -210,7 +210,7 @@ make_sdm_plots <- function(
         title = "Component Models",
         vlcex = 1.25
       )
-      legend(
+      graphics::legend(
         'topleft',
         legend = rownames(dfI)[3:7],
         lty = 1,
@@ -233,7 +233,7 @@ make_sdm_plots <- function(
         title = 'ENSEMBLE',
         vlcex = 1.25
       )
-      dev.off()
+      grDevices::dev.off()
     } #end variable importance plots
 
     if (ind[4]) {
@@ -283,7 +283,7 @@ make_sdm_plots <- function(
       avgR <- raster::stack(avgR)
       names(avgR) <- month.abb
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/mean_residuals_',
@@ -295,7 +295,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
       for (y in 1:12) {
         plot(
           raster::subset(avgR, y),
@@ -305,7 +305,7 @@ make_sdm_plots <- function(
           legend.mar = 0
         )
         plot(coastline['id'], col = 'grey', add = T)
-        legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
       }
       fields::image.plot(
         matrix(seq(-1, 1, by = 0.1), 11, 11),
@@ -322,9 +322,9 @@ make_sdm_plots <- function(
         axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
         col = cmocean::cmocean('balance')(64)
       )
-      dev.off()
+      grDevices::dev.off()
 
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), s, 'figures'),
           '/histogram_residuals_',
@@ -336,8 +336,8 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      hist(resids[], main = '', xlab = 'Residuals')
-      dev.off()
+      graphics::hist(resids[], main = '', xlab = 'Residuals')
+      grDevices::dev.off()
 
       rm(abund, obs) #clear out large data objects to help with looping
     } #end residuals

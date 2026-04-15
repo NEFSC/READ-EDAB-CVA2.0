@@ -82,9 +82,9 @@ make_exposure_table <- function(
 
     ##create means and standard deviations
     allMean <- mean(totalAll, na.rm = T)
-    allSD <- sd(totalAll, na.rm = T)
+    allSD <- stats::sd(totalAll, na.rm = T)
     impMean <- mean(totalImp, na.rm = T)
-    impSD <- sd(totalImp, na.rm = T)
+    impSD <- stats::sd(totalImp, na.rm = T)
     timeMean <- c(apply(vecSub, 1, FUN = mean, na.rm = T), allMean, impMean)
     timeSD <- c(apply(vecSub, 1, FUN = sd, na.rm = T), allSD, impSD)
     names(timeMean)[(length(timeMean) - 1):length(timeMean)] <- names(timeSD)[
@@ -176,14 +176,14 @@ make_exposure_table <- function(
 
     ##create means and standard deviations
     allMean <- mean(totalAll[], na.rm = T)
-    allSD <- sd(totalAll[], na.rm = T)
+    allSD <- stats::sd(totalAll[], na.rm = T)
     impMean <- mean(totalImp[], na.rm = T)
-    impSD <- sd(totalImp[], na.rm = T)
+    impSD <- stats::sd(totalImp[], na.rm = T)
 
     spaceMean <- spaceSD <- vector(length = raster::nlayers(mapSub))
     for (x in 1:raster::nlayers(mapSub)) {
       spaceMean[x] <- mean(raster::subset(mapSub, x)[], na.rm = T)
-      spaceSD[x] <- sd(raster::subset(mapSub, x)[], na.rm = T)
+      spaceSD[x] <- stats::sd(raster::subset(mapSub, x)[], na.rm = T)
     }
     names(spaceMean) <- names(spaceSD) <- names(mapSub)
     spaceMean <- c(spaceMean, allMean, impMean)

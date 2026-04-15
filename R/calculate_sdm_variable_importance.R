@@ -104,7 +104,7 @@ calculate_sdm_variable_importance <- function(
     RDE <- ranger::importance(
       x = mod,
       method = 'altmann',
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF
     )
   } #end if RF
@@ -115,7 +115,7 @@ calculate_sdm_variable_importance <- function(
   } #end if BRT
 
   if (model == 'sdmtmb') {
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
@@ -124,9 +124,9 @@ calculate_sdm_variable_importance <- function(
     ### get relative importance of model using type 3 anova method
     # model with *only* intercept and no random fields:
     fit_null <- sdmTMB::sdmTMB(
-      formula(paste0(pa_col, " ~ 1")),
+      stats::formula(paste0(pa_col, " ~ 1")),
       spatial = "off",
-      family = binomial(link = 'logit'),
+      family = stats::binomial(link = 'logit'),
       data = se,
       mesh = mesh
     )
@@ -150,14 +150,14 @@ calculate_sdm_variable_importance <- function(
 
         # model with *only* variable of choice and no random fields (can get random fields later):
         fitSub <- sdmTMB::sdmTMB(
-          formula = formula(formSub),
+          formula = stats::formula(formSub),
           spatial = "off",
-          family = binomial(link = 'logit'),
+          family = stats::binomial(link = 'logit'),
           data = se,
           mesh = mesh
         )
 
-        RDE[y] <- 1 - deviance(fitSub) / deviance(fit_null)
+        RDE[y] <- 1 - stats::deviance(fitSub) / stats::deviance(fit_null)
         print(y)
       } #end if
     } #end for

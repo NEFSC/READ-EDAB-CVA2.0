@@ -17,7 +17,7 @@ remove_corr <- function(se, pa_col, xy_col, month_col, year_col) {
       colnames(se) == month_col |
       colnames(se) == year_col
   )
-  corInd <- caret::findCorrelation(cor(se[, -ind]), names = T) #find correlated variables
+  corInd <- caret::findCorrelation(stats::cor(se[, -ind]), names = T) #find correlated variables
   if (length(corInd) != 0) {
     se <- se[, -which(colnames(se) == corInd)]
   }

@@ -16,7 +16,7 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
   #combine csvs
   paDF <- NULL
   for (x in sources) {
-    csv <- read.csv(x)
+    csv <- utils::read.csv(x)
 
     ind <- csv$name %in% nms
     csv$pa <- 0
@@ -69,7 +69,7 @@ evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
     paPred <- rbind(paPred, sub)
     #print(x)
   }
-  paPred <- paPred[complete.cases(paPred), ]
+  paPred <- paPred[stats::complete.cases(paPred), ]
 
   #calculate AUC
   Pred <- ROCR::prediction(paPred$pred, paPred$pa)

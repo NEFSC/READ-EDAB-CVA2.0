@@ -45,13 +45,13 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
   summarystats$FalseNeg <- mean(pred[test_data[, response] == 1])
   summarystats$Accuracy <- unname(cm$overall['Accuracy'])
 
-  summarystats$median_pred_at_pres <- median(gbm::predict.gbm(
+  summarystats$median_pred_at_pres <- stats::median(gbm::predict.gbm(
     model,
     test_data[which(test_data[, response] == 1), ],
     n.trees = model$gbm.call$best.trees,
     type = "response"
   ))
-  summarystats$median_pred_at_abs <- median(gbm::predict.gbm(
+  summarystats$median_pred_at_abs <- stats::median(gbm::predict.gbm(
     model,
     test_data[which(test_data[, response] == 0), ],
     n.trees = model$gbm.call$best.trees,
@@ -59,9 +59,9 @@ eval_brt <- function(model, test_data, response, plot = TRUE) {
   ))
 
   if (plot) {
-    #pdf(paste("BRT_ROCR_",listnames[i],".pdf",sep=''))
+    #grDevices::pdf(paste("BRT_ROCR_",listnames[i],".pdf",sep=''))
     PredictABEL::plotROC(test_data[, response], pred, colorize = TRUE)
-    #dev.off()
+    #grDevices::dev.off()
   }
 
   bhvals <- bhattacharyya_stat_brt(test_data, response, model$var.names)
