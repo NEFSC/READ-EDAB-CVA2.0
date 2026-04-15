@@ -90,7 +90,7 @@ cross_validate_sdm <- function(
 
     #convert dataframe to spatial object
     stDF = sf::st_as_sf(
-      seSub[complete.cases(seSub), ],
+      seSub[stats::complete.cases(seSub), ],
       coords = xy_col,
       crs = 4326,
       agr = "constant"
@@ -133,7 +133,7 @@ cross_validate_sdm <- function(
 
     # cross-validate (this will also run tune.rfsi, but it doesn't give you to the output like the raw code suggests! #rude)
     cv <- meteo::cv.rfsi(
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF,
       data.staid.x.y.z = c('staid', 'X', 'Y', 'year'),
       cpus = 1,
@@ -155,7 +155,7 @@ cross_validate_sdm <- function(
     ###simplify model before k-fold validations
     #simpBRT <- mod
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #k-fold validation code from Camrin Brawn (WHOI): https://zenodo.org/records/7971532
     cv <- eval_kfold_brt(
@@ -183,8 +183,8 @@ cross_validate_sdm <- function(
     #} #end for x
 
     se2 <- se[
-      complete.cases(se),
-      c(all.vars(formula(mod$formula[[1]])), year_col, xy_col)
+      stats::complete.cases(se),
+      c(all.vars(stats::formula(mod$formula[[1]])), year_col, xy_col)
     ]
 
     #cross-validation - doing it manually for memory reasons - following format from Braun et al scripts
@@ -203,10 +203,10 @@ cross_validate_sdm <- function(
         expr = {
           #create model
           cv <- sdmTMB::sdmTMB(
-            formula = formula(mod$formula[[1]]),
+            formula = stats::formula(mod$formula[[1]]),
             data = train,
             mesh = mesh,
-            family = binomial(link = 'logit'),
+            family = stats::binomial(link = 'logit'),
             #spatial = "on",
             spatiotemporal = 'iid',
             time = 'year',
@@ -217,7 +217,7 @@ cross_validate_sdm <- function(
           )
 
           #predict model
-          predicted <- predict(cv, newdata = test, type = "response")
+          predicted <- stats::predict(cv, newdata = test, type = "response")
           rm(cv) #to help with memory
           #return(predicted)
         }, #end expr

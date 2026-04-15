@@ -76,7 +76,7 @@ make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
       file.path(getwd(), spp_list$Name[x], 'model_output'),
       '/ensemble_weights.RData'
     )) #weights
-    aucW <- weighted.mean(eval, weights)
+    aucW <- stats::weighted.mean(eval, weights)
 
     #correct length of eval if SDMTMB didn't converge (doing this now because if SDMTMB didn't converge, the length of both weights and eval will be right so we don't need to correct until now)
     if (!any(grepl('SDMTMB', evalFlist))) {

@@ -60,7 +60,7 @@ make_exposure_plots <- function(
       vecSub <- vecExp[i, ]
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -74,9 +74,9 @@ make_exposure_plots <- function(
       )
       #set up panels according to the number of variables
       if (raster::nlayers(mapSub) < 6) {
-        par(mfrow = c(2, 3))
+        graphics::par(mfrow = c(2, 3))
       } else {
-        par(mfrow = c(3, 3))
+        graphics::par(mfrow = c(3, 3))
       }
 
       for (y in 1:raster::nlayers(mapSub)) {
@@ -84,7 +84,7 @@ make_exposure_plots <- function(
         i <- variable_df$Short.Name %in% names(mapSub)[y]
 
         #map
-        par(plt = c(0.2, 0.9, 0.15, 0.875))
+        graphics::par(plt = c(0.2, 0.9, 0.15, 0.875))
         plot(
           raster::subset(mapSub, y),
           zlim = c(1, 4),
@@ -97,12 +97,21 @@ make_exposure_plots <- function(
           yaxt = 'n',
           main = variable_df$Long.Name[i]
         )
-        axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-        axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+        graphics::axis(
+          2,
+          at = seq(30, 50, by = 1),
+          labels = seq(30, 50, by = 1),
+          las = 2
+        )
+        graphics::axis(
+          1,
+          at = seq(-85, -65, by = 1),
+          labels = seq(-85, -65, by = 1)
+        )
         plot(coastline['id'], col = 'grey', add = T)
 
         #inset timeseries
-        par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
+        graphics::par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
         plot(
           vecSub[y, ],
           t = 'b',
@@ -116,8 +125,8 @@ make_exposure_plots <- function(
           yaxt = 'n',
           xaxt = 'n'
         )
-        axis(1, at = 1:12, labels = month.abb, las = 2)
-        axis(
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+        graphics::axis(
           2,
           at = 1:4,
           labels = c('L', "M", "H", "VH"),
@@ -199,7 +208,7 @@ make_exposure_plots <- function(
         )
       }
 
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[2]) {
@@ -226,7 +235,7 @@ make_exposure_plots <- function(
       )) #totalT
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -239,7 +248,7 @@ make_exposure_plots <- function(
         height = 11
       )
       #map
-      par(fig = c(0, 1, 0, 1))
+      graphics::par(fig = c(0, 1, 0, 1))
       plot(
         totalM,
         zlim = c(1, 4),
@@ -252,8 +261,17 @@ make_exposure_plots <- function(
         yaxt = 'n',
         legend.mar = 0
       )
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      graphics::axis(
+        2,
+        at = seq(30, 50, by = 1),
+        labels = seq(30, 50, by = 1),
+        las = 2
+      )
+      graphics::axis(
+        1,
+        at = seq(-85, -65, by = 1),
+        labels = seq(-85, -65, by = 1)
+      )
       plot(coastline['id'], col = 'grey', add = T)
       fields::image.plot(
         matrix(seq(1, 4, length.out = 16), 4, 4),
@@ -271,7 +289,7 @@ make_exposure_plots <- function(
         col = cmocean::cmocean('matter')(4)
       )
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
       plot(
         totalT,
         t = 'b',
@@ -284,15 +302,15 @@ make_exposure_plots <- function(
         yaxt = 'n',
         xaxt = 'n'
       )
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(
+      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+      graphics::axis(
         2,
         at = 1:4,
         labels = c('Low', "Moderate", "High", "Very High"),
         las = 2,
         cex.lab = 0.75
       )
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[3]) {
@@ -319,7 +337,7 @@ make_exposure_plots <- function(
       )) #totalT
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/',
@@ -332,7 +350,7 @@ make_exposure_plots <- function(
         height = 11
       )
       #map
-      par(fig = c(0, 1, 0, 1))
+      graphics::par(fig = c(0, 1, 0, 1))
       plot(
         totalM,
         zlim = c(1, 4),
@@ -345,8 +363,17 @@ make_exposure_plots <- function(
         yaxt = 'n',
         legend.mar = 0
       )
-      axis(2, at = seq(30, 50, by = 1), labels = seq(30, 50, by = 1), las = 2)
-      axis(1, at = seq(-85, -65, by = 1), labels = seq(-85, -65, by = 1))
+      graphics::axis(
+        2,
+        at = seq(30, 50, by = 1),
+        labels = seq(30, 50, by = 1),
+        las = 2
+      )
+      graphics::axis(
+        1,
+        at = seq(-85, -65, by = 1),
+        labels = seq(-85, -65, by = 1)
+      )
       plot(coastline['id'], col = 'grey', add = T)
       fields::image.plot(
         matrix(seq(1, 4, length.out = 16), 4, 4),
@@ -364,7 +391,7 @@ make_exposure_plots <- function(
         col = cmocean::cmocean('matter')(4)
       )
 
-      par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
+      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
       plot(
         totalT,
         t = 'b',
@@ -377,15 +404,15 @@ make_exposure_plots <- function(
         yaxt = 'n',
         xaxt = 'n'
       )
-      axis(1, at = 1:12, labels = month.abb, las = 2)
-      axis(
+      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+      graphics::axis(
         2,
         at = 1:4,
         labels = c('Low', "Moderate", "High", "Very High"),
         las = 2,
         cex.lab = 0.75
       )
-      dev.off()
+      grDevices::dev.off()
     }
 
     if (ind[4]) {
@@ -399,7 +426,7 @@ make_exposure_plots <- function(
       cW <- rbind(rep(1, length(cW)), rep(0, length(cW)), cW)
 
       #plot
-      pdf(
+      grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures'),
           '/dynamic_variable_weights.pdf'
@@ -408,7 +435,7 @@ make_exposure_plots <- function(
         height = 8
       )
       fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5))
-      dev.off()
+      grDevices::dev.off()
     }
   } #end x
 }

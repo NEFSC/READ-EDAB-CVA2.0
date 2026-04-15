@@ -16,7 +16,7 @@
 #'
 #' #predict sdmTMB model for all data; not for each timestep as in \code{make_sdm_predictions}
 #' #this generates the \code{est} column
-#' pred <- predict(mod, newdata = allDF, type = 'response')
+#' pred <- stats::predict(mod, newdata = allDF, type = 'response')
 #'
 #' #add appropriate month.year (my) column to create rasters
 #' pred$my <- paste(pred$month, pred$year, sep = '.')
@@ -72,7 +72,7 @@ raster_to_df <- function(
 
     ##convert rasterStack to dataframe to play well with model
     srDF <- as.data.frame(raster::rasterToPoints(sr)[, -c(1:2)])
-    srDF <- srDF[complete.cases(srDF), ]
+    srDF <- srDF[stats::complete.cases(srDF), ]
     allDF <- rbind(allDF, srDF)
   }
 

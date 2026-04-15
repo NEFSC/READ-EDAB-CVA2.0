@@ -65,7 +65,7 @@ bhatt_coeff_brt <- function(x, y, bw = bw.nrd0, ...) {
     bin.n <- length(bin.breaks) - 1
   } else {
     #Bin breaks
-    bin.breaks <- hist(c(x, y), breaks = bw, plot = F)$breaks
+    bin.breaks <- graphics::hist(c(x, y), breaks = bw, plot = F)$breaks
     #Bin width
     band.width <- diff(bin.breaks)[1]
     #Number of bins
@@ -73,8 +73,8 @@ bhatt_coeff_brt <- function(x, y, bw = bw.nrd0, ...) {
   }
 
   #Counting the number of elements per bin
-  histx <- hist(x, breaks = bin.breaks, plot = FALSE)[[2]]
-  histy <- hist(y, breaks = bin.breaks, plot = FALSE)[[2]]
+  histx <- graphics::hist(x, breaks = bin.breaks, plot = FALSE)[[2]]
+  histy <- graphics::hist(y, breaks = bin.breaks, plot = FALSE)[[2]]
   #Relative counts
   rel.histx <- histx / sum(histx)
   rel.histy <- histy / sum(histy)

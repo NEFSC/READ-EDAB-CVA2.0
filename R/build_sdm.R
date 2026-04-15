@@ -66,7 +66,7 @@ build_sdm <- function(
 
     #run model
     mod <- EFHSDM::FitGAM(
-      gam.formula = formula(form),
+      gam.formula = stats::formula(form),
       data = se,
       family.gam = "binomial",
       select = T,
@@ -158,7 +158,7 @@ build_sdm <- function(
 
     #tune model
     mod <- meteo::rfsi(
-      formula = formula(form),
+      formula = stats::formula(form),
       data = stDF,
       data.staid.x.y.z = c('staid', 'X', 'Y'),
       cpus = 1,
@@ -179,7 +179,7 @@ build_sdm <- function(
   if (model == 'brt') {
     print('Building Boosted Regression Trees...')
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     modAll <- dismo::gbm.step(
       data = se,
@@ -228,7 +228,7 @@ build_sdm <- function(
       }
     } #end for x
 
-    se <- se[complete.cases(se), ]
+    se <- se[stats::complete.cases(se), ]
 
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
@@ -242,10 +242,10 @@ build_sdm <- function(
     tryMod <- tryCatch(
       expr = {
         mod <- sdmTMB::sdmTMB(
-          formula = formula(form),
+          formula = stats::formula(form),
           data = se,
           mesh = mesh,
-          family = binomial(link = 'logit'),
+          family = stats::binomial(link = 'logit'),
           #spatial = "on",
           spatiotemporal = 'iid',
           time = 'year',
@@ -305,10 +305,10 @@ build_sdm <- function(
 
             #re-run sdm
             modS <- sdmTMB::sdmTMB(
-              formula = formula(form),
+              formula = stats::formula(form),
               data = se,
               mesh = mesh,
-              family = binomial(link = 'logit'),
+              family = stats::binomial(link = 'logit'),
               #spatial = "on",
               spatiotemporal = 'iid',
               time = 'year',
