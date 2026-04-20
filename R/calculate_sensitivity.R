@@ -22,6 +22,8 @@
 #' sensitivityDF <- do.call(rbind, sensitivity.certainty)
 #' #this combines the list of vectors into a data.frame
 #' }
+#'
+#'@export
 
 calculate_sensitivity <- function(
   species_attributes,

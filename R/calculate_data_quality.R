@@ -1,8 +1,8 @@
 #' @title Calculate Data Quality Scores for each Attribute & Species
 #' @description Calculates mean data quality score
-
+#'
 #' @param species_attributes a data frame containing all of the expert scores for one species. See example for how to generate this list from the FCVA output.
-
+#'
 #' @return a vector of mean data quality scores for each attribute with the length of the number of attributes.
 #'
 #' @examples
@@ -15,6 +15,8 @@
 #' speciesDQ <- do.call(rbind, species.dqs)
 #' #this combines the list of vectors into a data.frame
 #' }
+#'
+#'@export
 
 calculate_data_quality <- function(species_attributes) {
   #calculate mean data quality

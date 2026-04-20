@@ -10,6 +10,8 @@
 #' @param model_confidence a data.table containing the model confidence scores for each species.
 #'
 #' @return Function does not return anything. The table is saved to species- and timeframe-specific \code{figures} folder. See manual for directory set up.
+#'
+#'@export
 
 make_exposure_table <- function(
   species,

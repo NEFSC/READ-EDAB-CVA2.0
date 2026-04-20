@@ -6,6 +6,8 @@
 #' @param imp_flist character vector of file paths to variable importance for component models
 #'
 #' @return A vector representing the weighted average of normalized variable importance, representing variable importance in the final ensemble SDM.
+#'
+#'@export
 
 normalize_variable_weights <- function(vars, ens_weights, imp_flist) {
   #set up data frame

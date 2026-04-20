@@ -5,6 +5,8 @@
 #' @param expert_scores output from \code{calculate_sensitivity(bootstrap = FALSE)} to append bootstrap certainty to.
 
 #' @return returns the \code{expert_scores} with a new column called 'Certainty', which includes the percentage of bootstrapped sensitivities that matched the weighted average final sensitivity.
+#'
+#'@export
 
 calculate_sensitivity_certainty <- function(bootstrap_scores, expert_scores) {
   s <- expert_scores$`Total Sensitivity` #pull the value of 1,2,3,4 from expert-derived scores

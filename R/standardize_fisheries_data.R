@@ -8,8 +8,9 @@
 #' @param csv_columns Column names in csv file in the following order: 'towid', 'longitude', 'latitude', 'date', 'count (can be count/abundance/density, etc)', 'name'. Date must be in a format that can be converted to POSIX with as.POSIXct
 #' @param yr_range A vector with length of 2 indicating the start and end, inclusive, year of the desired time series
 #'
-#' @return a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time
+#' @return a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time#'
 #'
+#'@export
 
 standardize_fisheries_data <- function(
   data_type,

@@ -9,6 +9,8 @@
 #' @param coastline shapefile used to plot land in model prediction plots
 #'
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
+#'
+#'@export
 
 make_exposure_plots <- function(
   species,

@@ -13,6 +13,8 @@
 #' @param table_dir file path to folder to save tables in
 #'
 #' @return No returns. Saves pdf file containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
+#'
+#'@export
 
 make_sensitivity_table <- function(
   species,

@@ -32,4 +32,5 @@ sensitivity.certainty <- mapply(bootstrap.certainty, sensitivity.bootstrap,
 sensitivityDF <- do.call(rbind, sensitivity.certainty)
 #this combines the list of vectors into a data.frame
 }
+
 }

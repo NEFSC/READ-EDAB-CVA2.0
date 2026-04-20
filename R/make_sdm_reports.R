@@ -11,6 +11,8 @@
 #' @param report_path character string designating where the reports should be saved
 #'
 #' @return Function does not return anything. Reports are saved to \code{report_path}
+#'
+#'@export
 
 make_sdm_reports <- function(
   species_list,

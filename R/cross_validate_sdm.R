@@ -9,6 +9,8 @@
 #' @param model one of the following indicating the desired model to perform cross validation on: gam, maxent, brt, rf, or sdmtmb
 #'
 #' @return the cross-validation results from the desired model. Objects will differ slightly depending on model type.
+#'
+#'@export
 
 cross_validate_sdm <- function(
   mod,
