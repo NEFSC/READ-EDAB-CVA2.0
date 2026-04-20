@@ -24,7 +24,7 @@ standardize_fisheries_data(
 \item{yr_range}{A vector with length of 2 indicating the start and end, inclusive, year of the desired time series}
 }
 \value{
-a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time
+a data frame. It is recommended to save this as a csv file as pulling survey and observer datasets does take time#'
 }
 \description{
 Pulls and standardizes fisheries independent and dependent datasets from the NEFSC survey and observer programs using ROracle. The function also can open a local CSV file and standardize the output.

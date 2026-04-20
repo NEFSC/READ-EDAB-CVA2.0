@@ -25,4 +25,5 @@ species.dqs <- lapply(species.data.list, calculate_data_quality)
 speciesDQ <- do.call(rbind, species.dqs)
 #this combines the list of vectors into a data.frame
 }
+
 }
