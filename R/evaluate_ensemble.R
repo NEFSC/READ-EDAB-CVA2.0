@@ -9,6 +9,8 @@
 #' @param yr_max end of year range to specify which predictions to use
 #'
 #' @return returns the AUC value for the given model on the new data
+#'
+#'@export
 
 evaluate_ensemble <- function(spp, spp_names, sources, yr_min, yr_max) {
   nms <- strsplit(spp_names, split = ',')[[1]] #seperate out species names

@@ -16,6 +16,8 @@
 #' speciesMC <- do.call(rbind, species.conf)
 #' #this combines the list of vectors into a data.frame
 #' }
+#'
+#'@export
 
 calculate_model_confidence <- function(species) {
   #calculate mean data quality

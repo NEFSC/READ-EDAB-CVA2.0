@@ -6,6 +6,8 @@
 #' @param bootstrap binary TRUE/FALSE to turn on/off bootstrapping of sensitivity scores. Will impact outputs.
 
 #' @return returns the final sensitivity scores based on the logic rule. The output is similar to \code{attribute_score}, where if \code{bootstrap = TRUE}, the function returns a vector containing the final sensitivity score for each sample, and if \code{bootstrap = FALSE}, it returns a single final value.
+#'
+#'@export
 
 apply_sensitivity_logic_rule <- function(attribute_vec, bootstrap) {
   if (bootstrap) {

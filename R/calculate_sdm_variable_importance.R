@@ -9,6 +9,8 @@
 #' @param model one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, or sdmtmb
 #'
 #' @return a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
+#'
+#'@export
 
 calculate_sdm_variable_importance <- function(
   mod,

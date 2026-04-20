@@ -5,6 +5,8 @@
 #' @param raw_list List of output rasters from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
+#'
+#'@export
 
 avg_model_data <- function(raw_list) {
   avgList <- vector(mode = 'list', length = length(raw_list))

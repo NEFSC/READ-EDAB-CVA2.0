@@ -10,6 +10,8 @@
 #' @param ensemble_preds a list of prediction values from component models used to build ensemble model. The list of predictions must have the same length and be in the same order as the corresponding weight vector.
 #'
 #' @return the model object from the desired model. Model objects will differ depending on the model type.
+#'
+#'@export
 
 build_sdm <- function(
   se,

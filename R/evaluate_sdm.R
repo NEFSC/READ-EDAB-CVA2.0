@@ -7,6 +7,8 @@
 #' @param mod the output from \code{build_sdm} - only used for ensemble
 #'
 #' @return the desired evaluation metric for the given model
+#'
+#'@export
 
 evaluate_sdm <- function(preds, model, metric, mod = NULL) {
   if (model == 'gam' | model == 'maxent') {

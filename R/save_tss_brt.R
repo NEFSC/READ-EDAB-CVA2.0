@@ -8,6 +8,8 @@
 #'
 #' @return a numeric value
 #' @source From Camrin Brawn (WHOI): https://zenodo.org/records/7971532.
+#'
+#'@export
 
 save_tss_brt <- function(truth, predicted) {
   pred <- ROCR::prediction(as.vector(abs(predicted)), as.vector(truth))

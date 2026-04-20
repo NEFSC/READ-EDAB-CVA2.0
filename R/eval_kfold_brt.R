@@ -17,6 +17,8 @@
 #' \dontrun{
 #' eval_kfold_brt(data_input_Fit, gbm_x=c("curl","ild", "ssh", "sst","sst_sd"), "presabs")
 #' }
+#'
+#'@export
 
 eval_kfold_brt <- function(
   data_input,

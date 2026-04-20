@@ -7,6 +7,8 @@
 #' @param short_names vector of simplified variable names to help name resulting raster files.
 #'
 #' @return a list whose length is equal to the length of \code{raw_list}, where each item in the list is a rasterStack of normalized data associated with that variable
+#'
+#'@export
 
 normalize_model_data <- function(raw_list, avg_list, sd_list, short_names) {
   normList <- vector(mode = 'list', length = length(raw_list))

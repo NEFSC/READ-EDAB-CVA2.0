@@ -5,6 +5,8 @@
 #'
 #' @return returns a single rasterBrick with the same spatial and temporal resolution as provided rasters. Maximum value should be 2 to ensure that presences are included.
 #'
+#'
+#'@export
 
 merge_fisheries_rasters <- function(raster_list) {
   #merge rasters generated from multiple data types
