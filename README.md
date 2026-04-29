@@ -18,7 +18,7 @@ performing exposure, and sensitivity calculations - for the Climate Vulnerabilit
 The `spatialcva` package can be installed using the following code:
 
 ``` r
-pak::pak("NEFSC/spatialcva")
+pak::pak("NEFSC/READ-EDAB-CVA2.0")
 ```
 
 ## Contact
