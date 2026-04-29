@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Katherine", "Gallagher", , "katherine.gallagher@noaa.gov", role = c("aut", "cre"))
 Description: This package provides the tools to build a spatial Climate Vulnerability Assessment. This includes pulling and formatting the necessary MOM6 and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores. 
-License: MIT + file LICENSE
+License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
