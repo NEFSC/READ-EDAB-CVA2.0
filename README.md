@@ -24,8 +24,8 @@ pak::pak("NEFSC/READ-EDAB-CVA2.0")
 ## Contact
 
 | [Katherine Gallagher](https://github.com/KGallagher7)
-|--------------------------------
-| [![Katherine Gallagher avatar](https://avatars.githubusercontent.com/u/203711305?s=100&v4)](https://github.com/KGallagher7) |
+|:--------------------------------:
+| <a href="https://github.com/KGallagher7"><img src="https://avatars.githubusercontent.com/u/203711305?v=4" alt="Katherine Gallagher avatar" width="100" align="center"></a> |
 
 #### Legal disclaimer
 
