@@ -25,7 +25,7 @@ pak::pak("NEFSC/spatialcva")
 
 | [Katherine Gallagher](https://github.com/KGallagher7)
 |--------------------------------
-| [![](https://avatars.githubusercontent.com/u/203711305?v=4)](https://github.com/KGallagher7) |
+| [![Katherine Gallagher avatar](https://avatars.githubusercontent.com/u/203711305?s=100%v=4)](https://github.com/KGallagher7) |
 
 #### Legal disclaimer
 
