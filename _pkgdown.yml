@@ -3,3 +3,65 @@ url: https://nefsc.github.io/READ-EDAB-CVA2.0/
 template:
   bootstrap: 5
 
+reference:
+- title: "Calculations"
+  desc: "Functions used to calculate scores and metrics"
+- contents:
+  - apply_sensitivity_logic_rule
+  - avg_model_data
+  - build_sdm
+  - calculate_attribute_score
+  - calculate_data_quality
+  - calculate_directionality
+  - calculate_directionality_certainty
+  - calculate_distribution_shifts
+  - calculate_model_confidence
+  - calculate_raw_exposure
+  - calculate_sdm_variable_importance
+  - calculate_sensitivity
+  - calculate_sensitivity_certainty
+  - pseudo_r2_brt
+- title: "Create Outputs"
+  desc: "Functions used to create figures, tables and output files"
+- contents:
+  - make_evaluation_csv
+  - make_exposure_plots
+  - make_exposure_table
+  - make_sdm_plots
+  - make_sdm_predictions
+  - make_sdm_reports
+  - make_sensitivity_barplots
+  - make_sensitivity_table
+  - make_total_exposure
+  - make_variable_exposure
+- title: "Data Processing"
+  desc: "Functions used to pull and process data"
+- contents:
+  - build_fisheries_raster
+  - match_guilds
+  - match_pa_model_rasters
+  - merge_fisheries_rasters
+  - normalize_model_data
+  - normalize_variable_weights
+  - predict_to_raster
+  - pull_mom6_forecast
+  - pull_mom6_hindcast
+  - pull_sdm_preds
+  - rank_exposure
+  - raster_to_df
+  - remove_corr
+  - set_binary_pa
+  - standardize_fisheries_data
+- title: "Statistics & Evaluation"
+  desc: "Functions used to calculate statistics and analyze outputs"
+- contents:
+  - bhatt_coeff_brt
+  - bhattacharyya_stat_brt
+  - cross_validate_sdm
+  - eval_brt
+  - eval_kfold_brt
+  - evaluate_ensemble
+  - evaluate_sdm
+  - save_auc_brt
+  - save_tss_brt
+  - sd_model_data
