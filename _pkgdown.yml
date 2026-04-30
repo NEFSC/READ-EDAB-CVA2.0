@@ -10,30 +10,12 @@ reference:
   - apply_sensitivity_logic_rule
   - avg_model_data
   - build_sdm
-  - calculate_attribute_score
-  - calculate_data_quality
-  - calculate_directionality
-  - calculate_directionality_certainty
-  - calculate_distribution_shifts
-  - calculate_model_confidence
-  - calculate_raw_exposure
-  - calculate_sdm_variable_importance
-  - calculate_sensitivity
-  - calculate_sensitivity_certainty
+  - starts_with("calculate_")
   - pseudo_r2_brt
 - title: "Create Outputs"
   desc: "Functions used to create figures, tables and output files"
 - contents:
-  - make_evaluation_csv
-  - make_exposure_plots
-  - make_exposure_table
-  - make_sdm_plots
-  - make_sdm_predictions
-  - make_sdm_reports
-  - make_sensitivity_barplots
-  - make_sensitivity_table
-  - make_total_exposure
-  - make_variable_exposure
+  - starts_with("make_")
 - title: "Data Processing"
   desc: "Functions used to pull and process data"
 - contents:
@@ -44,9 +26,7 @@ reference:
   - normalize_model_data
   - normalize_variable_weights
   - predict_to_raster
-  - pull_mom6_forecast
-  - pull_mom6_hindcast
-  - pull_sdm_preds
+  - starts_with("pull_")
   - rank_exposure
   - raster_to_df
   - remove_corr
