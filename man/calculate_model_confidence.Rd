@@ -26,4 +26,5 @@ species.conf <- lapply(species.data.list, model.confidence)
 speciesMC <- do.call(rbind, species.conf)
 #this combines the list of vectors into a data.frame
 }
+
 }

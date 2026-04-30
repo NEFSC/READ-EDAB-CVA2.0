@@ -22,6 +22,8 @@
 #' pred$my <- paste(pred$month, pred$year, sep = '.')
 #' abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
 #' }
+#'
+#'@export
 
 raster_to_df <- function(
   rasts,

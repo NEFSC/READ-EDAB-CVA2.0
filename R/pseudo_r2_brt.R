@@ -6,6 +6,8 @@
 #' @return value representing Pseudo-R2
 #'
 #' @source https://github.com/elhazen/EcoCast-SciAdv
+#'
+#'@export
 
 pseudo_r2_brt <- function(x) {
   if ("null.deviance" %in% names(x$self.statistics)) {

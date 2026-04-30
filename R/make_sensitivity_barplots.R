@@ -15,6 +15,8 @@
 #' @param scorer_dir the directory to save individual scorer PDF reports to
 #'
 #' @return No returns. Saves pdf file of the stacked barplots, with one page of barplots per species scored by the corresponding experts. PDFs will have naming convention FIRSTNAME_LASTNAME.pdf and be saved in the designated folder name
+#'
+#'@export
 
 make_sensitivity_barplots <- function(
   data,

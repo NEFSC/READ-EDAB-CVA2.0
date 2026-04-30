@@ -6,6 +6,8 @@
 #' @param cell_area a number representing the area of a single model grid cell on which the model is predicted.
 #'
 #' @return a data.frame with three columns: 1) timestamp, equal to the names of the layers in \code{abund}; 2) COG; 3) Area of probabilities greater than the \code{area.threshold}
+#'
+#'@export
 
 calculate_distribution_shifts <- function(
   abund,

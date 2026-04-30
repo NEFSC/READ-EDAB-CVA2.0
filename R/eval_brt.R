@@ -10,6 +10,8 @@
 #'
 #' @return model evaluation statistics
 #' @source Much of this code is derived from https://github.com/elhazen/PA-paper
+#'
+#'@export
 
 eval_brt <- function(model, test_data, response, plot = TRUE) {
   if (!(response %in% names(test_data))) {

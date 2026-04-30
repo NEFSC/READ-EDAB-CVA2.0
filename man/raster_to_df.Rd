@@ -35,4 +35,5 @@ pred <- stats::predict(mod, newdata = allDF, type = 'response')
 pred$my <- paste(pred$month, pred$year, sep = '.')
 abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
 }
+
 }

@@ -15,6 +15,9 @@
 #Requirements:
 #-R 3
 ##########################
+#'
+#'
+#'@export
 
 bhatt_coeff_brt <- function(x, y, bw = bw.nrd0, ...) {
   #SANITIZING

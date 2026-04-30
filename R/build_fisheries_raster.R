@@ -16,6 +16,7 @@
 #'
 #' @return a rasterBrick with the same extent as the provided grid, and a number of layers equal to the timeseries associated with the provided model data
 #'
+#'@export
 
 build_fisheries_raster <- function(
   data,

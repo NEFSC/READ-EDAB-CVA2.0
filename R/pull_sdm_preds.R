@@ -5,6 +5,8 @@
 #' @param model one of the following indicating the desired model to extract predicted values from: gam, maxent, brt, rf, or sdmtmb
 #'
 #' @return a data.frame containing the prediction outputs from the cross-validation necessary to calculate evaluation metric
+#'
+#'@export
 
 pull_sdm_preds <- function(cv, model) {
   if (model == 'gam' | model == 'maxent') {

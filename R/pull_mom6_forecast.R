@@ -14,6 +14,8 @@
 #' @param ens ensemble member. Must be equal to 1-10. For decadal forecasts, different ensemble members represent slightly different forcing scenarios. For forecast only.
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
+#'
+#'@export
 
 pull_mom6_forecast <- function(
   var_url,

@@ -20,6 +20,8 @@
 #' pred$my <- paste(pred$month, pred$year, sep = '.')
 #' abund <- predict_to_raster(df = pred, staticData = staticVars) #make into rasters
 #' }
+#'
+#'@export
 
 predict_to_raster <- function(df, static_variables) {
   hsm <- vector(mode = 'list', length = length(unique(df$my)))

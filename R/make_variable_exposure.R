@@ -7,6 +7,8 @@
 #' @param sdm_raster rasterStack with monthly averages of SDM results to use as weights for weighted average
 #'
 #' @return If \code{type == 'map'}, a rasterStack with the number of layers equal to the number of variables supplied, containing the weighted average exposure, weighted by SDM results, for each variable. If \code{type == 'timeseries'}, a matrix with the number of rows equal to the number of variables supplied, and 12 columns (1 for each month) containing the weighted average exposure, weighted by SDM results, for each variable.
+#'
+#'@export
 
 make_variable_exposure <- function(type, ranked_exposure, sdm_raster) {
   if (type == 'map') {

@@ -8,6 +8,8 @@
 #' @param month_col,year_col column names for month and year columns respectively
 #'
 #' @return a data frame with correlated covariates removed
+#'
+#'@export
 
 remove_corr <- function(se, pa_col, xy_col, month_col, year_col) {
   ind <- which(

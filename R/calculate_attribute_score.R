@@ -1,11 +1,13 @@
 #' @title Calculate Attribute Scores
 #' @description Calculates weighted average attribute scores for individual sensitivity attributes, with or without bootstrapping. Based on code from the Highly Migratory Species (HMS) CVA team.
-
+#'
 #' @param attribute a data frame consisting of all expert scores for a single sensitivity attribute and species.
 #' @param bootstrap binary TRUE/FALSE to turn on/off bootstrapping of sensitivity scores. Will impact outputs.
 #' @param samples number of samples to run for bootstrapping. Default is 10,000.
-
+#'
 #' @return weighted averaged scores for each attribute. If \code{bootstrap = TRUE}, this is a data frame with the number of rows equal to the number of samples, and the number of columns equal to the number of attributes. If \code{bootstrap = FALSE}, this is a vector equal to the length of the number of attributes.
+#'
+#'@export
 
 calculate_attribute_score <- function(
   attribute,

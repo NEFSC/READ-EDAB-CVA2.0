@@ -10,6 +10,8 @@
 #'
 #' @return an objected of class \code{performance}. Same as \code{ROCR::performance}.
 #' @source From Camrin Brawn (WHOI): https://zenodo.org/records/7971532.
+#'
+#'@export
 
 save_auc_brt <- function(truth, predicted, plot_roc = FALSE, ...) {
   pred <- ROCR::prediction(as.vector(abs(predicted)), as.vector(truth))

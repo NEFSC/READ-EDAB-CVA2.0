@@ -12,6 +12,8 @@
 #' @param pa_col column name for presence/absence column
 #'
 #' @return a data frame that contains the static variables listed and only environmental covariates associated with the species' feeding and habitat guilds
+#'
+#'@export
 
 match_guilds <- function(
   spp_env,

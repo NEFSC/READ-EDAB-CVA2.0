@@ -7,6 +7,8 @@
 #' @param no_flip_vars character vector naming which vectors should NOT be flipped - counterintuitive, yes, but this list was actually shorter than the variables that needed to be flipped for NECVA2.0. Names should match the names in \code{exposure}
 #'
 #' @return A list of rasterStacks with each layer containing ranked values between 1 - 4. The length of the list is equal to the length of the lists supplied as \code{exposure}
+#'
+#'@export
 
 rank_exposure <- function(
   exposure,

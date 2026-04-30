@@ -15,6 +15,7 @@
 #' \item A number of columns equal to the length of \code{static_variables}, if \code{add_static = T}, with column names matching the names of the rasters in the list
 #' }
 #'
+#'@export
 
 match_pa_model_rasters <- function(
   pa_rasters,

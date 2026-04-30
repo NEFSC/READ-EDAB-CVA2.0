@@ -24,6 +24,8 @@
 #'  \item{AUC.yr_min.yr_max}{Ensemble model AUC calculated on the external data, if \code{test_ens == TRUE}. Column name will reflect the timeseries used}
 #' }
 #'
+#'
+#'@export
 
 make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
   #spp_list is the csv of species lists including alternative names to help with matching in test_ens

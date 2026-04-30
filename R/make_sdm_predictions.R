@@ -13,6 +13,8 @@
 #' @param weights a vector of model weights - used for building the ensemble model
 #'
 #' @return returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
+#'
+#'@export
 
 make_sdm_predictions <- function(
   mod,

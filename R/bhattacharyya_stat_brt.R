@@ -9,6 +9,8 @@
 #' @param vars character vector of the desired variables
 #'
 #' @return vector of Bhattacharyya's coefficients for each variable
+#'
+#'@export
 
 bhattacharyya_stat_brt <- function(data, response, vars) {
   bh <- list()

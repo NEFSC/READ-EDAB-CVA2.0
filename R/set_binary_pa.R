@@ -6,6 +6,8 @@
 #' @param pa_col column name for presence/absence column
 #'
 #' @return a data frame where presence/absence has been set to 0 for absent and 1 for present
+#'
+#'@export
 
 set_binary_pa <- function(se, pa_col) {
   paDF <- se[se[, pa_col] != 0, ] #remove unsampled cells (pa_col == 0)

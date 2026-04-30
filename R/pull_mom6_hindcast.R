@@ -12,6 +12,8 @@
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
 #'
 #' @return a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
+#'
+#'@export
 
 pull_mom6_hindcast <- function(
   var_url,
