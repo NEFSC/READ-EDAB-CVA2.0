@@ -3,3 +3,45 @@ url: https://nefsc.github.io/READ-EDAB-CVA2.0/
 template:
   bootstrap: 5
 
+reference:
+- title: "Calculations"
+  desc: "Functions used to calculate scores and metrics"
+- contents:
+  - apply_sensitivity_logic_rule
+  - avg_model_data
+  - build_sdm
+  - starts_with("calculate_")
+  - pseudo_r2_brt
+- title: "Create Outputs"
+  desc: "Functions used to create figures, tables and output files"
+- contents:
+  - starts_with("make_")
+- title: "Data Processing"
+  desc: "Functions used to pull and process data"
+- contents:
+  - build_fisheries_raster
+  - match_guilds
+  - match_pa_model_rasters
+  - merge_fisheries_rasters
+  - normalize_model_data
+  - normalize_variable_weights
+  - predict_to_raster
+  - starts_with("pull_")
+  - rank_exposure
+  - raster_to_df
+  - remove_corr
+  - set_binary_pa
+  - standardize_fisheries_data
+- title: "Statistics & Evaluation"
+  desc: "Functions used to calculate statistics and analyze outputs"
+- contents:
+  - bhatt_coeff_brt
+  - bhattacharyya_stat_brt
+  - cross_validate_sdm
+  - eval_brt
+  - eval_kfold_brt
+  - evaluate_ensemble
+  - evaluate_sdm
+  - save_auc_brt
+  - save_tss_brt
+  - sd_model_data
