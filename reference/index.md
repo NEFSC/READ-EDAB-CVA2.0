@@ -1,18 +1,13 @@
 # Package index
 
-## All functions
+## Calculations
+
+Functions used to calculate scores and metrics
 
 - [`apply_sensitivity_logic_rule()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/apply_sensitivity_logic_rule.md)
   : Calculate Total Sensitivity Score with the Logic Rule
 - [`avg_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/avg_model_data.md)
   : Average Model Data
-- [`bhatt_coeff_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhatt_coeff_brt.md)
-  : Bhattacharyya Coefficient of two distributions
-- [`bhattacharyya_stat_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhattacharyya_stat_brt.md)
-  : Bhattacharyya's coefficient test
-- [`build_fisheries_raster()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/build_fisheries_raster.md)
-  : Convert Standardized Fisheries Data into Presence/Absence/Effort
-  Raster
 - [`build_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/build_sdm.md)
   : Build Component or Ensemble Species Distribution Models
 - [`calculate_attribute_score()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_attribute_score.md)
@@ -35,16 +30,13 @@
   : Calculate Sensitivity
 - [`calculate_sensitivity_certainty()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/calculate_sensitivity_certainty.md)
   : Calculate Certainty on Bootstrapped Sensitivity Scores
-- [`cross_validate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/cross_validate_sdm.md)
-  : Component Model Cross-Validation
-- [`eval_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_brt.md)
-  : Calculate BRT model evaluation statistics
-- [`eval_kfold_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_kfold_brt.md)
-  : K-fold BRT fit
-- [`evaluate_ensemble()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_ensemble.md)
-  : Test the Ensemble Model with Observations
-- [`evaluate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_sdm.md)
-  : Calculate Performance Metric
+- [`pseudo_r2_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pseudo_r2_brt.md)
+  : calculate Pseudo-R2 for BRT
+
+## Create Outputs
+
+Functions used to create figures, tables and output files
+
 - [`make_evaluation_csv()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_evaluation_csv.md)
   : Create a spreadsheet containing all SDM performance metrics
 - [`make_exposure_plots()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_exposure_plots.md)
@@ -65,6 +57,14 @@
   : Make Map or Timeseries of Total Species-Specific Exposure
 - [`make_variable_exposure()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/make_variable_exposure.md)
   : Make Maps or Timeseries of Variable-Specific Exposure
+
+## Data Processing
+
+Functions used to pull and process data
+
+- [`build_fisheries_raster()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/build_fisheries_raster.md)
+  : Convert Standardized Fisheries Data into Presence/Absence/Effort
+  Raster
 - [`match_guilds()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/match_guilds.md)
   : Subset Species/Environmental Dataset to Ecologically-Relevant
   Dynamic Variables
@@ -78,8 +78,6 @@
   : Normalize Dynamic Variable Weights
 - [`predict_to_raster()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/predict_to_raster.md)
   : Convert Predicted Values in Data.Frame to Rasters
-- [`pseudo_r2_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pseudo_r2_brt.md)
-  : calculate Pseudo-R2 for BRT
 - [`pull_mom6_forecast()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pull_mom6_forecast.md)
   : Pull MOM6 Forecast Data
 - [`pull_mom6_hindcast()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/pull_mom6_hindcast.md)
@@ -93,13 +91,32 @@
 - [`remove_corr()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/remove_corr.md)
   : Remove Correlated Environmental Covariates from
   Species/Environmental Data Frame
+- [`set_binary_pa()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/set_binary_pa.md)
+  : Convert Species/Environmental Data Frame to Presence/Absence
+- [`standardize_fisheries_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/standardize_fisheries_data.md)
+  : Standardize Fisheries Dependent and Independent Datasets
+
+## Statistics & Evaluation
+
+Functions used to calculate statistics and analyze outputs
+
+- [`bhatt_coeff_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhatt_coeff_brt.md)
+  : Bhattacharyya Coefficient of two distributions
+- [`bhattacharyya_stat_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhattacharyya_stat_brt.md)
+  : Bhattacharyya's coefficient test
+- [`cross_validate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/cross_validate_sdm.md)
+  : Component Model Cross-Validation
+- [`eval_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_brt.md)
+  : Calculate BRT model evaluation statistics
+- [`eval_kfold_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/eval_kfold_brt.md)
+  : K-fold BRT fit
+- [`evaluate_ensemble()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_ensemble.md)
+  : Test the Ensemble Model with Observations
+- [`evaluate_sdm()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/evaluate_sdm.md)
+  : Calculate Performance Metric
 - [`save_auc_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/save_auc_brt.md)
   : Calculate Area under the Curve (AUC) for BRT models
 - [`save_tss_brt()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/save_tss_brt.md)
   : Calculate True Skill Statistic (TSS) for BRT models
 - [`sd_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/sd_model_data.md)
   : Calculate Standard Deviation on MOM6 Data
-- [`set_binary_pa()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/set_binary_pa.md)
-  : Convert Species/Environmental Data Frame to Presence/Absence
-- [`standardize_fisheries_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/standardize_fisheries_data.md)
-  : Standardize Fisheries Dependent and Independent Datasets
