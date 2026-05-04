@@ -1,4 +1,4 @@
-.Rproj
+*.Rproj
 .Rproj.user
 .Rhistory
 .RData
@@ -7,3 +7,4 @@
 .quarto
 ^\.vscode$
 docs
+inst/doc

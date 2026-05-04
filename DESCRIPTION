@@ -6,6 +6,7 @@ Authors@R:
 Description: This package provides the tools to build a spatial Climate Vulnerability Assessment. This includes pulling and formatting the necessary MOM6 and fisheries data; building and predicting component and ensemble models; calculating exposure from model predictions; and calculating and bootstrapping sensitivity from expert scores. 
 License: file LICENSE
 Encoding: UTF-8
+BugReports: https://github.com/NEFSC/READ-EDAB-CVA2.0/issues/new?template=bug_report.yml
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: 
@@ -30,8 +31,30 @@ Imports:
     PredictABEL,
     grDevices,
     gt, ggplot2, purrr
-Suggests: DBI, survdat, foreach, parallel, doParallel, ROCR, jsonlite, data.table, abind, lubridate, measurements, DescTools, reshape2, RColorBrewer, cmocean, fields, fmsb, quarto, scales
+Suggests: 
+    DBI,
+    survdat,
+    foreach,
+    parallel,
+    doParallel,
+    ROCR,
+    jsonlite,
+    data.table,
+    abind,
+    lubridate,
+    measurements,
+    DescTools,
+    reshape2,
+    RColorBrewer,
+    cmocean,
+    fields,
+    fmsb,
+    quarto,
+    scales,
+    knitr,
+    rmarkdown
 Remotes:
     NOAA-EDAB/survdat,
     EFHSDM=noaa-akro/alaska-efh-ensemble-sdm
-URL: https://nefsc.github.io/READ-EDAB-CVA2.0/
+URL: https://nefsc.github.io/READ-EDAB-CVA2.0/, https://github.com/NEFSC/READ-EDAB-CVA2.0/
+VignetteBuilder: knitr
