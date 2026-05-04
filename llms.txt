@@ -1,10 +1,5 @@
 # spatialcva (Climate Vulnerability Assessment 2.0)
 
-[![gitleaks](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/secretScan.yml)
-[![R-CMD-check](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/R-CMD-check.yaml)
-[![format-check.yaml](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml/badge.svg?branch=main)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/format-check.yml)
-[![pkgdown](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/NEFSC/READ-EDAB-CVA2.0/actions/workflows/pkgdown.yaml)
-
 ## Overview
 
 This package performs the analysis - building species distribution
@@ -168,3 +163,8 @@ Functions used to calculate statistics and analyze outputs
 - [`sd_model_data()`](https://nefsc.github.io/READ-EDAB-CVA2.0/reference/sd_model_data.md)
   : Calculate Standard Deviation on MOM6 Data
 
+# Articles
+
+### All vignettes
+
+- [spatialcva](https://nefsc.github.io/READ-EDAB-CVA2.0/articles/spatialcva.md):

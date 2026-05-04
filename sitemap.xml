@@ -1,8 +1,11 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/404.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/LICENSE-text.html</loc></url>
+<url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/articles/index.html</loc></url>
+<url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/articles/spatialcva.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/authors.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/index.html</loc></url>
+<url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/news/index.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/reference/apply_sensitivity_logic_rule.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/reference/avg_model_data.html</loc></url>
 <url><loc>https://nefsc.github.io/READ-EDAB-CVA2.0/reference/bhatt_coeff_brt.html</loc></url>
