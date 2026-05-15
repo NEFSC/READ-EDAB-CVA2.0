@@ -1,22 +1,25 @@
-PRs into dev contained all info we needed. They have already been reviewed. If you've got this far we're in good shape!
+PRs into `dev` contained all necessary info. They have already been approved.
+Please provide the information below so `main` can be synced with `dev`:
 
 ### List PRs
 
-List the PRs that made it into dev that are waiting to be pulled into main:
+List the PRs that were merged into `dev` that will be pulled into `main` and any issues they fix:
 
-* PR #? which fixes #?  
-* PR #? which fixes #?   
+* PR #? which fixes #?
 
 ### Types of changes
 
-What types of changes does code introduce? Put an `x` in the boxes that apply.
+What types of changes does this pull request introduce? Put an `x` in the boxes that apply.
 This will inform the new release number.
 
-- [ ] Bugfix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Fix (non-breaking change which fixes a bug)
+- [ ] Feature (non-breaking change which adds or changes functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation Update (if none of the other choices apply) 
+- [ ] Other change (if none of the other choices apply)
 
 ### Reviewer instructions
 
-The underlying PRs should already have been reviewed.
+The underlying PRs should have been reviewed. Please check that the proposed merge is correct before approving.
+If any checkboxes other than "Other change" have been selected please prepare the following file changes for a new release version:
+- [ ] NEWS.md - add release notes
+- [ ] DESCRIPTION - increment the version number according to [Semantic Versioning](https://semver.org)
