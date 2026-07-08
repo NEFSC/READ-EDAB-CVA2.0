@@ -21,7 +21,7 @@ standardize_fisheries_data <- function(
 ) {
   if (data_type %in% c('NESurveys', 'NEObserver', 'CSV')) {
     ##now move onto different processing pipelines
-    if (data_type == 'Surveys') {
+    if (data_type == 'NESurveys') {
       print('Standardizing Survey Data...')
       ## pull fisheries-independent data
       data <- survdat::get_survdat_data(
@@ -58,7 +58,7 @@ standardize_fisheries_data <- function(
       dat <- dat[dat$year >= yr_range[1] & dat$year <= yr_range[2], ]
     } #end if survey
 
-    if (data_type == 'Observer') {
+    if (data_type == 'NEObserver') {
       print('Standardizing Observer Data...')
       ## pull fisheries-dependent data - a bit more intense since there isn't a nice function to do it, and needs to be subset, but follows the same basic steps as survdat
       #observer data
@@ -78,7 +78,11 @@ standardize_fisheries_data <- function(
       asm.qry <- paste0(
         "select YEAR, MONTH, TRIPID, HAULNUM, LONHBEG, LATHBEG, NESPP4, HAILWT
         from obdbs.ASMSPP
-        where YEAR between 1993 and 2019
+        where YEAR between ",
+        yr_range[1],
+        " and ",
+        yr_range[2],
+        "
         order by YEAR, MONTH, TRIPID"
       )
       asm <- data.table::as.data.table(DBI::dbGetQuery(channel, asm.qry))
