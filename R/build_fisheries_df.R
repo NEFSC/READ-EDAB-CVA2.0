@@ -76,7 +76,7 @@ build_fisheries_df <- function(data, is_obs, grid, tm_multiplier = 24 * 60 * 60,
           pa <- data.frame(year = tow$year[1], month = tow$month[1], tow.lon = tow$lon[1], tow.lat = tow$lat[1], grid.lon = iLon, grid.lat = iLat)
           
           #generate grid cell lat/lon ID to help combine data later 
-          idLon <- DescTools::Closest(x = lonR-360, a = tow$lon[1], which = T)
+          idLon <- DescTools::Closest(x = lonR, a = tow$lon[1], which = T)
           idLat <- DescTools::Closest(x = latR, a = tow$lat[1], which = T)
           pa$gridID <- paste(idLon, idLat, sep = '-') #add to pa data.frame
           
