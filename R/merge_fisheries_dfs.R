@@ -10,7 +10,14 @@
 
 merge_fisheries_dfs <- function(df_dir) {
   
+  #check for combined dataframe and remove from list if present
   flist <- dir(df_dir, full.names = T)
+  if (
+    any(grepl('combined', flist))
+  ) {
+    flist <- flist[-grepl('combined', flist)]
+  }
+  
   data <- NULL
   for(x in 1:length(flist)){
     d <- read.csv(flist[x])
@@ -20,6 +27,7 @@ merge_fisheries_dfs <- function(df_dir) {
   
   paMax <- stats::aggregate(data, by = list(data$year, data$month, data$gridID), FUN = max) #combine by grid cell ID to get max presence/absence within each grid cell
   paMax <- paMax[,-grep('Group', names(paMax))]
+  paMax <- paMax[order(paMax$year, paMax$month),]
 
   return(paMax)
 }
