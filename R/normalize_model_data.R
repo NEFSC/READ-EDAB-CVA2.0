@@ -9,9 +9,9 @@
 #' @return a spatRaster of normalized environmental data
 
 
-normalize_model_data <- function(raw, avg, sd, spatial.temporal){
+normalize_model_data <- function(raw, avg, sd, spatial_temporal){
   
-  if(spatial.temporal){
+  if(spatial_temporal){
     ##normalize data to monthly spatially and temporally explicit averages and sds 
     mth <- rep(1:12, times = raster::nlayers(v)/12) #creates repeating list of 1:12 for each year
     #normalize data

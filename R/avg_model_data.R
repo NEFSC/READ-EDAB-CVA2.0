@@ -3,15 +3,15 @@
 #' Calculate monthly average from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any spatRaster of gridded data.
 #'
 #' @param raw spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
-#' @param spatial.temporal TRUE/FALSE to determine averaging method. If TRUE, averages are spatially and temporally explicit. If FALSE, averaging occurs across space and time
+#' @param spatial_temporal TRUE/FALSE to determine averaging method. If TRUE, averages are spatially and temporally explicit. If FALSE, averaging occurs across space and time
 #'
 #' @return If \code{spatial.temporal} is TRUE, a spatRaster is returned. If FALSE, a single value is returned. 
 #'
 #'@export
 
-avg_model_data <- function(raw, spatial.temporal) {
+avg_model_data <- function(raw, spatial_temporal) {
 
-  if(spatial.temporal){
+  if(spatial_temporal){
     ## create monthly averages across space and time (months - should make this customizable at some point)
     avgs <- NULL
     for (m in 1:12) {

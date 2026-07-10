@@ -25,12 +25,11 @@ pull_mom6_hindcast <- function(
 ) {
 
   #get grid info for subsetting to help reduce computation time
-  stat <- ncdf4::nc_open(static)
-  lon <- ncdf4::ncvar_get(stat, "geolon")
-  lat <- ncdf4::ncvar_get(stat, "geolat")
+  stat <- ncdf4::nc_open(static_grid)
+  
   ncdf4::nc_close(stat)
 
-  e <- terra::ext(min(lon), max(lon), min(lat), max(lat)) #define grid extent
+  #e <- terra::ext(min(lon), max(lon), min(lat), max(lat)) #define grid extent
   se <- terra::ext(bounds) #define extent to subset to
   
   vars <- jsonlite::fromJSON(var_url) #turn json file into a list
@@ -47,7 +46,7 @@ pull_mom6_hindcast <- function(
   
   #find appropriate url for requested variable
     ind <- which(
-      long.name == req_vars &
+      long.name == req_var &
         grid.type == gt &
         out.freq == of &
         rl == release
@@ -55,21 +54,45 @@ pull_mom6_hindcast <- function(
 
     #load url
     #v <- raster::stack(url[ind])
-    v <- terra::rast(url[ind])
+    v <- ncdf4::nc_open(url[ind])
+    
+    #get dimensions
+    lon <- ncdf4::ncvar_get(v, "lon")
+    lat <- ncdf4::ncvar_get(v, "lat")
+    tm <- as.POSIXct(ncdf4::ncvar_get(v, 'time')*60*60*24, origin = '1993-01-01')
+    
+    #find indexes for lon/lat to crop to bounding box
+    lonInd <- which(lon >= bounds[1] & lon <= bounds[2])
+    latInd <- which(lat >= bounds[3] & lat <= bounds[4])
+    
+    #pull variable
+    var <- ncdf4::ncvar_get(v, 
+                            names(v$var),
+                            start = c(lonInd[1], latInd[1], 1),
+                            count = c(length(lonInd), length(latInd), -1))
+    ncdf4::nc_close(v)
+    
+    # Convert the array to a SpatRaster
+    # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time] 
+    # so terra reads the rows and columns correctly.
+    r_list <- lapply(1:dim(var)[3], function(i) {
+      terra::rast(t(var[,,i]))
+    })
+    cropped_rast <- terra::rast(r_list)
+    
+    # Apply the correct spatial metadata
+    terra::ext(cropped_rast) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
+    terra::crs(cropped_rast) <- "EPSG:4326" # Or whatever coordinate system the data uses
 
     #create and set names using month and year 
-    n <- matrix(
-      unlist(strsplit(names(v), split = '[.]')),
-      ncol = 3,
-      nrow = raster::nlayers(v),
-      byrow = T
-    )
-    n[, 1] <- gsub('X', replacement = '', n[, 1])
+    m <- lubridate::month(tm)
+    yr <- lubridate::year(tm)
 
-    names(v) <- paste(n[, 2], n[, 1], sep = '.') #set names
-    terra::ext(v) <- e #set extent
-    #subset
-    v <- terra::crop(v, se) #this is the rate limiting step
-
-  return(v)
+    names(cropped_rast) <- paste(m, yr, sep = '.') #set names
+    #terra::ext(v) <- e #set extent
+    
+    #flip it
+    cropped_rast <- terra::flip(cropped_rast, direction="vertical")
+   
+  return(cropped_rast)
 }

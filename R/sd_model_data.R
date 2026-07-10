@@ -2,13 +2,13 @@
 #' @description
 #'
 #' @param raw spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
-#' @param spatial.temporal TRUE/FALSE to determine how standard deviations are calculated If TRUE, standard deviation calculations are spatially and temporally explicit. If FALSE, the calculation occurs across space and time
+#' @param spatial_temporal TRUE/FALSE to determine how standard deviations are calculated If TRUE, standard deviation calculations are spatially and temporally explicit. If FALSE, the calculation occurs across space and time
 #' 
 #' @return If \code{spatial.temporal} is TRUE, a spatRaster is returned. If FALSE, a single value is returned. 
 
-sd_model_data <- function(raw, spatial.temporal){
+sd_model_data <- function(raw, spatial_temporal){
   
-  if(spatial.temporal){
+  if(spatial_temporal){
     ## create monthly averages across space and time (months - should make this customizable at some point)
     sds <- NULL
     for (m in 1:12) {

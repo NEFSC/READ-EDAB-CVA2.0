@@ -7,7 +7,7 @@
 #' @param gt desired grid type. Must match one of the options in the 'cefi_grid_type' column in provided JSON table
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
-#' @param static URL to static grid for MOM6
+#' @param static_grid URL to static grid for MOM6
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
 #' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. For forecast only
 #'
@@ -21,10 +21,9 @@ pull_mom6_forecast <- function(
   gt = 'regrid',
   of = 'monthly',
   bounds = c(-78, -65, 35, 45),
-  static,
+  static_grid,
   release,
-  init,
-  ens
+  init
 ) {
   vars <- jsonlite::fromJSON(var_url) #turn json file into a list
 
@@ -40,7 +39,7 @@ pull_mom6_forecast <- function(
 
   #get info for subsetting
   #putting subsetting back because everything else takes too long otherwise
-  stat <- ncdf4::nc_open(static)
+  stat <- ncdf4::nc_open(static_grid)
   lon <- ncdf4::ncvar_get(stat, "geolon")
   lat <- ncdf4::ncvar_get(stat, "geolat")
   ncdf4::nc_close(stat)
