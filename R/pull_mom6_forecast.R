@@ -98,5 +98,8 @@ pull_mom6_forecast <- function(
   nms <- cbind(lubridate::month(d), lubridate::year(d))
   names(cropped_rast) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
   
+  #flip it
+  cropped_rast <- terra::flip(cropped_rast, direction="vertical")
+  
   return(cropped_rast)
 }
