@@ -35,9 +35,6 @@ pull_mom6_forecast <- function(
     init.date <- c(init.date, vars[[x]]$cefi_init_date)
   }
   
-  #get info for subsetting
-  se <- terra::ext(bounds) #extent to subset to
-  
   ind <- which(
     long.name == req_var &
       grid.type == gt &
@@ -83,23 +80,23 @@ pull_mom6_forecast <- function(
   ##take average of ensemble members
   varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = T)
   
-  #flip to get orientation right
-  varFlip <- aperm(varAvg, c(2, 1, 3))
-  varFlip <- varFlip[nrow(varFlip):1, , ]
+  # Convert the array to a SpatRaster
+  # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time] 
+  # so terra reads the rows and columns correctly.
+  r_list <- lapply(1:dim(varAvg)[3], function(i) {
+    terra::rast(t(varAvg[,,i]))
+  })
+  cropped_rast <- terra::rast(r_list)
   
-  #convert to raster
-  v <- terra::rast(varFlip)
-  terra::crs(v) <- "+proj=longlat +datum=WGS84 +no_defs"
+  # Apply the correct spatial metadata
+  terra::ext(cropped_rast) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
+  terra::crs(cropped_rast) <- "EPSG:4326" # Or whatever coordinate system the data uses
   
   #create and set names
-  yr <- as.numeric(substr(init, 2, 5))
-  yr10 <- yr + 9
-  nms <- expand.grid(1:12, yr:yr10)
+  yrInit <- as.numeric(substr(init, 2, 5))
+  d <- as.POSIXct(tm * 60 * 60 * 24, origin = paste(yrInit, '01', '01', sep = '-'))
+  nms <- cbind(lubridate::month(d), lubridate::year(d))
+  names(cropped_rast) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
   
-  names(v) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
-  #terra::ext(v) <- e #set extent
-  #subset
-  #v <- terra::crop(v, se) #this is the rate limiting step
-  
-  return(v)
+  return(cropped_rast)
 }
