@@ -1,6 +1,6 @@
 #' @title Average Model Data
 #' @description
-#' Calculate monthly average from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any spatRaster of gridded data.
+#' Calculate monthly or global averages from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any spatRaster of gridded data.
 #'
 #' @param raw spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
 #' @param spatial_temporal TRUE/FALSE to determine averaging method. If TRUE, averages are spatially and temporally explicit. If FALSE, averaging occurs across space and time

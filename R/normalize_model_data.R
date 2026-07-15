@@ -4,7 +4,7 @@
 #'
 #' @param raw Output spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}. Alternatively, a spatRaster of data to be normalized
 #' @param avg,sd Output spatRaster from \code{avg_model_data} and \code{sd_model_data}, respectively. Alternatively, averages and standard deviations of desired gridded datasets. 
-#' @param spatial.temporal TRUE/FALSE to determine how normalization should occur. If TRUE, calculations should be spatially and temporally explicit. \code{avg} and \code{sd} should be spatRaster objects with averages and standard deviations of data in space and time. If FALSE, the calculation occurs across space and time; \code{avg} and \code{sd} should be single values representing the overall average and standard deviation for the given variable.
+#' @param spatial_temporal TRUE/FALSE to determine how normalization should occur. If TRUE, calculations should be spatially and temporally explicit. \code{avg} and \code{sd} should be spatRaster objects with averages and standard deviations of data in space and time. If FALSE, the calculation occurs across space and time; \code{avg} and \code{sd} should be single values representing the overall average and standard deviation for the given variable.
 #'
 #' @return a spatRaster of normalized environmental data
 

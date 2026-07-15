@@ -1,5 +1,5 @@
 #' @title Calculate Standard Deviation on MOM6 Data
-#' @description
+#' @description Calculate monthly or global standard deviations from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any spatRaster of gridded data.
 #'
 #' @param raw spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}
 #' @param spatial_temporal TRUE/FALSE to determine how standard deviations are calculated If TRUE, standard deviation calculations are spatially and temporally explicit. If FALSE, the calculation occurs across space and time

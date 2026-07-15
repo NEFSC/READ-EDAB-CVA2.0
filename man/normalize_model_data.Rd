@@ -4,17 +4,17 @@
 \alias{normalize_model_data}
 \title{Normalize Model Data}
 \usage{
-normalize_model_data(raw_list, avg_list, sd_list, short_names)
+normalize_model_data(raw, avg, sd, spatial_temporal)
 }
 \arguments{
-\item{raw_list}{List of output rasters from \code{pull_hind} or \code{pull_forecast}. Alternatively, a list of rasters containing gridded data to be normalized, with each entry in the list containing a rasterStack of a timeseries of environmental data to be normalized.}
+\item{raw}{Output spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}. Alternatively, a spatRaster of data to be normalized}
 
-\item{avg_list, sd_list}{List of output rasters from \code{avg_model_data} and \code{sd_env}, respectively. Alternatively, averages and standard deviations of desired gridded datasets. Should be a list of rasterStacks, with each entry in the list containing the rasterStack for a different variable.}
+\item{avg, sd}{Output spatRaster from \code{avg_model_data} and \code{sd_model_data}, respectively. Alternatively, averages and standard deviations of desired gridded datasets.}
 
-\item{short_names}{vector of simplified variable names to help name resulting raster files.}
+\item{spatial_temporal}{TRUE/FALSE to determine how normalization should occur. If TRUE, calculations should be spatially and temporally explicit. \code{avg} and \code{sd} should be spatRaster objects with averages and standard deviations of data in space and time. If FALSE, the calculation occurs across space and time; \code{avg} and \code{sd} should be single values representing the overall average and standard deviation for the given variable.}
 }
 \value{
-a list whose length is equal to the length of \code{raw_list}, where each item in the list is a rasterStack of normalized data associated with that variable
+a spatRaster of normalized environmental data
 }
 \description{
 Normalize model data across the entire provided timeseries using a z-score
