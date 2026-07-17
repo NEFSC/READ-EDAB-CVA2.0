@@ -7,7 +7,6 @@
 #' @param gt desired grid type. Must match one of the options in the 'cefi_grid_type' column in provided JSON table
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
-#' @param static_grid URL to static grid for MOM6
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
 #' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. For forecast only
 #'
@@ -16,17 +15,16 @@
 #'@export
 
 pull_mom6_forecast <- function(
-  var_url,
-  req_var,
-  gt = 'regrid',
-  of = 'monthly',
-  bounds = c(-78, -65, 35, 45),
-  static_grid,
-  release,
-  init
+    var_url,
+    req_var,
+    gt = 'regrid',
+    of = 'monthly',
+    bounds = c(-78, -65, 35, 45),
+    release,
+    init
 ) {
   vars <- jsonlite::fromJSON(var_url) #turn json file into a list
-
+  
   long.name <- url <- grid.type <- out.freq <- rl <- init.date <- NULL #pull the long names, full opendap urls, grid types, and output frequency for indexing which files to pull
   for (x in 1:length(vars)) {
     long.name <- c(long.name, vars[[x]]$cefi_long_name)
@@ -36,65 +34,72 @@ pull_mom6_forecast <- function(
     rl <- c(rl, vars[[x]]$cefi_release)
     init.date <- c(init.date, vars[[x]]$cefi_init_date)
   }
-
-  #get info for subsetting
-  #putting subsetting back because everything else takes too long otherwise
-  stat <- ncdf4::nc_open(static_grid)
-  lon <- ncdf4::ncvar_get(stat, "geolon")
-  lat <- ncdf4::ncvar_get(stat, "geolat")
-  ncdf4::nc_close(stat)
-
-  e <- terra::::ext(min(lon), max(lon), min(lat), max(lat)) #extent
-  se <- terra::ext(bounds) #extent to subset to
-
-    ind <- which(
-      long.name == req_var &
-        grid.type == gt &
-        out.freq == of &
-        rl == release &
-        init.date == init
-    ) #find appropriate url for the variable
-
-    #load url with netcdf to account for ensemble members
-    var <- NULL
-    r <- ncdf4::nc_open(url[ind])
-    tm <- ncdf4::ncvar_get(r, 'lead')
-    for (m in 1:10) {
-      vm <- NULL
-      for (z in 1:length(tm)) {
-        v <- ncdf4::ncvar_get(
-          r,
-          names(r$var),
-          start = c(1, 1, z, m),
-          count = c(-1, -1, 1, 1)
-        )
-        vm <- abind::abind(vm, v, along = 3)
-      } #end z
-      var <- abind::abind(var, vm, along = 4)
-    } #end m
-    ncdf4::nc_close(r)
-
-    ##take average of ensemble members
-    varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = T)
-
-    #flip to get orientation right
-    varFlip <- aperm(varAvg, c(2, 1, 3))
-    varFlip <- varFlip[nrow(varFlip):1, , ]
-
-    #convert to raster
-    v <- terra::rast(varFlip)
-    terra::ext(v) <- e
-    terra::crs(v) <- "+proj=longlat +datum=WGS84 +no_defs"
-
-    #create and set names
-    yr <- as.numeric(substr(init, 2, 5))
-    yr10 <- yr + 9
-    nms <- expand.grid(1:12, yr:yr10)
-
-    names(v) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
-    terra::ext(v) <- e #set extent
-    #subset
-    v <- terra::crop(v, se) #this is the rate limiting step
   
-  return(v)
+  ind <- which(
+    long.name == req_var &
+      grid.type == gt &
+      out.freq == of &
+      rl == release &
+      init.date == init
+  ) #find appropriate url for the variable
+  
+  if(length(ind) > 1){ #if ind matches multiple files (which is the case for MLD because the names aren't unique)
+    #max/min MLD are provided on regridded products, find where those are and remove them. 
+    iMin <- grep('min', url[ind])
+    iMax <- grep('max', url[ind])
+    ind <- ind[-c(iMin, iMax)]
+  }
+  
+  #load url with netcdf to account for ensemble members
+  var <- NULL
+  r <- ncdf4::nc_open(url[ind])
+  #get lon/lat first for subsetting
+  lon <- ncdf4::ncvar_get(r, "lon")
+  lat <- ncdf4::ncvar_get(r, "lat")
+  
+  #find indexes for lon/lat to crop to bounding box
+  lonInd <- which(lon >= bounds[1] & lon <= bounds[2])
+  latInd <- which(lat >= bounds[3] & lat <= bounds[4])
+  
+  tm <- ncdf4::ncvar_get(r, 'lead')
+  for (m in 1:10) {
+    vm <- NULL
+    for (z in 1:length(tm)) {
+      v <- ncdf4::ncvar_get(
+        r,
+        names(r$var),
+        start = c(lonInd[1], latInd[1], z, m),
+        count = c(length(lonInd), length(latInd), 1, 1)
+      )
+      vm <- abind::abind(vm, v, along = 3)
+    } #end z
+    var <- abind::abind(var, vm, along = 4)
+  } #end m
+  ncdf4::nc_close(r)
+  
+  ##take average of ensemble members
+  varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = T)
+  
+  # Convert the array to a SpatRaster
+  # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time] 
+  # so terra reads the rows and columns correctly.
+  r_list <- lapply(1:dim(varAvg)[3], function(i) {
+    terra::rast(t(varAvg[,,i]))
+  })
+  cropped_rast <- terra::rast(r_list)
+  
+  # Apply the correct spatial metadata
+  terra::ext(cropped_rast) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
+  terra::crs(cropped_rast) <- "EPSG:4326" # Or whatever coordinate system the data uses
+  
+  #create and set names
+  yrInit <- as.numeric(substr(init, 2, 5))
+  d <- as.POSIXct(tm * 60 * 60 * 24, origin = paste(yrInit, '01', '01', sep = '-'))
+  nms <- cbind(lubridate::month(d), lubridate::year(d))
+  names(cropped_rast) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
+  
+  #flip it
+  cropped_rast <- terra::flip(cropped_rast, direction="vertical")
+  
+  return(cropped_rast)
 }
