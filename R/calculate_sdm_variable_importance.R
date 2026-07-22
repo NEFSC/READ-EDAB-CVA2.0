@@ -5,44 +5,41 @@
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param pa_col column name for presence/absence column
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
-#' @param month_col,year_col column names for month and year columns respectively
+#' @param month_col,year_col column names for month and year columns respectively. Defaults to 'month' and 'year' respectively. 
+#' @param var_names a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}. 
 #' @param model one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, or sdmtmb
 #'
 #' @return a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
-#'
-#'@export
 
-calculate_sdm_variable_importance <- function(
-  mod,
-  se,
-  pa_col,
-  xy_col,
-  month_col,
-  year_col,
-  model
-) {
-  if (model == 'gam') {
-    #build gam model
+calculate_sdm_variable_importance <- function(mod, 
+                                              se, 
+                                              pa_col, 
+                                              xy_col, 
+                                              month_col = 'month', 
+                                              year_col = 'year', 
+                                              var_names,
+                                              model){
+  
+  if(model == 'gam'){ #build gam model
     #extract relative deviance explained
     RDE <- EFHSDM::GAMStats(model = mod, data = se)
+    
   } #end if gam
-
-  if (model == 'maxent') {
+  
+  if(model == 'maxent'){
     ##get relative deviance explained
     RDE <- EFHSDM::MaxnetStats(model = mod, data = se, species = pa_col)
   } #end if maxent
-
-  if (model == 'rf') {
+  
+  if(model == 'rf'){
     print('Building Random Forest with Spatial Interpolation...')
-
+    
     se <- cbind(1:nrow(se), se) #stand in station ids
     colnames(se)[1] <- "staid"
-    se$month.year <- paste(se[, month_col], se[, year_col], sep = '-')
-    se$year <- lubridate::year(lubridate::my(se$month.year))
-
+    
     #subsample by space-time
     set.seed(2025)
-
+    
     #make regions
     se$region <- NA
     se$region[which(se[, xy_col[1]] > -70 & se[, xy_col[2]] < 41.5)] <- 'GB' #georges bank
@@ -51,7 +48,7 @@ calculate_sdm_variable_importance <- function(
       se[, xy_col[1]] < -70 & se[, xy_col[2]] < 42 & se[, xy_col[2]] > 39.5
     )] <- 'SNE' #southern new england
     se$region[which(se[, xy_col[2]] < 39.5)] <- 'MAB' #mid-atlantic bight
-
+    
     #make space-time id
     se$sp.tm <- paste(se$month.year, se$region, sep = '-')
     sptm <- unique(se$sp.tm)
@@ -59,13 +56,13 @@ calculate_sdm_variable_importance <- function(
     seSub <- NULL
     for (x in sptm) {
       sub <- se[se$sp.tm == x, ]
-
-      abs <- sub[sub$value == 0, ]
-      pres <- sub[sub$value == 1, ]
-
+      
+      abs <- sub[sub[,pa_col] == 0, ]
+      pres <- sub[sub[,pa_col] == 1, ]
+      
       if (nrow(pres) <= 5) {
         #if there are few presences
-        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs) / 4)), ] #subsample absences to a minimum number per month and region
+        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs) / 4)), ] #subsample absences to a 1/4 of the absences within month and region
         allSub <- rbind(absSub, pres) #combine with presences (if any are absent)
         #this will allow all regions, years, and months to be present in the final time series to help predictions while also making the ratio of presences/absences somewhat more even
       } else if (nrow(abs) > nrow(pres)) {
@@ -76,95 +73,66 @@ calculate_sdm_variable_importance <- function(
         #if presences outnumber absences
         allSub <- sub #do nothing and keep it all
       }
-
+      
       seSub <- rbind(seSub, allSub)
     }
-
+    
     #convert dataframe to spatial object
     stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF = sftime::st_sftime(stDF, time_column_name = year_col)
-
+    stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+    
     #create formula
-    form <- "value ~ "
-    for (x in 2:ncol(se)) {
-      if (
-        colnames(se)[x] != pa_col &
-          colnames(se)[x] != xy_col[1] &
-          colnames(se)[x] != xy_col[2] &
-          colnames(se)[x] != year_col &
-          colnames(se)[x] != 'month.year' &
-          colnames(se)[x] != 'region' &
-          colnames(se)[x] != 'sp.tm' &
-          colnames(se)[x] != 'staid'
-      ) {
-        #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + ', colnames(se)[x])
-      }
+    form <- paste0(pa_col, " ~ ")
+    #add covariates - don't need to add space/time since they are already accounted for in spatial object
+    for (x in var_names) {
+      form <- paste0(form, ' + ', x)
     } #end for x
-
+    
     ##get important covariates
-    RDE <- ranger::importance(
-      x = mod,
-      method = 'altmann',
-      formula = stats::formula(form),
-      data = stDF
-    )
+    RDE <- ranger::importance(x=mod, method = 'altmann', formula = formula(form), data = stDF)
+    
   } #end if RF
-
-  if (model == 'brt') {
+  
+  if(model == 'brt'){
     #get relative importance
     RDE <- mod$contributions
   } #end if BRT
-
-  if (model == 'sdmtmb') {
-    se <- se[stats::complete.cases(se), ]
-
-    #make mesh
-    mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
-    #MOM6 resolution is 1/12 = ~8 km
-
-    ### get relative importance of model using type 3 anova method
-    # model with *only* intercept and no random fields:
-    fit_null <- sdmTMB::sdmTMB(
-      stats::formula(paste0(pa_col, " ~ 1")),
-      spatial = "off",
-      family = stats::binomial(link = 'logit'),
-      data = se,
-      mesh = mesh
-    )
-
-    #loop across variables and get their partial deviance explained
-    RDE <- vector(length = ncol(se))
-    for (y in 1:ncol(se)) {
-      if (
-        colnames(se)[y] != pa_col &
-          colnames(se)[y] != xy_col[1] &
-          colnames(se)[y] != xy_col[2] &
-          colnames(se)[y] != year_col &
-          colnames(se)[y] != 'region' &
-          colnames(se)[y] != 'sp.tm'
-      ) {
-        #don't do this for the response variable, xy vars, or year
-        #isolate covariate
-
-        #build formula with single covariate
-        formSub <- paste0(pa_col, " ~ + s(", colnames(se)[y], ", k = 6)")
-
-        # model with *only* variable of choice and no random fields (can get random fields later):
-        fitSub <- sdmTMB::sdmTMB(
-          formula = stats::formula(formSub),
-          spatial = "off",
-          family = stats::binomial(link = 'logit'),
-          data = se,
-          mesh = mesh
-        )
-
-        RDE[y] <- 1 - stats::deviance(fitSub) / stats::deviance(fit_null)
-        print(y)
-      } #end if
-    } #end for
-    names(RDE) <- names(se)
+  
+  if(model == 'sdmtmb'){
+    # 1. Predict the fixed-effects component only (setting spatial fields to 0)
+    # This isolates environmental signals from spatial absorption
+    requireNamespace("sdmTMB", quietly = TRUE) # Forces R to load maxnet and register all its S3 methods (like predict.maxnet)
+    pred_fixed <- predict(mod, re_form = NA)
+    
+    # Total variance explained by all environmental variables combined
+    total_fixed_var <- var(pred_fixed$est)
+    
+    importance_df <- data.frame(Variable = var_names, Var_Contribution = NA, Pct_Importance = NA)
+    
+    # 2. Drop each variable's prediction contribution to see what is lost
+    fe_coefs <- broom::tidy(mod, effects = "fixed")
+    
+    for (i in seq_along(var_names)) {
+      v <- var_names[i]
+      coef_val <- fe_coefs$estimate[fe_coefs$term == v]
+      
+      # Calculate what the fixed prediction would look like WITHOUT this variable
+      # (Subtracting its linear effect: Beta * X)
+      isolated_pred <- pred_fixed$est - (coef_val * pred_fixed[[v]])
+      
+      # Importance = Total environmental variance minus variance without this variable
+      dropped_var <- total_fixed_var - var(isolated_pred)
+      importance_df$Var_Contribution[i] <- max(0, dropped_var) # Bound at 0
+    }
+    
+    # Normalize to percentages
+    importance_df$Pct_Importance <- (importance_df$Var_Contribution / sum(importance_df$Var_Contribution)) * 100
+    RDE <- importance_df
+    
   } #end if sdmtmb
-
+  
   return(RDE)
+  
 }
+
+
