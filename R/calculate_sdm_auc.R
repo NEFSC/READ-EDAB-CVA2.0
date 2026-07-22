@@ -52,7 +52,7 @@ calculate_sdm_auc <- function(model, data_type, data,  prediction_rasters) {
     
     # 2 Reshape from wide to long format using base R's reshape()
     # This looks for the "_" delimiter we created in step 1
-    extracted_long <- reshape(
+    extracted_long <- stats::reshape(
       extracted_wide_meta,
       idvar = c("gridID", "grid.lon", "grid.lat", "ID"), # Columns that uniquely identify the location
       varying = 5:ncol(extracted_wide_meta),    # The columns containing the extracted raster data
@@ -72,7 +72,7 @@ calculate_sdm_auc <- function(model, data_type, data,  prediction_rasters) {
       all.x = TRUE
     )
     
-    preds <- preds[complete.cases(preds),]
+    preds <- preds[stats::complete.cases(preds),]
     
     #get AUC 
     Pred <- ROCR::prediction(preds$predicted, preds$pa)

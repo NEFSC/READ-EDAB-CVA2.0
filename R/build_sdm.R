@@ -347,7 +347,7 @@ build_sdm <- function(
   if (model == "sdmtmb") {
     print('Building sdmTMB...')
     
-    se <- se[complete.cases(se),]
+    se <- se[stats::complete.cases(se),]
     
     #build formula
     form <- paste0(pa_col, " ~ ")

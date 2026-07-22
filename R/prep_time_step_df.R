@@ -5,7 +5,7 @@
 #' @param rasts list of environmental spatRasters to use in predictions. Each spatRaster should have the name number of layers, corresponding to different timestamps
 #' @param static_variables spatRaster containing the static variables used in model. 
 
-#' @return a data.frame containing all of the data in \codee{rasts} and \code{static_variables} for a single timestep. 
+#' @return a data.frame containing all of the data in \code{rasts} and \code{static_variables} for a single timestep. 
 #'
 #'@export
 

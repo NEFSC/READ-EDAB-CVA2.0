@@ -89,7 +89,7 @@ calculate_sdm_variable_importance <- function(mod,
     } #end for x
     
     ##get important covariates
-    RDE <- ranger::importance(x=mod, method = 'altmann', formula = formula(form), data = stDF)
+    RDE <- ranger::importance(x=mod, method = 'altmann', formula = stats::formula(form), data = stDF)
     
   } #end if RF
   
@@ -102,10 +102,10 @@ calculate_sdm_variable_importance <- function(mod,
     # 1. Predict the fixed-effects component only (setting spatial fields to 0)
     # This isolates environmental signals from spatial absorption
     requireNamespace("sdmTMB", quietly = TRUE) # Forces R to load maxnet and register all its S3 methods (like predict.maxnet)
-    pred_fixed <- predict(mod, re_form = NA)
+    pred_fixed <- stats::predict(mod, re_form = NA)
     
     # Total variance explained by all environmental variables combined
-    total_fixed_var <- var(pred_fixed$est)
+    total_fixed_var <- stats::var(pred_fixed$est)
     
     importance_df <- data.frame(Variable = var_names, Var_Contribution = NA, Pct_Importance = NA)
     
@@ -121,7 +121,7 @@ calculate_sdm_variable_importance <- function(mod,
       isolated_pred <- pred_fixed$est - (coef_val * pred_fixed[[v]])
       
       # Importance = Total environmental variance minus variance without this variable
-      dropped_var <- total_fixed_var - var(isolated_pred)
+      dropped_var <- total_fixed_var - stats::var(isolated_pred)
       importance_df$Var_Contribution[i] <- max(0, dropped_var) # Bound at 0
     }
     

@@ -8,6 +8,7 @@
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
 #' @param month_col,year_col column names for month and year columns respectively
+#' @param pa_col column name for presence/absence column
 #' @param weights a vector of model weights - used for building the ensemble model
 #'
 #' @return returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
@@ -86,7 +87,7 @@ make_sdm_predictions <- function(
   }
   
   if (model == 'sdmtmb') {
-    warning('sdmTMB predictions can take a long time. Consider switching functions if lagging.')
+    warning('sdmTMB predictions can take a long time (approximately 1 min per timestamp).')
   }
   
   # --- MAIN TIME-SERIES LOOP (CONSOLIDATED) ---
@@ -126,16 +127,16 @@ make_sdm_predictions <- function(
       
     } else if (model == 'sdmtmb') {
       requireNamespace("sdmTMB", quietly = TRUE) # Forces R to load maxnet and register all its S3 methods (like predict.maxnet)
+      
       sr_df <- prep_time_step_df(x, rasts, static_variables)
       colnames(sr_df)[1:2] <- xy_col
-      p  <- predict(mod, newdata = sr_df, type = 'response')
+      
+      p  <- stats::predict(mod, newdata = sr_df, type = 'response')
+      
       p_df <- cbind(sr_df[,1:2], p$est)
       r_pred <- terra::rast(p_df, type = "xyz")
       terra::crs(r_pred) <- terra::crs(template_r)
-      r_pred_extended    <- terra::extend(r_pred, template_r) # Ensures alignment
-      hsm[[x]] <- r_pred_extended
-      print(x)
-      
+      hsm[[x]]   <- terra::extend(r_pred, template_r) # Ensures alignment
       
     } else if (model == 'rf') {
       sr_df <- prep_time_step_df(x, rasts, static_variables)
