@@ -9,11 +9,9 @@ make_sdm_predictions(
   model,
   rasts,
   static_variables,
-  bathy_raster,
-  mask = T,
-  bathy_max,
   se = NULL,
   month_col,
+  pa_col,
   year_col,
   xy_col,
   weights = NULL
@@ -24,17 +22,15 @@ make_sdm_predictions(
 
 \item{model}{one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, sdmtmb, or ens}
 
-\item{rasts}{list of rasterStacks corresponding to the environmental covariates used to build the models. The number of layers in each rasterStack should be the same and correspond to the length of the timeseries for the models to be predicted on}
+\item{rasts}{for component models (GAM/MAXENT/RF/BRT/SDMTMB) list of spatRasters corresponding to the environmental covariates used to build the models. The number of layers in each spatRaster should be the same and correspond to the length of the timeseries for the models to be predicted on. For the Ensemble, a list of spatRasters containing the predicted values for each of the component models. The length of the list should be equal to the length of \code{weights}}
 
-\item{static_variables}{list of rasters containing the static variables used in model. Should be the same object used in \code{merge_spp_env}.}
-
-\item{bathy_raster, bathy_max}{a raster of bathymetry with the same extent and resolution as \code{rasts} and the maximum depth you want included. For example, if you want to mask off waters deeper than 1000 m, \code{bathy_max} would be set to 1000. The value should be positive regardless of the sign of your bathymetry data.}
-
-\item{mask}{TRUE/FALSE indicating whether to mask off certain depths (i.e. waters deeper than 1000 m)}
+\item{static_variables}{spatRaster containing the static variables used in model.}
 
 \item{se}{data frame containing species presence/absence data and desired environmental covariate data.}
 
 \item{month_col, year_col}{column names for month and year columns respectively}
+
+\item{pa_col}{column name for presence/absence column}
 
 \item{xy_col}{a vector with a length of 2 indicating the longitude and latitude column names}
 

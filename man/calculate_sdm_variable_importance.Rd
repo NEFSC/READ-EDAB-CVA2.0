@@ -9,8 +9,9 @@ calculate_sdm_variable_importance(
   se,
   pa_col,
   xy_col,
-  month_col,
-  year_col,
+  month_col = "month",
+  year_col = "year",
+  var_names,
   model
 )
 }
@@ -23,7 +24,9 @@ calculate_sdm_variable_importance(
 
 \item{xy_col}{a vector with a length of 2 indicating the longitude and latitude column names}
 
-\item{month_col, year_col}{column names for month and year columns respectively}
+\item{month_col, year_col}{column names for month and year columns respectively. Defaults to 'month' and 'year' respectively.}
+
+\item{var_names}{a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}.}
 
 \item{model}{one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, or sdmtmb}
 }
