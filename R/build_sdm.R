@@ -7,6 +7,7 @@
 #' @param month_col,year_col column names for month and year columns respectively. Defaults to 'month' and 'year' respectively.
 #' @param var_names a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}.
 #' @param model one of the following indicating the desired model to build: gam, maxent, brt, rf, sdmtmb, or ens
+#' @param year_range vector with length of two including the maximum and minimum years to include in the model. Only used if \code{model = 'sdmtmb'}. Should include maximum desired year if predicting as well; i.e. if training data range from 1993-2019, but you want to forecast out to 2035, the \code{year_range} should be c(1993,2035). Defaults to the range of the \code{year_col} in \code{se}
 #' @param ensemble_weights vector of model weights used to build ensemble model. The vector must have the same length and be in the same order as the corresponding predictions list.
 #' @param ensemble_preds a list of prediction values from component models used to build ensemble model. The list of predictions must have the same length and be in the same order as the corresponding weight vector.
 #'
@@ -22,6 +23,7 @@ build_sdm <- function(
     year_col = 'year',
     var_names,
     model,
+    year_range = range(se[,year_col], na.rm = T),
     ensemble_weights = NULL,
     ensemble_preds = NULL
 ) {
@@ -369,9 +371,6 @@ build_sdm <- function(
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
     #MOM6 resolution is 1/12 = ~8 km
 
-    ##add extra years to help with forecasting
-    forecast_years <- 2020:2035 #probably more than we need but to be safe - will need to add options to define
-
     # --- SECTION 1: Try Initial Global Model ---
     mod <- tryCatch(
       expr = {
@@ -380,13 +379,13 @@ build_sdm <- function(
           data = se,
           mesh = mesh,
           family = stats::binomial(link = 'logit'),
-          spatiotemporal = 'iid',
-          time = 'year',
+          spatiotemporal = 'ar1',
+          time = year_col,
           reml = TRUE,
           anisotropy = TRUE,
           share_range = TRUE,   # Keeps original user structure
           do_fit = TRUE,
-          extra_time = forecast_years
+          extra_time = year_range
         )
       },
       error = function(e) {
@@ -444,13 +443,13 @@ build_sdm <- function(
               data = se,
               mesh = mesh,          # Keep original high-resolution mesh since speed is no longer an issue
               family = stats::binomial(link = 'logit'),
-              spatiotemporal = 'iid',
-              time = 'year',
+              spatiotemporal = 'ar1',
+              time = year_col,
               reml = TRUE,
               anisotropy = TRUE,
               share_range = TRUE,
               do_fit = TRUE,
-              extra_time = forecast_years
+              extra_time = year_range
             )
 
             # Calculate the candidate model's AIC
