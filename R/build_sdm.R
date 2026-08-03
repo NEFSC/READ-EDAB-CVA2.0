@@ -385,7 +385,7 @@ build_sdm <- function(
           anisotropy = TRUE,
           share_range = TRUE,   # Keeps original user structure
           do_fit = TRUE,
-          extra_time = year_range
+          extra_time = year_range[1]:year_range[2]
         )
       },
       error = function(e) {
@@ -449,7 +449,7 @@ build_sdm <- function(
               anisotropy = TRUE,
               share_range = TRUE,
               do_fit = TRUE,
-              extra_time = year_range
+              extra_time = year_range[1]:year_range[2]
             )
 
             # Calculate the candidate model's AIC
