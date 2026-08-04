@@ -1,11 +1,16 @@
 #' @title Create a spreadsheet containing all SDM performance metrics
 #' @description
-#' Loads existing performance metrics for component models, and calculates Area under the Curve (AUC) for the ensemble model 2 ways. This function also has the option to test the model on an external dataset using \code{test_ens}. The final product is a saved csv file containing all of the performance metrics.
+#' Compiles sample sizes and performance metrics for the component and ensemble modelsThe final product is a saved csv file containing all of the performance metrics.
 #'
 #' @param spp_list the data.frame containing species names and alternative names for \code{test_ens}. Must contain the column \code{Name}, which matches the names of the species folders to help pull correct data.
-#' @param test_ens a TRUE/FALSE indicating whether or not to test the ensemble model on an external dataset
-#' @param yr_min start of year range to specify which predictions to use. Only used if \code{test_ens == TRUE}
-#' @param yr_max end of year range to specify which predictions to use. Only used if \code{test_ens == TRUE}
+#' @param training_years vector with length equal to 2, indicating the maximum and minimum years that identify the desired training datasets
+#' @param pa_col column name for presence/absence column
+#' @param release release code for MOM6 data. Helps pull correct training dataset associated with the MOM6 data with the same name
+#' @param spatial_temporal TRUE/FALSE to determine method for normalizing. Helps pull correct training dataset associated with the MOM6 data with the same name
+#' @param mask_bathy TRUE/FALSE indicating whether or not bathymetry data was used as a mask for raw data before normalization. Helps pull correct training dataset associated with the MOM6 data with the same name
+#' @param rm_corr TRUE/FALSE indicating whether or not correlated environmental covariates were removed. Helps to pull correct training dataframe
+#' @param add_data TRUE/FALSE indicating whether or not to add additional data to the dataset, for example, AUCs calculated on different time periods
+#' @param additional_data a data.frame of additional data to add to the data.frame. column names should be desired column names 
 #'
 #' @return nothing is returned. The resulting CSV file called 'species_evaluation_metrics.csv' is saved in the working directory.
 #'
@@ -19,17 +24,19 @@
 #'  \item{N.PRESENCE, N.ABSENCE}{number of presences/absences in the data set used to build the model}
 #'  \item{BRT, GAM, MAXENT, RF, SDMTMB}{AUC for each component model}
 #'  \item{BRT.WT, GAM.WT, MAXENT.WT, RF.WT, SDMTMB.WT}{weights for each component model in the final ensemble}
-#'  \item{ENS.AUC}{Ensemble model AUC based on weighted sum of CV predictions from each component model}
-#'  \item{WAVG.ENS.AUC}{Ensemble model AUC calculated as a weighted average of AUCs, using the corresponding weights}
-#'  \item{AUC.yr_min.yr_max}{Ensemble model AUC calculated on the external data, if \code{test_ens == TRUE}. Column name will reflect the timeseries used}
+#'  \item{ENS.AUC}{Ensemble model AUC}
+#'  \item{...}{Any additional columns from \code{add_data}}
 #' }
 #'
 #'
 #'@export
 
-make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
-  #spp_list is the csv of species lists including alternative names to help with matching in test_ens
-
+make_evaluation_csv <- function(spp_list, training_years, pa_col, release, spatial_temporal, mask_bathy, rm_corr, add_data, additional_data) {
+  #suffixes to help locate correct data
+  suffix <- if(spatial_temporal) "" else "_global"
+  bathy_suffix <- if(mask_bathy) "masked" else ""
+  corr_suffix <- if(rm_corr) "rmcorr" else ""
+  
   #subset spp_list to serve as base for csv
   sppEval <- spp_list[,
     colnames(spp_list) %in%
@@ -42,19 +49,21 @@ make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
   #pull existing metrics calculated and saved in workflow
   for (x in 1:nrow(spp_list)) {
     #load in data frame to get the number of presences/absences
-    load(paste(
-      file.path(getwd(), spp_list$Name[x]),
-      'pa_clean.RData',
-      sep = '/'
-    )) #load data - dfC
-    n.pres <- length(which(dfC$value == 1))
-    n.abs <- length(which(dfC$value == 0))
+    training_name <- file.path(spp_dir, paste0('training_', training_years[1], '_', training_years[2], '_', corr_suffix, '_hindcast_', release, '_', bathy_suffix, suffix, '.csv'))
+    
+    if (!file.exists(training_name)) {
+      stop("Aborting: training dataset not found.")
+    }
+    dfT <- read.csv(file.path(training_name))
+    
+    n.pres <- length(which(dfT[,pa_col] == 1))
+    n.abs <- length(which(dfT[,pa_col] == 0))
 
-    #pull in other model AUCs
+    #pull in other model AUCs **need to check order of these **
     #load in evaluation metrics
     evalFlist <- dir(
       file.path(getwd(), spp_list$Name[x], 'model_output', 'eval_metrics'),
-      pattern = '.RData',
+      pattern = '.rds',
       full.names = T
     )
     eval <- vector(length = length(evalFlist))
@@ -63,29 +72,7 @@ make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
       eval[y] <- ev
     } #eval is a vector of the component model AUCS
 
-    #load in ensemble and calculate raw aucs from weighted sum predictions from component models
-    load(paste0(
-      file.path(getwd(), spp_list$Name[x], 'model_output', 'models'),
-      '/ENSEMBLE.RData'
-    )) #ens
-    #calculate auc
-    Pred <- ROCR::prediction(ens$pred, ens$abund)
-    Perf <- ROCR::performance(Pred, 'auc')
-    auc <- Perf@y.values[[1]]
-
-    #create weighted average auc
-    load(paste0(
-      file.path(getwd(), spp_list$Name[x], 'model_output'),
-      '/ensemble_weights.RData'
-    )) #weights
-    aucW <- stats::weighted.mean(eval, weights)
-
-    #correct length of eval if SDMTMB didn't converge (doing this now because if SDMTMB didn't converge, the length of both weights and eval will be right so we don't need to correct until now)
-    if (!any(grepl('SDMTMB', evalFlist))) {
-      #if sdmtmb does not converge
-      eval[5] <- NA #add a placeholder to both eval and weights
-      weights[5] <- NA
-    }
+   
 
     #put it all together and add names
     eval <- c(n.pres, n.abs, eval, weights, auc, aucW)
@@ -102,75 +89,18 @@ make_evaluation_csv <- function(spp_list, test_ens = T, yr_min, yr_max) {
       "MAXENT.WT",
       "RF.WT",
       'SDMTMB.WT',
-      'ENS.AUC',
-      'WAVG.ENS.AUC'
+      'ENS.AUC'
     )
 
     #add to sEval
     sEval <- rbind(sEval, eval)
-    print(x)
   } #end x
 
   #now we test the ensemble on the external dataset, if desired
 
-  if (test_ens) {
-    message(paste("Testing Ensemble on new data..."))
-    #create altNames vector for test_ens
-    altNames <- paste(
-      spp_list$Common.Name,
-      spp_list$COM_NAME,
-      spp_list$Scientific.Name,
-      spp_list$Alternate.Name,
-      spp_list$SCI_NAME,
-      spp_list$SCI_NAME_ALT,
-      spp_list$SCI_NAME_ALT2,
-      sep = ','
-    )
-
-    #predict on external dataset
-    evalTest <- vector(length = nrow(sppEval)) #using sppEval as the base
-    for (y in 1:nrow(spp_list)) {
-      ##make source list - we have both rasters and csv files, but for some reason this was easier to do with the csv files. But the raster file list includes all of the data used in the model building (some sources were excluded due to low counts or methods that didn't match the species [i.e. a longline survey would not catch shellfish]). So we use the raster list to subset the csv list appropriately for each species.
-      #grab list of standardized csvs
-      csvFlist <- dir(
-        './Data/csvs/standardized',
-        pattern = paste(yr_min, yr_max, sep = "_")
-      )
-      csvFlist <- gsub('.csv', '', csvFlist) #isolate to names only
-
-      #grab species-specific list of rasters
-      rastFlist <- dir(
-        file.path(getwd(), spp_list$Name[y], 'input_rasters'),
-        pattern = paste(yr_min, yr_max, sep = "_")
-      )
-      rastFlist <- gsub('.nc', '', rastFlist) #isolate to names only
-      i <- grep('combined_rasters', rastFlist) #remove combined raster if present
-      if (length(i) != 0) {
-        rastFlist <- rastFlist[-i]
-      }
-
-      csvFlist <- csvFlist[csvFlist %in% rastFlist] #subset csvFlist to just datasets used for species
-      csvFlist <- paste0('./Data/csvs/standardized/', csvFlist, '.csv') #recreate full paths
-      #test ensemble
-      evalTest[y] <- test_ens(
-        spp = spp_list$Name[y],
-        sppNames = altNames[y],
-        sources = csvFlist,
-        yr_min = yr_min,
-        yr_max = yr_max
-      )
-      print(y)
-    }
-  } #end test_ens
-
-  #combine and save spreadsheet
-  if (test_ens) {
-    #if test_ens is true, add result and rename column
-    sppEval <- cbind(sppEval, sEval, evalTest)
-    names(sppEval)[ncol(sppEval)] <- paste('AUC', yr_min, yr_max, sep = '.')
-  } else {
-    #if test_ens is FALSE
-    sppEval <- cbind(sppEval, sEval) #just combine everything you made in the first for loop
+  if (add_data) {
+    message(paste("Adding additional data..."))
+    sppEval <- cbind(sppEval, additional_data) #combining everything
   }
   utils::write.csv(
     sppEval,
