@@ -14,22 +14,23 @@ calculate_directionality <- function(
   bootstrap = TRUE,
   samples = 10000
 ) {
-  scores.only <- species[, (dim(species)[2] - 2):dim(species)[2]] #isolate scores
+  scores.only <- species[, c('Negative', 'Neutral', "Positive")] #isolate scores
+  scores.clean <- scores.only[apply(!is.na(scores.only), 1, any), ] #remove NAs from non existent scores for the species 
 
   if (bootstrap) {
     #if bootstrap is TRUE, perform bootstrap
     set.seed(2026)
     scoresB <- NULL
 
-    if (sum(scores.only, na.rm = T) == 0) {
+    if (sum(scores.clean, na.rm = T) == 0) {
       #check for data (if all are NAs, sum will be equal to 0)
       scoresB <- rep(0, length = samples)
     } else {
       for (i in 1:samples) {
         #calculate number of tallies into Neg(itive), Neu(trals), Pos(itive)
-        num_negs <- sum(scores.only$Negative, na.rm = T)
-        num_neu <- sum(scores.only$Neutral, na.rm = T)
-        num_pos <- sum(scores.only$Positive, na.rm = T)
+        num_negs <- sum(scores.clean$Negative, na.rm = T)
+        num_neu <- sum(scores.clean$Neutral, na.rm = T)
+        num_pos <- sum(scores.clean$Positive, na.rm = T)
 
         #create draw pile based on number of tallies in each category
         draw_pile <- c(
@@ -41,7 +42,7 @@ calculate_directionality <- function(
         #randomly sample with replacement 20 (4 tallies x 5 experts) from draw pile
         samp <- sample(
           x = draw_pile,
-          size = 4 * nrow(scores.only),
+          size = 4 * nrow(scores.clean),
           replace = TRUE
         ) #replaced 4 with 5 * nrow(scores.only)
 
@@ -66,7 +67,7 @@ calculate_directionality <- function(
 
         #calculate weighted average
         score <- ((sampNEG * -1) + (sampNEU * 0) + (sampPOS * 1)) /
-          (nrow(scores.only) * 4)
+          (nrow(scores.clean) * 4)
 
         #ranking
         rank <- ifelse(
@@ -83,13 +84,13 @@ calculate_directionality <- function(
   } else {
     #if bootstrap if FALSE, just get weighted mean
     #calculate number of tallies into Neg(itive), Neu(trals), Pos(itive)
-    num_negs <- sum(scores.only$Negative, na.rm = T)
-    num_neu <- sum(scores.only$Neutral, na.rm = T)
-    num_pos <- sum(scores.only$Positive, na.rm = T)
+    num_negs <- sum(scores.clean$Negative, na.rm = T)
+    num_neu <- sum(scores.clean$Neutral, na.rm = T)
+    num_pos <- sum(scores.clean$Positive, na.rm = T)
 
     #calculate weighted average
     score <- ((num_negs * -1) + (num_neu * 0) + (num_pos * 1)) /
-      (nrow(scores.only) * 4)
+      (nrow(scores.clean) * 4)
 
     #ranking
     rank <- ifelse(
