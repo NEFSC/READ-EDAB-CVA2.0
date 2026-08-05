@@ -71,8 +71,7 @@ make_sdm_plots <- function(
                      retro = T),
           mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
           xlab = '', 
-          ylab = '',
-          col = rev(cmocean::cmocean('matter')(30))
+          ylab = ''
         )
         plot(coastline, col = 'grey', add = T)
         graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
@@ -241,56 +240,33 @@ make_sdm_plots <- function(
       message(paste("Plotting residuals..."))
       #residual plots
       #model predictions
-      load(paste0(
-        getwd(),
-        '/',
-        s,
-        '/output_rasters/ENSEMBLE_',
-        yr_min,
-        '_',
-        yr_max,
-        '.RData'
-      )) #abund
-      abund <- raster::stack(abund)
+      predictions_path <- file.path(spp_dir, 'output_rasters', paste0('ENSEMBLE_', source, '_', release, '_', bathy_suffix, suffix, '.tif'))
+      abund <- terra::rast(prediction_path)
 
       #observations
-      obs <- raster::stack(paste0(
-        getwd(),
-        '/',
-        s,
-        '/input_rasters/combined_rasters_',
-        yr_min,
-        '_',
-        yr_max,
-        '.nc'
-      ))
+      obs_name <- file.path(spp_dir, paste0('fisheries_environment', '_', corr_suffix, '_hindcast_', release, '_', bathy_suffix, suffix, '.csv'))
+      obs <- read.csv(obs_name)
 
-      #manipulate obs a bit to clean it up
-      names(obs) <- names(abund)
-      obsC <- raster::crop(obs, raster::extent(abund))
-      obsC[obsC == 0] <- NA
-      obsC[obsC == 1] <- 0
-      obsC[obsC == 2] <- 1
+      preds <- build_preds_df(obs, xy_col = c("grid.lon", "grid.lat"), abund)
 
-      resids <- obsC - abund
+      preds$residuals <- preds$pa - preds$predicted
 
+      template_r <- abund[[1]][[1]]
       #avg residuals
       avgR <- vector(mode = 'list', length = 12)
       for (y in 1:12) {
-        mn <- seq(y, raster::nlayers(resids), by = 12)
-        MNS <- raster::subset(resids, mn)
-        avgR[[y]] <- raster::calc(MNS, fun = mean, na.rm = T)
+        sub <- preds[preds$month == y,]
+        pts <- terra::vect(sub, geom=c("grid.lon", "grid.lat"), crs = 'EPSG:4326')
+        avgR[[y]] <- terra::rasterize(pts, template_r, field = 'residuals', fun = mean)
       } #end for
-      avgR <- raster::stack(avgR)
+      avgR <- terra::rast(avgR)
       names(avgR) <- month.abb
 
       grDevices::pdf(
         paste0(
-          file.path(getwd(), s, 'figures'),
+          file.path(spp_dir, 'figures'),
           '/mean_residuals_',
-          yr_min,
-          '_',
-          yr_max,
+          release,
           '.pdf'
         ),
         width = 8,
@@ -298,14 +274,19 @@ make_sdm_plots <- function(
       )
       graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
       for (y in 1:12) {
-        plot(
-          raster::subset(avgR, y),
-          zlim = c(-1, 1),
+        terra::plot(
+          avgR[[y]],
+          range = c(-1, 1),
           col = cmocean::cmocean('balance')(64),
           legend = F,
-          legend.mar = 0
+          pax = list(cex.axis = 2, cex.lab = 1.25,
+                     yat = seq(35,45,by=1),
+                     retro = T),
+          mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
+          xlab = '', 
+          ylab = ''
         )
-        plot(coastline['id'], col = 'grey', add = T)
+        plot(coastline, col = 'grey', add = T)
         graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
       }
       fields::image.plot(
@@ -327,17 +308,15 @@ make_sdm_plots <- function(
 
       grDevices::pdf(
         paste0(
-          file.path(getwd(), s, 'figures'),
+          file.path(spp_dir, 'figures'),
           '/histogram_residuals_',
-          yr_min,
-          '_',
-          yr_max,
+          release,
           '.pdf'
         ),
         width = 6,
         height = 6
       )
-      graphics::hist(resids[], main = '', xlab = 'Residuals')
+      graphics::hist(preds$residuals, main = '', xlab = 'Residuals')
       grDevices::dev.off()
 
       rm(abund, obs) #clear out large data objects to help with looping
