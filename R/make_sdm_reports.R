@@ -36,6 +36,9 @@ make_sdm_reports <- function(
 
     # Clean species name for file paths (e.g., "Blue Whale" -> "Blue_Whale")
     clean_name <- row$Name
+    
+    # Define standard paths
+    spp_dir        <- file.path(getwd(), clean_name)
 
     #match to metrics
     mrow <- model_metrics[which(model_metrics$Common.Name == row$Common.Name), ]
@@ -59,39 +62,36 @@ make_sdm_reports <- function(
         hTab = as.data.frame(hTab),
         n_pres = mrow$N.PRESENCE,
         n_abs = mrow$N.ABSENCE,
-        aucWI = round(mrow$ENS.AUC, digits = 3),
-        aucOUT = round(mrow$AUC.2020.2023, digits = 3),
+        auc = round(mrow$ENS.AUC, digits = 3),
         # Assuming your PDFs follow a naming convention:
-        weight_plot_pdf = paste0(
-          file.path(getwd(), clean_name, 'figures'),
-          '/component_model_weights.pdf'
+        weight_plot_pdf =  paste0(
+          file.path(spp_dir, 'figures'),
+          '/component_model_weights_', 
+          release, 
+          '.pdf'
         ),
         imp_plot_pdf = paste0(
-          file.path(getwd(), clean_name, 'figures'),
-          '/variable_importance_radars.pdf'
+          file.path(spp_dir, 'figures'),
+          '/variable_importance_radars_', 
+          release, 
+          '.pdf'
         ),
-        results_pdf = paste0(
-          file.path(getwd(), clean_name, 'figures'),
-          '/mean_SDM_',
-          yr_min,
-          '_',
-          yr_max,
-          '_vert.pdf'
+        results_pdf =  paste0(
+          file.path(spp_dir, 'figures'),
+          '/mean_SDM_hindcast_',
+          release,
+          '.pdf'
         ),
         resid_hist = paste0(
-          file.path(getwd(), clean_name, 'figures'),
+          file.path(spp_dir, 'figures'),
           '/histogram_residuals_',
-          yr_min,
-          '_',
-          yr_max,
+          release,
           '.pdf'
         ),
         resid_map = paste0(
-          file.path(getwd(), clean_name, 'figures'),
+          file.path(spp_dir, 'figures'),
           '/mean_residuals_',
-          yr_min,
-          '_',
-          yr_max,
+          release,
           '.pdf'
         )
       )
