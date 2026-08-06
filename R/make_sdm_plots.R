@@ -53,44 +53,43 @@ make_sdm_plots <- function(
         paste0(
           file.path(spp_dir, 'figures'),
           '/mean_SDM_',
+          source, '_',
           release,
           '.pdf'
         ),
         width = 8,
         height = 11
       )
-      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(2.2, 2.2, 1, 0.5), oma = c(0, 0, 0, 0))
       for (y in 1:12) {
+        # Draw continuous legend ONLY on the last panel (December)
+        draw_legend <- (y == 12)
+        
         terra::plot(
           avgHSM[[y]],
           range = c(0, 1),
           col = cmocean::cmocean('matter')(64),
-          legend = F,
-          pax = list(cex.axis = 2, cex.lab = 1.25,
-                     yat = seq(35,45,by=1),
-                     retro = T),
-          mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
-          xlab = '', 
-          ylab = ''
+          legend = draw_legend,
+          mar = c(2.2, 2.2, 1, 0.5), # Keep panel margins tight inside terr
+          pax = list(
+            cex.axis = 1.25,
+            cex.lab = 1,
+            yat = seq(36, 44, by = 2),
+            xat = seq(-78, -66, by = 2),
+            retro = TRUE
+          ),
+          plg = list(
+            title = "Probability of\nOccurance",
+            title.cex = 1.5,
+            cex = 1.5,
+            horizontal = TRUE,       # Make legend horizontal
+            x = -72,
+            y = 36),      # Place inside bottom right of panel 12
         )
         plot(coastline, col = 'grey', add = T)
-        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+        graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
-      fields::image.plot(
-        matrix(seq(0, 1, by = 0.1), 11, 11),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.4, 0.8, 0.25, 0.35),
-        legend.args = list(
-          text = 'Probability of\nOccurance',
-          cex = 0.75,
-          side = 3,
-          line = 0.1
-        ),
-        axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
-        col = cmocean::cmocean('matter')(64)
-      )
+      
       grDevices::dev.off()
     } #end sdm results
 
@@ -266,44 +265,42 @@ make_sdm_plots <- function(
         paste0(
           file.path(spp_dir, 'figures'),
           '/mean_residuals_',
+          source, "_",
           release,
           '.pdf'
         ),
         width = 8,
         height = 11
       )
-      graphics::par(mfrow = c(4, 3), mar = c(3, 3, 1, 0))
+      graphics::par(mfrow = c(4, 3), mar = c(2.2, 2.2, 1, 0.5), oma = c(0, 0, 0, 0))
       for (y in 1:12) {
+        # Draw continuous legend ONLY on the last panel (December)
+        draw_legend <- (y == 12)
+        
         terra::plot(
           avgR[[y]],
           range = c(-1, 1),
           col = cmocean::cmocean('balance')(64),
-          legend = F,
-          pax = list(cex.axis = 2, cex.lab = 1.25,
-                     yat = seq(35,45,by=1),
-                     retro = T),
-          mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
-          xlab = '', 
-          ylab = ''
+          legend = draw_legend,
+          mar = c(2.2, 2.2, 1, 0.5), # Keep panel margins tight inside terr
+          pax = list(
+            cex.axis = 1.25,
+            cex.lab = 1,
+            yat = seq(36, 44, by = 2),
+            xat = seq(-78, -66, by = 2),
+            retro = TRUE
+          ),
+          plg = list(
+            title = "Mean Residuals",
+            title.cex = 1.5,
+            cex = 1.5,
+            horizontal = TRUE,       # Make legend horizontal
+            x = -72,
+            y = 36),      # Place inside bottom right of panel 12
         )
-        plot(coastline, col = 'grey', add = T)
-        graphics::legend('topleft', bty = 'n', legend = month.abb[y], cex = 2)
+         plot(coastline, col = 'grey', add = T)
+        graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
-      fields::image.plot(
-        matrix(seq(-1, 1, by = 0.1), 11, 11),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.4, 0.8, 0.25, 0.35),
-        legend.args = list(
-          text = 'Residuals',
-          cex = 0.75,
-          side = 3,
-          line = 0.1
-        ),
-        axis.args = list(cex.axis = 1, mgp = c(3, 0.5, 0)),
-        col = cmocean::cmocean('balance')(64)
-      )
       grDevices::dev.off()
 
       grDevices::pdf(
