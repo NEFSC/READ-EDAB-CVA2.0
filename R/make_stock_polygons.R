@@ -38,7 +38,7 @@ make_stock_polygons <- function(key, species_col, stock_col, id_col, polygons, p
         terra::buffer(width = -100)
       
       # Project back to original CRS if necessary
-      spp.stock.agg <- terra::project(spp.stock.agg, crs(polygons))
+      spp.stock.agg <- terra::project(spp.stock.agg, terra::crs(polygons))
       
       # Assign the stock name as a new attribute column
       spp.stock.agg$stock_area <- s
@@ -53,7 +53,7 @@ make_stock_polygons <- function(key, species_col, stock_col, id_col, polygons, p
     names(stock.polys) <- stocks
     stock.polys <- terra::vect(stock.polys)
     
-    writeVector(stock.polys, filename = paste0(gsub(' ', '', x), '.shp'), overwrite = T)
+    terra::writeVector(stock.polys, filename = paste0(gsub(' ', '', x), '.shp'), overwrite = T)
     
     log <- rbind(c(x, paste(stocks, ' ', collapse = ' ')))
     
