@@ -55,7 +55,7 @@ make_stock_polygons <- function(key, species_col, stock_col, id_col, polygons, p
     
     terra::writeVector(stock.polys, filename = paste0(gsub(' ', '', x), '.shp'), overwrite = T)
     
-    log <- rbind(c(x, paste(stocks, ' ', collapse = ' ')))
+    log <- rbind(log, c(x, paste(stocks, ' ', collapse = ' ')))
     
   }#end x
   
