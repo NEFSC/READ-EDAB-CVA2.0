@@ -3,10 +3,11 @@
 #' @description Combines raw variable exposures and SDM results, using the SDM results as weights to average the exposure across time to produce maps of species-specific exposure for each variable or across space to produce timeseries of species-specific exposure for each variable
 #'
 #' @param type designates desired output, must equal 'map' or 'timeseries'
-#' @param ranked_exposure a list of spatRasters of ranked exposure data. Output from \code{rank_exposure}
+#' @param ranked_exposure a list of spatRasters of ranked exposure data. 
 #' @param sdm_raster spatRaster with monthly averages of SDM results to use as weights for weighted average
+#' @param stock_polys a spatVector containing polygons associated with stocks. Defaults to NULL. 
 #'
-#' @return If \code{type == 'map'}, a spatRaster with the number of layers equal to the number of variables supplied, containing the weighted average exposure, weighted by SDM results, for each variable. If \code{type == 'timeseries'}, a matrix with the number of rows equal to the number of variables supplied, and 12 columns (1 for each month) containing the weighted average exposure, weighted by SDM results, for each variable.
+#' @return If \code{type == 'map'}, a spatRaster with the number of layers equal to the number of variables supplied, containing the weighted average exposure, weighted by SDM results, for each variable. If \code{type == 'timeseries'} and \code{stock_polys} are not provided, a matrix with the number of rows equal to the number of variables supplied, and 12 columns (1 for each month) containing the weighted average exposure, weighted by SDM results, for each variable. If \code{stock_polys} are provided, the function returns a list of matrices equal to 1 + number of stock polygons provided. The global average, plus averages within each polygon are generated. 
 #'
 #'@export
 
