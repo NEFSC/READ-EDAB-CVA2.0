@@ -3,7 +3,7 @@
 #' @description Uses the logic rule from CVA1.0 to combine variable-specific exposures to create a total exposure map or timeseries
 #'
 #' @param type designates desired output, must equal 'map' or 'timeseries'
-#' @param variable_exposure If \code{type == 'map'}, a rasterStack output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix output from \code{make_variable_exposure(type == 'timeseries')}.
+#' @param variable_exposure If \code{type == 'map'}, a spatRaster output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix output from \code{make_variable_exposure(type == 'timeseries')}.
 #' @param count_all TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables
 #' @param weights output from \code{combine_weights} - a vector of variable weights in ensemble SDM
 #' @param weight_threshold numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation
@@ -24,31 +24,21 @@ make_total_exposure <- function(
       mapSub <- variable_exposure
     } else {
       wi <- which(weights >= weight_threshold)
-      mapSub <- raster::subset(variable_exposure, wi)
+      mapSub <- variable_exposure[wi]
     }
 
-    #multiply mean exposure maps by variable weights to scale, and count how many layers have each rank within each cell
-    hr <- raster::calc(mapSub, function(x) {
-      length(x[x >= 3.5])
-    })
-    hh <- raster::calc(mapSub, function(x) {
-      length(x[x >= 3])
-    })
-    md <- raster::calc(mapSub, function(x) {
-      length(x[x >= 2.5])
-    })
-
-    hr[is.na(raster::subset(mapSub, 1))] <- NA
-    hh[is.na(raster::subset(mapSub, 1))] <- NA
-    md[is.na(raster::subset(mapSub, 1))] <- NA
+    #count how many layers have each rank within each cell
+    hr <- sum(mapSub >= 3.5)
+    hh <- sum(mapSub >= 3)
+    md <- sum(mapSub >= 2.5)
 
     #apply logic rule from Hare et al 2015
-    expL <- raster::subset(mapSub, 1)
-    expL[] <- 1
-    expL <- replace(expL, md >= 2, 2)
-    expL <- replace(expL, hh >= 2, 3)
-    expL <- replace(expL, hr >= 3, 4)
-    expL[is.na(raster::subset(mapSub, 1))] <- NA
+    expL <- ifel(!is.na(hr), 1, NA) #everything starts as 1
+
+    expL <- ifel(md >= 2, expL + 1, expL + 0) #add 1 if moderate threshold met, max now = 2
+    expL <- ifel(hh >= 2, expL + 1, expL + 0) #add 1 if moderate threshold met, max now = 3
+    expL <- ifel(hr >= 3, expL + 1, expL + 0) #add 1 if moderate threshold met, max now = 4
+    
 
     return(expL)
   }
