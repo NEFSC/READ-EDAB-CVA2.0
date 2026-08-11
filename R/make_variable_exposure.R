@@ -47,7 +47,7 @@ make_variable_exposure <- function(type, ranked_exposure, sdm_raster, stock_poly
     colnames(matExp) <- month.abb
     
     if(!is.null(stock_polys)){ #if stock polygons are provided, 
-      stock_mats <- vector(mode = 'list', length = length(stock_polys)) #confirm length is the correct call here
+      stock_mats <- vector(mode = 'list', length = length(stock_polys)) 
       for(p in 1:length(stock_polys)){
         pExp <- matrix(nrow = length(ranked_exposure), ncol = 12)
         for (x in 1:length(ranked_exposure)) {
@@ -61,7 +61,7 @@ make_variable_exposure <- function(type, ranked_exposure, sdm_raster, stock_poly
             r_stack <- c(r, h)
             names(r_stack) <- c('exp', 'sdm')
             
-            vals <- terra::extract(r_stack, stock_polys[p]) #again check indexing here 
+            vals <- terra::extract(r_stack, stock_polys[p]) 
             meanExp[m] <- sum(vals$exp * vals$sdm, na.rm = T) / sum(vals$sdm, na.rm = T) #calculate weighted average 
           }
           pExp[x, ] <- meanExp
