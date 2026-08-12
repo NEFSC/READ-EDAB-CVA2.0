@@ -154,46 +154,41 @@ make_sdm_plots <- function(
       
       dfT <- read.csv(file.path(training_name)) 
       
-      flist <- dir(
-        file.path(spp_dir, 'model_output/importance'),
-        full.names = T, 
-        pattern = 'rds'
-      )
-      flistClean <- dir(
-        file.path(spp_dir, 'model_output/importance'),
-        full.names = F, 
-        pattern = 'rds'
-      )
-
-      #set up data frame
-      vars <- names(dfT)[names(dfT) %in% var_names]
-      v <- data.frame(var = vars)
-
-      for (x in 1:length(flist)) {
-        load(flist[x]) #imp
-        if (inherits(imp, 'data.frame') & grepl('BRT', flist[x])) {
-          v <- merge(v, imp, by = 'var', all.x = T)
+      #normalized variable importance; load if file exists, make it if it doesn't
+      if(!file.exists(file.path('./SDMs/', spp, 'model_output',
+                                'normalized_variable_importance.rds'))){
+        #read in variable importance outputs & create list
+        flist <- dir(
+          file.path('./SDMs/', spp, 'model_output/importance'),
+          full.names = T,
+          pattern = 'rds'
+        )
+        imp_list <- vector(mode = 'list', length = length(flist))
+        for(x in 1:length(flist)){
+          load(flist[x])
+          imp_list[[x]] <- imp
         }
-        if (inherits(imp, 'data.frame') & grepl('SDMTMB', flist[x])) {
-          v <- merge(v, imp[,1:2], by.x = 'var', by.y = 'Variable')
-        } 
-        if(!inherits(imp, 'data.frame')){
-          imp.df <- data.frame(var = names(imp)[!is.na(names(imp))], var.imp = imp[!is.na(names(imp))])
-          v <- merge(v, imp.df, by = 'var', all.x = T)
-        }
-        #print(x)
+        names(imp_list) <- gsub('.rds', '', dir(
+          file.path('./SDMs/', spp, 'model_output/importance'),
+          full.names = F,
+          pattern = 'rds'
+        ))
+        
+        #pull variable names from mapexp
+        dyn_vars <- names(dfT)[names(dfT) %in% var_names]
+        
+        #create variable importance
+        var_imp <- normalize_variable_importance(vars = dyn_vars, ens_weights = weights, imp_list = imp_list)
+        
+        #save
+        save(var_imp, file = file.path('./SDMs/', spp, 'model_output',
+                                       'normalized_variable_importance.rds'))
+      } else {
+        var_imp <- load(file.path('./SDMs/', spp, 'model_output',
+                                  'normalized_variable_importance.rds'))
       }
 
-      colnames(v)[-1] <- gsub('.rds', '', flistClean)
-
-      v <- replace(v, is.na(v), 0)
-
-      dfI <- t(apply(v[,-1], 2, FUN = function(x) {
-        x / sum(x)
-      }))
-      colnames(dfI) <- v$var
-
-      dfI <- rbind(rep(max(dfI, na.rm = T), ncol(dfI)), rep(0, ncol(dfI)), dfI)
+      dfI <- rbind(rep(max(var_imp[-nrow(var_imp),], na.rm = T), ncol(var_imp)), rep(0, ncol(var_imp)), var_imp[-nrow(var_imp),])
 
       pal <- RColorBrewer::brewer.pal(n = 5, 'Set1')
 
@@ -227,10 +222,7 @@ make_sdm_plots <- function(
       )
       #}
       #add weighted mean from ensemble
-      load(file.path(spp_dir, 'model_output/ensemble_weights.rds')) #weights 
-      dfW <- dfI[-c(1, 2), ]
-      ws <- apply(dfW, MARGIN = 2, FUN = weighted.mean, w = weights, na.rm = T)
-      ws <- rbind(dfI[1:2, ], ws)
+      ws <- rbind(dfI[1:2, ], var_imp[nrow(var_imp),])
       fmsb::radarchart(
         as.data.frame(ws),
         pfcol = scales::alpha(pal, 0.5),
