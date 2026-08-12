@@ -5,7 +5,7 @@
 #' @param type designates desired output, must equal 'map' or 'timeseries'
 #' @param variable_exposure If \code{type == 'map'}, a spatRaster output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix or list output from \code{make_variable_exposure(type == 'timeseries')}.
 #' @param count_all TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables
-#' @param weights output from \code{combine_weights} - a vector of variable weights in ensemble SDM
+#' @param variable_weights output from \code{combine_weights} - a vector of variable weights in ensemble SDM
 #' @param weight_threshold numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation
 #'
 #' @return If \code{type == 'map'}, the output is a raster representing total exposure across space. If \code{type == 'timeseries'}, the output is a vector representing total exposure across time if a single matrix is supplied in variable_exposure, or a matrix with a number of rows equal to the length of the list supplied in variable_exposure.
@@ -16,7 +16,7 @@ make_total_exposure <- function(
   type,
   variable_exposure,
   count_all,
-  weights,
+  variable_weights,
   weight_threshold
 ) {
   if (type == 'map') {
