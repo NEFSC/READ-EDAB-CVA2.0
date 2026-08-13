@@ -10,20 +10,8 @@ sd_model_data <- function(raw, spatial_temporal){
   
   if(spatial_temporal){
     ## create monthly averages across space and time (months - should make this customizable at some point)
-    sds <- NULL
-    for (m in 1:12) {
-      mn <- seq(m, terra::nlyr(raw), by = 12) #grab all month xs from timeseries by creating a sequence
-      MNS <- raw[[mn]] #subset raster brick
-      mm <- terra::stdev(MNS, na.rm = T) #average
-      sds <- abind::abind(as.array(mm), sds, along = 3) #make array and bind together
-      #print(m)
-    } #end m
-    #convert to rasterBrick
-    
-    sds <- terra::rast(sds)
-    terra::ext(sds) <- terra::ext(raw) #make the extent the same as v
-    terra::crs(sds) <- terra::crs(raw)
-    names(sds) <- 1:12
+    sds <- terra::tapp(raw, rep(1:12, times = terra::nlyr(raw)/12), fun = 'sd')
+    names(sds) <- month.abb
   } else {
     #calculate global average across layers and space
     gMean <- mean(terra::global(raw, 'mean', na.rm = T)$mean) #first calculate global mean
