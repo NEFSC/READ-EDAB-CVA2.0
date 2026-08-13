@@ -20,8 +20,9 @@ calculate_raw_exposure <- function(present, future, spatial_temporal, mask_bathy
     }
     #reproject because there are slight differences in resolution/extent for some reason, especially with the forecasts
     bathy_aligned <- terra::resample(bathy, present, method = "bilinear")
-    
     present <- terra::ifel(bathy_aligned <= bathy_range[1] | bathy_aligned > bathy_range[2], NA, present)
+    
+    bathy_aligned <- terra::resample(bathy, future, method = "bilinear")
     future <- terra::ifel(bathy_aligned <= bathy_range[1] | bathy_aligned > bathy_range[2], NA, future)
   }
   
