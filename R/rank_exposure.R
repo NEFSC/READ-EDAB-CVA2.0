@@ -11,7 +11,7 @@
 
 rank_exposure <- function(
   exposure,
-  flip = T
+  flip = F
 ) {
 
     #change sign - negative = exposure to worse habitat?
