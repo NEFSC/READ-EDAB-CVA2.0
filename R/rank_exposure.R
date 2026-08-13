@@ -4,44 +4,28 @@
 #'
 #' @param exposure output from \code{calculate_raw_exposure}
 #' @param flip TRUE/FALSE option to multiply exposure by -1 to ensure that positive exposure values represent negative variable change (increasing temperatures, decreasing oxygen concentrations, etc).
-#' @param no_flip_vars character vector naming which vectors should NOT be flipped - counterintuitive, yes, but this list was actually shorter than the variables that needed to be flipped for NECVA2.0. Names should match the names in \code{exposure}
 #'
-#' @return A list of rasterStacks with each layer containing ranked values between 1 - 4. The length of the list is equal to the length of the lists supplied as \code{exposure}
+#' @return A spatRaster with each layer containing ranked values between 1 - 4. 
 #'
 #'@export
 
 rank_exposure <- function(
   exposure,
-  flip = T,
-  no_flip_vars = c('bottomT', 'surfaceT', 'bottomArg', 'MLD')
+  flip = T
 ) {
-  rankE <- vector(mode = 'list', length = length(exposure)) #list of vectors for
-  for (x in 1:length(exposure)) {
-    s <- exposure[[x]]
 
     #change sign - negative = exposure to worse habitat?
     if (flip) {
-      if (names(exposure)[x] %in% no_flip_vars) {
-        s <- s
-      } else {
-        s <- s * -1
+      exposure <- exposure * -1
       }
-    }
 
-    mapE <- vector(mode = 'list', length = 12) #list for maps
-    for (m in 1:12) {
-      r <- raster::subset(s, m)
-      #rank
-      QR <- replace(r, r <= 0.5, 1)
-      QR <- replace(QR, r > 0.5 & r <= 1.5, 2)
-      QR <- replace(QR, r > 1.5 & r <= 2, 3)
-      QR <- replace(QR, r > 2, 4)
+    #rank
+    QR <- terra::ifel(!is.na(exposure), 1, NA) #everything starts as 1 and we build from there 
+    QR <- terra::ifel(exposure > 0.5 & exposure <= 1.5, QR + 1, QR + 0) #add one if exposure is between 0.5 and 1.5 to bring maximum to 2
+    QR <- terra::ifel(exposure > 1.5 & exposure <= 2, QR + 1, QR + 0) #add one if exposure is between 1.5 and 2 to bring maximum to 3
+    QR <- terra::ifel(exposure > 2, QR + 1, QR + 0) #add one if exposure is greater than 2 to bring maximum to 4
 
-      mapE[[m]] <- QR
-    }
-
-    rankE[[x]] <- raster::stack(mapE)
-  }
-  names(rankE) <- names(exposure)
-  return(rankE)
+  names(QR) <- names(exposure)
+  
+  return(QR)
 }
