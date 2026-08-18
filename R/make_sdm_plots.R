@@ -20,7 +20,12 @@
 make_sdm_plots <- function(
   species,
   type = c('ensemble', 'weights', 'importance', 'residuals'),
-  release, spatial_temporal, mask_bathy, rm_corr, source = 'hindcast', init = NA,
+  release, 
+  spatial_temporal, 
+  mask_bathy, 
+  rm_corr, 
+  training_years, 
+  source = 'hindcast', init = NA,
   var_names,
   coastline,
   model_metrics
@@ -155,11 +160,11 @@ make_sdm_plots <- function(
       dfT <- read.csv(file.path(training_name)) 
       
       #normalized variable importance; load if file exists, make it if it doesn't
-      if(!file.exists(file.path('./SDMs/', spp, 'model_output',
+      if(!file.exists(file.path(spp_dir, 'model_output',
                                 'normalized_variable_importance.rds'))){
         #read in variable importance outputs & create list
         flist <- dir(
-          file.path('./SDMs/', spp, 'model_output/importance'),
+          file.path(spp_dir, 'model_output/importance'),
           full.names = T,
           pattern = 'rds'
         )
@@ -169,10 +174,12 @@ make_sdm_plots <- function(
           imp_list[[x]] <- imp
         }
         names(imp_list) <- gsub('.rds', '', dir(
-          file.path('./SDMs/', spp, 'model_output/importance'),
+          file.path(spp_dir, 'model_output/importance'),
           full.names = F,
           pattern = 'rds'
         ))
+        
+        load(file.path(spp_dir, 'model_output/ensemble_weights.rds')) #weights 
         
         #pull variable names from mapexp
         dyn_vars <- names(dfT)[names(dfT) %in% var_names]
@@ -181,10 +188,10 @@ make_sdm_plots <- function(
         var_imp <- normalize_variable_importance(vars = dyn_vars, ens_weights = weights, imp_list = imp_list)
         
         #save
-        save(var_imp, file = file.path('./SDMs/', spp, 'model_output',
+        save(var_imp, file = file.path(spp_dir, 'model_output',
                                        'normalized_variable_importance.rds'))
       } else {
-        var_imp <- load(file.path('./SDMs/', spp, 'model_output',
+        var_imp <- load(file.path(spp_dir, 'model_output',
                                   'normalized_variable_importance.rds'))
       }
 
@@ -240,7 +247,7 @@ make_sdm_plots <- function(
       #residual plots
       #model predictions
       predictions_path <- file.path(spp_dir, 'output_rasters', paste0('ENSEMBLE_', source, '_', release, '_', bathy_suffix, suffix, '.tif'))
-      abund <- terra::rast(prediction_path)
+      abund <- terra::rast(predictions_path)
 
       #observations
       obs_name <- file.path(spp_dir, paste0('fisheries_environment', '_', corr_suffix, '_hindcast_', release, '_', bathy_suffix, suffix, '.csv'))
