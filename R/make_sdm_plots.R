@@ -225,7 +225,7 @@ make_sdm_plots <- function(
         vlcex = 1.25
       )
       graphics::legend(
-        'topleft',
+        'bottomright',
         legend = rownames(dfI)[3:7],
         lty = 1,
         col = pal,
