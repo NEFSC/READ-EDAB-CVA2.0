@@ -93,7 +93,7 @@ make_sdm_plots <- function(
             x = -72,
             y = 36),      # Place inside bottom right of panel 12
         )
-        plot(coastline, col = 'grey', add = T)
+        terra::plot(coastline, col = 'grey', add = T)
         graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
       
@@ -209,7 +209,7 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
-      graphics::par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
+      graphics::par(mfrow = c(1, 2), mar = c(1, 4, 1, 4))
       fmsb::radarchart(
         as.data.frame(dfI),
         pfcol = scales::alpha(pal, 0.1),
@@ -304,7 +304,7 @@ make_sdm_plots <- function(
             x = -72,
             y = 36),      # Place inside bottom right of panel 12
         )
-         plot(coastline, col = 'grey', add = T)
+         terra::plot(coastline, col = 'grey', add = T)
         graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
       grDevices::dev.off()
