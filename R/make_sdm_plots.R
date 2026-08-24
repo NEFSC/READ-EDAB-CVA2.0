@@ -191,7 +191,7 @@ make_sdm_plots <- function(
         save(var_imp, file = file.path(spp_dir, 'model_output',
                                        'normalized_variable_importance.rds'))
       } else {
-        var_imp <- load(file.path(spp_dir, 'model_output',
+        load(file.path(spp_dir, 'model_output',
                                   'normalized_variable_importance.rds'))
       }
 
