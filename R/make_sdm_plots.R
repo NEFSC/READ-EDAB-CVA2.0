@@ -67,7 +67,11 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
+      
+      # Save old par settings
+      oldpar <- graphics::par(no.readonly = TRUE)
       graphics::par(mfrow = c(4, 3), mar = c(2.2, 2.2, 1, 0.5), oma = c(0, 0, 0, 0))
+      
       for (y in 1:12) {
         # Draw continuous legend ONLY on the last panel (December)
         draw_legend <- (y == 12)
@@ -96,7 +100,8 @@ make_sdm_plots <- function(
         terra::plot(coastline, col = 'grey', add = T)
         graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
-      
+      # Reset device parameters before closing
+      graphics::par(oldpar)
       grDevices::dev.off()
     } #end sdm results
 
@@ -206,10 +211,10 @@ make_sdm_plots <- function(
           release, 
           '.pdf'
         ),
-        width = 11,
-        height = 8
+        width = 8,
+        height = 11
       )
-      graphics::par(mfrow = c(1, 2), mar = c(1, 4, 1, 4))
+      graphics::par(mfrow = c(2, 1), mar = c(1, 4, 1, 4))
       fmsb::radarchart(
         as.data.frame(dfI),
         pfcol = scales::alpha(pal, 0.1),
@@ -278,7 +283,10 @@ make_sdm_plots <- function(
         width = 8,
         height = 11
       )
+      # Save old par settings
+      oldpar <- graphics::par(no.readonly = TRUE)
       graphics::par(mfrow = c(4, 3), mar = c(2.2, 2.2, 1, 0.5), oma = c(0, 0, 0, 0))
+      
       for (y in 1:12) {
         # Draw continuous legend ONLY on the last panel (December)
         draw_legend <- (y == 12)
@@ -307,6 +315,8 @@ make_sdm_plots <- function(
          terra::plot(coastline, col = 'grey', add = T)
         graphics::text(x = -76, y = 44, labels = month.abb[y], cex = 1.2)
       }
+      # Reset device parameters before closing
+      graphics::par(oldpar)
       grDevices::dev.off()
 
       grDevices::pdf(
@@ -322,7 +332,6 @@ make_sdm_plots <- function(
       graphics::hist(preds$residuals, main = '', xlab = 'Residuals')
       grDevices::dev.off()
 
-      rm(abund, obs) #clear out large data objects to help with looping
     } #end residuals
   }
 }
