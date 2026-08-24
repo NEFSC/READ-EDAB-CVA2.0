@@ -206,8 +206,8 @@ make_sdm_plots <- function(
           release, 
           '.pdf'
         ),
-        width = 8,
-        height = 11
+        width = 11,
+        height = 8
       )
       graphics::par(mfrow = c(1, 2), mar = c(1, 4, 1, 4))
       fmsb::radarchart(
