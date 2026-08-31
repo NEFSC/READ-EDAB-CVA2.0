@@ -375,18 +375,27 @@ build_sdm <- function(
     mod <- tryCatch(
       expr = {
         mod <- sdmTMB::sdmTMB(
-          formula = stats::formula(form),
-          data = se,
-          mesh = mesh,
-          family = stats::binomial(link = 'logit'),
+          formula        = stats::formula(form),
+          data           = se,
+          mesh           = mesh,
+          family         = stats::binomial(link = 'logit'),
           spatiotemporal = 'ar1',
-          time = year_col,
-          reml = TRUE,
-          anisotropy = TRUE,
-          share_range = TRUE,   # Keeps original user structure
-          do_fit = TRUE,
-          extra_time = year_range[1]:year_range[2]
+          time           = year_col,
+          reml           = FALSE, # ML for fixed-effect AIC comparison
+          anisotropy     = TRUE,
+          share_range    = TRUE,
+          do_fit         = TRUE,
+          extra_time     = year_range[1]:year_range[2]
         )
+        # Check gradient and presence of NA standard errors
+        max_grad  <- max(abs(mod$gradients), na.rm = TRUE)
+        fe_tidy   <- tryCatch(broom::tidy(mod, effects = "fixed"), error = function(e) NULL)
+        has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
+        
+        if (max_grad > 0.001 || has_na_se) {
+            sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+        }
+        
       },
       error = function(e) {
         message('Initial model did not converge')
@@ -395,7 +404,7 @@ build_sdm <- function(
     )
 
     # --- SECTION 2: Automated Fast AIC Reduction ---
-    if (exists('mod') && class(mod) == 'sdmTMB') {
+    if (exists('mod') && inherits(mod, 'sdmTMB')) {
 
       try2simp <- tryCatch(
         expr = {
@@ -412,12 +421,12 @@ build_sdm <- function(
             fe_summary <- broom::tidy(mod, effects = "fixed")
             env_summary <- fe_summary[fe_summary$term %in% var_names, ]
 
-            #Dynamically calculate the absolute Z-statistic (|estimate| / std.error)
-            # A smaller Z value means the effect is indistinguishable from zero (noise)
-            env_summary$z_stat <- abs(env_summary$estimate / env_summary$std.error)
 
-            #Target the variable with the LOWEST Z-statistic to drop next
-            weakest_var <- env_summary$term[which.min(env_summary$z_stat)]
+            # Standard Z-score selection for valid/mixed SEs
+            env_summary$z_stat <- abs(env_summary$estimate / env_summary$std.error)
+              
+              weakest_var <- env_summary$term[which.min(env_summary$z_stat)]
+
             test_vars <- setdiff(var_names, weakest_var)
 
             # Step 2c: Build the candidate test formula string with linear effects
@@ -445,7 +454,7 @@ build_sdm <- function(
               family = stats::binomial(link = 'logit'),
               spatiotemporal = 'ar1',
               time = year_col,
-              reml = TRUE,
+              reml = FALSE,
               anisotropy = TRUE,
               share_range = TRUE,
               do_fit = TRUE,
@@ -479,6 +488,87 @@ build_sdm <- function(
         }
       )
     } else {
+      mod <- NA
+    }
+    
+    # --- SECTION 3: Final Champion Re-Fit (REML = TRUE) ---
+    if (!is.null(mod) && inherits(mod, "sdmTMB")) {
+      
+      print('Re-fitting final champion model with REML = TRUE for optimal spatial variance estimation...')
+      
+      # Option A: Using stats::update (Fastest & standard in R)
+      final_mod <- tryCatch(
+        expr = {
+          mod <- stats::update(mod, reml = TRUE)
+          # Check gradient and presence of NA standard errors
+          max_grad  <- max(abs(mod$gradients), na.rm = TRUE)
+          fe_tidy   <- tryCatch(broom::tidy(mod, effects = "fixed"), error = function(e) NULL)
+          has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
+          
+          if (max_grad > 0.001 || has_na_se) {
+            sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+          }
+        },
+        error = function(e) {
+          message('REML update failed. Falling back to explicit sdmTMB fit...')
+          NULL
+        }
+      )
+      
+      # Option B: Fallback explicit call if update() fails
+      if (is.null(final_mod)) {
+        final_mod <- tryCatch(
+          expr = {
+            #build formula
+            form <- paste0(pa_col, " ~ ")
+            # Keep seasonal anchors as smoothers if desired (common practice)
+            if (!is.null(month_col)) {
+              form <- paste0(form, " s(", month_col, ", k = 4)") # Lowered k slightly for stability
+            }
+            if (!is.null(year_col)) {
+              form <- paste0(form, " + s(", year_col, ", k = 4)")
+            }
+            
+            # LOOP UPDATE: Add environmental covariates as strictly LINEAR effects
+            for (x in var_names) {
+              form <- paste0(form, " + ", x) # <-- No more s() or k = 6!
+            }
+            
+            mod <- sdmTMB::sdmTMB(
+              formula        = stats::formula(form),
+              data           = se,
+              mesh           = mesh,
+              family         = stats::binomial(link = 'logit'),
+              spatiotemporal = 'ar1',
+              time           = year_col,
+              reml           = TRUE, # Final model fitted with REML
+              anisotropy     = TRUE,
+              share_range    = TRUE,
+              do_fit         = TRUE,
+              extra_time     = year_range[1]:year_range[2]
+            )
+            # Check gradient and presence of NA standard errors
+            max_grad  <- max(abs(mod$gradients), na.rm = TRUE)
+            fe_tidy   <- tryCatch(broom::tidy(mod, effects = "fixed"), error = function(e) NULL)
+            has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
+            
+            if (max_grad > 0.001 || has_na_se) {
+              sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+            }
+          },
+          error = function(e) {
+            message('Final REML fit failed completely. Returning ML champion model instead.')
+            return(mod)
+          }
+        )
+      }
+      
+      # Assign final model object
+      mod <- final_mod
+      print('Final model fit complete.')
+      
+    } else {
+      message('No valid model was produced.')
       mod <- NA
     }
 
