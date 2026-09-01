@@ -379,7 +379,7 @@ build_sdm <- function(
           data           = se,
           mesh           = mesh,
           family         = stats::binomial(link = 'logit'),
-          spatiotemporal = 'ar1',
+          spatiotemporal = 'iid',
           time           = year_col,
           reml           = FALSE, # ML for fixed-effect AIC comparison
           anisotropy     = TRUE,
@@ -454,7 +454,7 @@ build_sdm <- function(
               data = se,
               mesh = mesh,          # Keep original high-resolution mesh since speed is no longer an issue
               family = stats::binomial(link = 'logit'),
-              spatiotemporal = 'ar1',
+              spatiotemporal = 'iid',
               time = year_col,
               reml = FALSE,
               anisotropy = TRUE,
@@ -543,7 +543,7 @@ build_sdm <- function(
               data           = se,
               mesh           = mesh,
               family         = stats::binomial(link = 'logit'),
-              spatiotemporal = 'ar1',
+              spatiotemporal = 'iid',
               time           = year_col,
               reml           = TRUE, # Final model fitted with REML
               anisotropy     = TRUE,
