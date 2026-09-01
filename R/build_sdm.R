@@ -393,8 +393,10 @@ build_sdm <- function(
         has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
         
         if (max_grad > 0.001 || has_na_se) {
-            sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+            mod <- sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
         }
+        
+        mod
         
       },
       error = function(e) {
@@ -506,8 +508,10 @@ build_sdm <- function(
           has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
           
           if (max_grad > 0.001 || has_na_se) {
-            sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+            mod <- sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
           }
+          
+          mod
         },
         error = function(e) {
           message('REML update failed. Falling back to explicit sdmTMB fit...')
@@ -553,8 +557,10 @@ build_sdm <- function(
             has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
             
             if (max_grad > 0.001 || has_na_se) {
-              sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+              mod <- sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
             }
+            
+            mod
           },
           error = function(e) {
             message('Final REML fit failed completely. Returning ML champion model instead.')
