@@ -366,42 +366,94 @@ build_sdm <- function(
       form <- paste0(form, " + ", x) # <-- No more s() or k = 6!
     }
 
-
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
     #MOM6 resolution is 1/12 = ~8 km
+    
+    # --- NEW: Initialize tracking flag ---
+    current_anisotropy <- TRUE
 
     # --- SECTION 1: Try Initial Global Model ---
     mod <- tryCatch(
       expr = {
-        mod <- sdmTMB::sdmTMB(
+        # 1. Fit initial model with Anisotropy = TRUE
+        m <- sdmTMB::sdmTMB(
           formula        = stats::formula(form),
           data           = se,
           mesh           = mesh,
           family         = stats::binomial(link = 'logit'),
           spatiotemporal = 'iid',
           time           = year_col,
-          reml           = FALSE, # ML for fixed-effect AIC comparison
+          reml           = FALSE, 
           anisotropy     = TRUE,
           share_range    = TRUE,
           do_fit         = TRUE,
           extra_time     = year_range[1]:year_range[2]
         )
-        # Check gradient and presence of NA standard errors
-        max_grad  <- max(abs(mod$gradients), na.rm = TRUE)
-        fe_tidy   <- tryCatch(broom::tidy(mod, effects = "fixed"), error = function(e) NULL)
+        
+        # 2. Check gradient and presence of NA standard errors
+        max_grad  <- max(abs(m$gradients), na.rm = TRUE)
+        fe_tidy   <- tryCatch(broom::tidy(m, effects = "fixed"), error = function(e) NULL)
         has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
         
+        # 3. Run extra optimization if needed
         if (max_grad > 0.001 || has_na_se) {
-            mod <- sdmTMB::run_extra_optimization(mod, nlminb_loops = 1, newton_steps = 1)
+          m <- sdmTMB::run_extra_optimization(m, nlminb_loops = 1, newton_steps = 1)
+          
+          # Re-check after optimization
+          max_grad  <- max(abs(m$gradients), na.rm = TRUE)
+          fe_tidy   <- tryCatch(broom::tidy(m, effects = "fixed"), error = function(e) NULL)
+          has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
+          
+          # If STILL bad, intentionally throw an error to trigger the fallback
+          if (max_grad > 0.001 || has_na_se) {
+            message("Gradients/SEs still bad after extra optimization.")
+            return(NA)
+          }
         }
         
-        mod
+        m # Return the successful model
         
       },
       error = function(e) {
-        message('Initial model did not converge')
-        return(NA)
+        message('Initial model (anisotropy = TRUE) failed. Trying with anisotropy = FALSE...')
+        
+        # --- NEW: Flip the flag for downstream sections ---
+        current_anisotropy <<- FALSE
+        
+        # --- FALLBACK: Try again with anisotropy = FALSE ---
+        tryCatch(
+          expr = {
+            m_fallback <- sdmTMB::sdmTMB(
+              formula        = stats::formula(form),
+              data           = se,
+              mesh           = mesh,
+              family         = stats::binomial(link = 'logit'),
+              spatiotemporal = 'iid',
+              time           = year_col,
+              reml           = FALSE, 
+              anisotropy     = FALSE, # CHANGED TO FALSE
+              share_range    = TRUE,
+              do_fit         = TRUE,
+              extra_time     = year_range[1]:year_range[2]
+            )
+            
+            # Check gradients for the fallback
+            max_grad  <- max(abs(m_fallback$gradients), na.rm = TRUE)
+            fe_tidy   <- tryCatch(broom::tidy(m_fallback, effects = "fixed"), error = function(e) NULL)
+            has_na_se <- if (!is.null(fe_tidy)) any(is.na(fe_tidy$std.error)) else TRUE
+            
+            if (max_grad > 0.001 || has_na_se) {
+              m_fallback <- sdmTMB::run_extra_optimization(m_fallback, nlminb_loops = 1, newton_steps = 1)
+            }
+            
+            m_fallback # Return fallback model
+          },
+          error = function(e2) {
+            message('Fallback model also failed to converge.')
+            return(NA)
+          }
+        )
       }
     )
 
@@ -457,7 +509,7 @@ build_sdm <- function(
               spatiotemporal = 'iid',
               time = year_col,
               reml = FALSE,
-              anisotropy = TRUE,
+              anisotropy = current_anisotropy,
               share_range = TRUE,
               do_fit = TRUE,
               extra_time = year_range[1]:year_range[2]
@@ -546,7 +598,7 @@ build_sdm <- function(
               spatiotemporal = 'iid',
               time           = year_col,
               reml           = TRUE, # Final model fitted with REML
-              anisotropy     = TRUE,
+              anisotropy     = current_anisotropy,
               share_range    = TRUE,
               do_fit         = TRUE,
               extra_time     = year_range[1]:year_range[2]
