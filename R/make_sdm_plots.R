@@ -329,7 +329,9 @@ make_sdm_plots <- function(
         width = 6,
         height = 6
       )
-      graphics::hist(preds$residuals, main = '', xlab = 'Residuals')
+      graphics::hist(preds$residuals, main = '', xlab = 'Residuals', xlim = c(-1,1))
+      graphics::abline(v = mean(preds$residuals,na.rm = T), lty = 2, col = 'red4')
+      graphics::legend('topleft', legend = paste0('Mean (+/- SD) = ', round(mean(preds$residuals,na.rm = T), 2), ' +/- ', round(sd(preds$residuals,na.rm = T), 2)), bty = 'n')
       grDevices::dev.off()
 
     } #end residuals
