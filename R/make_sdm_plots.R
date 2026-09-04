@@ -133,7 +133,7 @@ make_sdm_plots <- function(
       graphics::box()
       grDevices::dev.off()
 
-      aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB')])
+      aucs <- as.matrix(model_metrics[which(model_metrics$Name == s), paste(c("BRT", 'GAM', 'MAXENT', 'RF', 'SDMTMB'), "AUC", sep = '.')])
       grDevices::pdf(
         paste0(file.path(spp_dir, 'figures'), '/component_model_aucs_', 
                release, 
@@ -164,9 +164,7 @@ make_sdm_plots <- function(
       
       dfT <- read.csv(file.path(training_name)) 
       
-      #normalized variable importance; load if file exists, make it if it doesn't
-      if(!file.exists(file.path(spp_dir, 'model_output',
-                                'normalized_variable_importance.rds'))){
+      #normalized variable importance
         #read in variable importance outputs & create list
         flist <- dir(
           file.path(spp_dir, 'model_output/importance'),
@@ -191,14 +189,7 @@ make_sdm_plots <- function(
         
         #create variable importance
         var_imp <- normalize_variable_importance(vars = dyn_vars, ens_weights = weights, imp_list = imp_list)
-        
-        #save
-        save(var_imp, file = file.path(spp_dir, 'model_output',
-                                       'normalized_variable_importance.rds'))
-      } else {
-        load(file.path(spp_dir, 'model_output',
-                                  'normalized_variable_importance.rds'))
-      }
+
 
       dfI <- rbind(rep(max(var_imp[-nrow(var_imp),], na.rm = T), ncol(var_imp)), rep(0, ncol(var_imp)), var_imp[-nrow(var_imp),])
 
