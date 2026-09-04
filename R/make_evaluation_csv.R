@@ -48,8 +48,9 @@ make_evaluation_csv <- function(spp_list, training_years, pa_col, release, spati
   sEval <- NULL
   #pull existing metrics calculated and saved in workflow
   for (x in 1:nrow(spp_list)) {
+    
     #load in data frame to get the number of presences/absences
-    training_name <- file.path(spp_dir, paste0('training_', training_years[1], '_', training_years[2], '_', corr_suffix, '_hindcast_', release, '_', bathy_suffix, suffix, '.csv'))
+    training_name <- file.path(getwd(), spp_list$Name[x], paste0('training_', training_years[1], '_', training_years[2], '_', corr_suffix, '_hindcast_', release, '_', bathy_suffix, suffix, '.csv'))
     
     if (!file.exists(training_name)) {
       stop("Aborting: training dataset not found.")
@@ -66,38 +67,50 @@ make_evaluation_csv <- function(spp_list, training_years, pa_col, release, spati
       pattern = '.rds',
       full.names = T
     )
+    
+    #reorder evalFlist to put ensemble last
+    evalFlist <- evalFlist[c(1,3:6,2)]
+    
     eval <- vector(length = length(evalFlist))
     for (y in 1:length(evalFlist)) {
-      load(evalFlist[y])
-      eval[y] <- ev
-    } #eval is a vector of the component model AUCS
+      if(!is.na(evalFlist[y])){
+        load(evalFlist[y])
+        eval[y] <- ev
+      } else {
+        eval[y] <- NA
+      }
+    } #eval is a vector of the component model + ensemble AUCs
 
-   
+   load(file.path(getwd(), spp_list$Name[x], 'model_output', 'ensemble_weights.rds')) #weights
+   if(length(weights) < 5){
+     weights <- c(weights, NA) #if weights only has 4 mondels, append an NA
+   }
 
     #put it all together and add names
-    eval <- c(n.pres, n.abs, eval, weights, auc, aucW)
+    eval <- c(n.pres, n.abs, eval, weights)
     names(eval) <- c(
       'N.PRESENCE',
       'N.ABSENCE',
-      'BRT',
-      'GAM',
-      "MAXENT",
-      "RF",
-      'SDMTMB',
+      'BRT.AUC',
+      'GAM.AUC',
+      "MAXENT.AUC",
+      "RF.AUC",
+      'SDMTMB.AUC',
+      'ENS.AUC',
       'BRT.WT',
       'GAM.WT',
       "MAXENT.WT",
       "RF.WT",
-      'SDMTMB.WT',
-      'ENS.AUC'
+      'SDMTMB.WT'
     )
 
     #add to sEval
     sEval <- rbind(sEval, eval)
   } #end x
+  
+  sppEval <- cbind(sppEval, sEval)
 
-  #now we test the ensemble on the external dataset, if desired
-
+  # an option to add ational data such as other stats
   if (add_data) {
     message(paste("Adding additional data..."))
     sppEval <- cbind(sppEval, additional_data) #combining everything
