@@ -217,7 +217,7 @@ make_sdm_plots <- function(
       )
       graphics::legend(
         'bottomright',
-        legend = rownames(dfI)[3:7],
+        legend = rownames(dfI)[3:nrow(dfI)],
         lty = 1,
         col = pal,
         pch = 15:19,
