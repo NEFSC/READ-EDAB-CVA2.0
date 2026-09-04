@@ -72,7 +72,6 @@ make_sdm_reports <- function(
         sTab = sTab,
         n_pres = mrow$N.PRESENCE,
         n_abs = mrow$N.ABSENCE,
-        auc = round(mrow$ENS.AUC, digits = 3),
         # Assuming your PDFs follow a naming convention:
         weight_plot_pdf =  paste0(
           file.path(spp_dir, 'figures'),
