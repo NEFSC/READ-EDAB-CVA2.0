@@ -77,19 +77,57 @@ calculate_sdm_variable_importance <- function(mod,
       seSub <- rbind(seSub, allSub)
     }
     
-    #convert dataframe to spatial object
-    stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    seSub$true_date <- as.Date(paste0("01.", seSub$month.year), format = "%d.%m.%Y")
     
-    #create formula
-    form <- paste0(pa_col, " ~ ")
-    #add covariates - don't need to add space/time since they are already accounted for in spatial object
-    for (x in var_names) {
-      form <- paste0(form, ' + ', x)
-    } #end for x
+    # 2. Convert dataframe to spatial object
+    stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
+    
+    # 3. Use the new true_date column for your sftime temporal dimension
+    stDF = sftime::st_sftime(stDF, time_column_name = "true_date")
     
     ##get important covariates
-    RDE <- ranger::importance(x=mod, method = 'altmann', formula = stats::formula(form), data = stDF)
+    # 1. Strip the spatial geometry for ranger compatibility
+    se_df <- sf::st_drop_geometry(stDF)
+    
+    # 2. Get baseline predictions and calculate a performance metric 
+    # (Assuming probability predictions for Presence/Absence)
+    base_preds <- stats::predict(mod, data = se_df)$predictions
+    
+    # If your model outputs probabilities for classes, make sure to select the "Presence" column
+    if(is.matrix(base_preds)) base_preds <- base_preds[, "1"] 
+    
+    # Calculate baseline performance (e.g., using a simple metric like Log Loss or Brier Score)
+    # Here we use Brier Score (Mean Squared Error for probabilities, lower is better)
+    base_brier <- mean((base_preds - se_df[[pa_col]])^2)
+    
+    importance_df <- data.frame(Variable = var_names, Importance = NA)
+    
+    # 3. Perform Block Permutation Importance
+    for (i in seq_along(var_names)) {
+      v <- var_names[i]
+      perm_data <- se_df
+      
+      # SHUFFLE WITHIN BLOCKS: ave() applies the sample function within each sp.tm group
+      perm_data[[v]] <- stats::ave(perm_data[[v]], perm_data$sp.tm, FUN = sample)
+      
+      # Predict on the spatially shuffled data
+      perm_preds <- stats::predict(mod, data = perm_data)$predictions
+      if(is.matrix(perm_preds)) perm_preds <- perm_preds[, "1"]
+      
+      # Calculate degraded performance
+      perm_brier <- mean((perm_preds - perm_data[[pa_col]])^2)
+      
+      # Importance is the INCREASE in error (larger increase = more important)
+      # Bounded at 0 in case random noise slightly improves the model by chance
+      importance_df$Importance[i] <- max(0, perm_brier - base_brier)
+    }
+    
+    # Normalize to percentages
+    importance_df$Pct_Importance <- (importance_df$Importance / sum(importance_df$Importance)) * 100
+    
+    # Sort from most to least important
+    RDE <- importance_df[order(-importance_df$Pct_Importance), ]
     
   } #end if RF
   
@@ -99,34 +137,38 @@ calculate_sdm_variable_importance <- function(mod,
   } #end if BRT
   
   if(model == 'sdmtmb'){
-    # 1. Predict the fixed-effects component only (setting spatial fields to 0)
-    # This isolates environmental signals from spatial absorption
-    requireNamespace("sdmTMB", quietly = TRUE) # Forces R to load maxnet and register all its S3 methods (like predict.maxnet)
-    pred_fixed <- stats::predict(mod, re_form = NA)
+    requireNamespace("sdmTMB", quietly = TRUE)
     
-    # Total variance explained by all environmental variables combined
-    total_fixed_var <- stats::var(pred_fixed$est)
+    # 1. Calculate a baseline performance metric (e.g., Pseudo R-squared of the fixed effects)
+    pred_baseline <- stats::predict(mod, re_form = NA)$est
     
-    importance_df <- data.frame(Variable = var_names, Var_Contribution = NA, Pct_Importance = NA)
+    # Replace 'response_var' with the actual name of your dependent variable
+    base_r2 <- stats::cor(pred_baseline, mod$data[,pa_col], use = "complete.obs")^2 
     
-    # 2. Drop each variable's prediction contribution to see what is lost
-    fe_coefs <- broom::tidy(mod, effects = "fixed")
+    dyn_names <- c(var_names, month_col, year_col)
     
-    for (i in seq_along(var_names)) {
-      v <- var_names[i]
-      coef_val <- fe_coefs$estimate[fe_coefs$term == v]
+    importance_df <- data.frame(Variable = dyn_names, Importance = NA)
+    
+    # 2. Shuffle each variable to see how much performance drops
+    for (i in seq_along(dyn_names)) {
+      v <- dyn_names[i]
       
-      # Calculate what the fixed prediction would look like WITHOUT this variable
-      # (Subtracting its linear effect: Beta * X)
-      isolated_pred <- pred_fixed$est - (coef_val * pred_fixed[[v]])
+      # Create a copy of the data and randomly shuffle the target variable
+      perm_data <- mod$data
+      perm_data[[v]] <- sample(perm_data[[v]])
       
-      # Importance = Total environmental variance minus variance without this variable
-      dropped_var <- total_fixed_var - stats::var(isolated_pred)
-      importance_df$Var_Contribution[i] <- max(0, dropped_var) # Bound at 0
+      # Predict using the shuffled data
+      pred_perm <- stats::predict(mod, newdata = perm_data, re_form = NA)$est
+      
+      # Calculate performance with the shuffled variable
+      perm_r2 <- stats::cor(pred_perm, mod$data[,pa_col], use = "complete.obs")^2
+      
+      # Importance is the drop in R-squared (larger drop = more important)
+      importance_df$Importance[i] <- max(0, base_r2 - perm_r2)
     }
     
     # Normalize to percentages
-    importance_df$Pct_Importance <- (importance_df$Var_Contribution / sum(importance_df$Var_Contribution)) * 100
+    importance_df$Pct_Importance <- (importance_df$Importance / sum(importance_df$Importance)) * 100
     RDE <- importance_df
     
   } #end if sdmtmb

@@ -128,9 +128,14 @@ build_sdm <- function(
       seSub <- rbind(seSub, allSub)
     }
 
-    #convert dataframe to spatial object
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    seSub$true_date <- as.Date(paste0("01.", seSub$month.year), format = "%d.%m.%Y")
+    
+    # 2. Convert dataframe to spatial object
     stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+    
+    # 3. Use the new true_date column for your sftime temporal dimension
+    stDF = sftime::st_sftime(stDF, time_column_name = "true_date")
 
     #make clean coordinate columns to help with cv
     coords <- sf::st_coordinates(stDF)
@@ -139,7 +144,7 @@ build_sdm <- function(
 
     #create formula
     # Build formula string
-    form <- paste(pa_col, "~", paste(var_names, collapse = " + "))
+    form <- paste(pa_col, "~", paste(c(var_names, month_col, year_col), collapse = " + "))
 
     #build model
     mod <- meteo::rfsi(
@@ -161,7 +166,7 @@ build_sdm <- function(
 
     #reduce parameters
     history <- list()
-    current_predictors <- var_names
+    current_predictors <- c(var_names, month_col, year_col)
 
     # Create spatial LLO (Leave-Location-Out) folds manually based on your unique stations
     unique_stations <- unique(stDF$staid)
