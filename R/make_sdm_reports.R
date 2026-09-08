@@ -107,9 +107,16 @@ make_sdm_reports <- function(
     )
 
     #move to final folder
+    # Determine where Quarto actually saved the file
+    rendered_file <- file.path(dirname(template), paste0("SDM_Report_", clean_name, ".pdf"))
+    
+    # Define your intended destination
+    final_destination <- file.path(getwd(), report_path, paste0("SDM_Report_", clean_name, ".pdf"))
+    
+    # Move to final folder
     file.rename(
-      from = paste0("SDM_Report_", clean_name, ".pdf"),
-      to = file.path(getwd(), report_path, paste0("SDM_Report_", clean_name, ".pdf"))
+      from = rendered_file,
+      to = final_destination
     )
   } #end i
 } #end function
