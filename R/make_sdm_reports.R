@@ -109,7 +109,7 @@ make_sdm_reports <- function(
     #move to final folder
     file.rename(
       from = paste0("SDM_Report_", clean_name, ".pdf"),
-      to = file.path(report_path, paste0("SDM_Report_", clean_name, ".pdf"))
+      to = file.path(getwd(), report_path, paste0("SDM_Report_", clean_name, ".pdf"))
     )
   } #end i
 } #end function
