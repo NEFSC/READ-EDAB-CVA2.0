@@ -20,7 +20,7 @@ normalize_variable_importance <- function(vars, ens_weights, imp_list) {
       v <- merge(v, imp, by = 'var', all.x = T)
     }
     if (inherits(imp, 'data.frame') & grepl('SDMTMB', names(imp_list)[x])) {
-      v <- merge(v, imp[,1:2], by.x = 'var', by.y = 'Variable')
+      v <- merge(v, imp[,1:2], by.x = 'var', by.y = 'Variable', all.x = T)
     } 
     if(!inherits(imp, 'data.frame')){
       imp.df <- data.frame(var = names(imp)[!is.na(names(imp))], var.imp = imp[!is.na(names(imp))])
@@ -30,7 +30,7 @@ normalize_variable_importance <- function(vars, ens_weights, imp_list) {
   }
   
   colnames(v)[-1] <- names(imp_list)
-
+  
   #normalize within models - some are already like this so they won't change 
   v <- replace(v, is.na(v), 0)
   
@@ -41,7 +41,7 @@ normalize_variable_importance <- function(vars, ens_weights, imp_list) {
   
   #get weighted average of all according to component model weights 
   ws <- apply(dfI, MARGIN = 2, FUN = weighted.mean, w = ens_weights, na.rm = T) #weighted average of weights
-
+  
   #combine 
   dfI <- rbind(dfI, ws)
   rownames(dfI)[nrow(dfI)] <- "ENSEMBLE"
