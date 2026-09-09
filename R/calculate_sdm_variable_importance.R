@@ -86,11 +86,7 @@ calculate_sdm_variable_importance <- function(mod,
     # 3. Use the new true_date column for your sftime temporal dimension
     stDF = sftime::st_sftime(stDF, time_column_name = "true_date")
     
-    ##get important covariates
-    # 1. Strip the spatial geometry for ranger compatibility
-    se_df <- sf::st_drop_geometry(stDF)
-    
-    # 2. Get baseline predictions and calculate a performance metric 
+    # 1. Get baseline predictions and calculate a performance metric 
     # (Assuming probability predictions for Presence/Absence)
     base_preds_df <- meteo::pred.rfsi(
       model = mod,
@@ -117,7 +113,7 @@ calculate_sdm_variable_importance <- function(mod,
     # 3. Perform Block Permutation Importance
     for (i in seq_along(var_names)) {
       v <- var_names[i]
-      perm_data <- se_df
+      perm_data <- stDF
       
       # SHUFFLE WITHIN BLOCKS: ave() applies the sample function within each sp.tm group
       perm_data[[v]] <- stats::ave(perm_data[[v]], perm_data$sp.tm, FUN = sample)
@@ -129,7 +125,7 @@ calculate_sdm_variable_importance <- function(mod,
         data = stDF,
         obs.col = pa_col,
         data.staid.x.y.z = c('staid', 'X', 'Y'),
-        newdata = perm_stDF,
+        newdata = perm_data,
         newdata.staid.x.y.z = c('staid', 'X', 'Y'),
         s.crs = sf::st_crs(stDF),
         newdata.s.crs = sf::st_crs(stDF),
@@ -139,7 +135,7 @@ calculate_sdm_variable_importance <- function(mod,
       perm_preds <- perm_preds_df[["1"]]
       
       # Calculate degraded performance
-      perm_brier <- mean((perm_preds - perm_stDF[[pa_col]])^2)
+      perm_brier <- mean((perm_preds - perm_data[[pa_col]])^2)
       
       # Importance is the INCREASE in error (larger increase = more important)
       # Bounded at 0 in case random noise slightly improves the model by chance
