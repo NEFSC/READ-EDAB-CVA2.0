@@ -157,7 +157,7 @@ build_sdm <- function(
       seed = 42,
       num.trees = 200,
       s.crs = sf::st_crs(stDF),
-      use.idw = T,
+      use.idw = FALSE,
       write.forest = T,
       splitrule = "extratrees",
       min.node.size = 5,
@@ -167,101 +167,115 @@ build_sdm <- function(
     #reduce parameters
     history <- list()
     current_predictors <- c(var_names, month_col, year_col)
-
-    # Create spatial LLO (Leave-Location-Out) folds manually based on your unique stations
+    
+    # 1. HANDLE MISSING DATA UPFRONT
+    # Ensure perfect alignment and identical datasets for every RFE iteration
+    all_model_cols <- c(pa_col, current_predictors)
+    complete_rows <- complete.cases(sf::st_drop_geometry(stDF)[, all_model_cols])
+    stDF <- stDF[complete_rows, ]
+    
+    # 2. SETUP SPATIAL BLOCK FOLDS
+    # Grouping by 'staid' ensures no spatial overlap between training and validation
     unique_stations <- unique(stDF$staid)
     set.seed(42)
     num_folds <- 5
     station_folds <- split(sample(unique_stations), rep(1:num_folds, length.out = length(unique_stations)))
-
+    
+    # 3. RECURSIVE FEATURE ELIMINATION LOOP
     repeat {
       # Build formula string
       form_string <- paste(pa_col, "~", paste(current_predictors, collapse = " + "))
       current_formula <- stats::formula(form_string)
-
-      # 2. Spatial Cross-Validation with Probability output
-      # 'probability = TRUE' forces ranger to output probability vectors instead of hard 0/1s
-      # ... Inside your repeat/loop block ...
-
-      # Vectors to pool predictions across folds
+      
       all_observed <- c()
       all_predicted_probs <- c()
-
-      # --- 2. Manual Cross-Validation Loop ---
+      
+      # --- MANUAL CROSS-VALIDATION LOOP ---
       for (f in 1:num_folds) {
         val_stations <- station_folds[[f]]
-
+        
         # Split data based on spatial station IDs
         train_df <- stDF[!stDF$staid %in% val_stations, ]
         val_df   <- stDF[stDF$staid %in% val_stations, ]
-
-        # Fit the RFSI model using the exact parameters that work for you
-        # Note: probability = TRUE must be supplied via ranger arguments (...)
+        
+        # --- NEW FIX: TEMPORAL OVERLAP SAFETY ---
+        # Find the name of your active time column in the sftime object
+        # (Replace 'true_date' if you named your time column something else)
+        time_col_name <- "true_date" 
+        
+        # Identify dates present in the training fold
+        valid_train_dates <- unique(train_df[[time_col_name]])
+        
+        # Filter validation fold to ONLY include dates the training fold knows about
+        val_df <- val_df[val_df[[time_col_name]] %in% valid_train_dates, ]
+        
+        # If the validation fold is now empty because of this, skip to the next fold
+        if (nrow(val_df) == 0) next
+        
+        # Fit the RFSI model (probability = TRUE required for AUC)
         model_fit <- tryCatch({
           meteo::rfsi(
-            formula = current_formula,
-            data = train_df,
-            data.staid.x.y.z = c('staid', 'X', 'Y'),
-            cpus = 1,
-            progress = FALSE,
-            num.trees = 200,
-            s.crs = sf::st_crs(stDF),
-            use.idw = TRUE,
-            splitrule = "extratrees",        # Gini for classification/probability
-            min.node.size = 5,
-            sample.fraction = 0.95,
-            probability = TRUE,        # Forces probability forest execution
-            importance = "impurity"
+            formula = current_formula, data = train_df,
+            data.staid.x.y.z = c('staid', 'X', 'Y'), cpus = 1, progress = FALSE,
+            num.trees = 200, s.crs = sf::st_crs(stDF), use.idw = FALSE,
+            splitrule = "extratrees", min.node.size = 5, sample.fraction = 0.95,
+            probability = TRUE, importance = "impurity"
           )
         }, error = function(e) NULL)
-
+        
         if (is.null(model_fit)) next
-
+        
         # Generate predictions on the validation fold
-        # pred.rfsi returns probability vectors when given a probability model
         predictions <- meteo::pred.rfsi(
-          model = model_fit,
-          data = train_df,             # Conditioning data points
-          obs.col = pa_col,
-          data.staid.x.y.z = c('staid', 'X', 'Y'),
-          newdata = val_df,            # Locations to predict
+          model = model_fit, data = train_df, obs.col = pa_col,
+          data.staid.x.y.z = c('staid', 'X', 'Y'), newdata = val_df,
           newdata.staid.x.y.z = c('staid', 'X', 'Y'),
-          s.crs = sf::st_crs(stDF),
-          newdata.s.crs = sf::st_crs(stDF),
-          progress = FALSE
+          s.crs = sf::st_crs(stDF), newdata.s.crs = sf::st_crs(stDF), progress = FALSE
         )
-
-        # 1. Convert val_df to a plain data frame to strip spatial geometry for a clean merge
+        
+        # --- ROBUST MERGE ---
         val_plain <- as.data.frame(val_df)
-
-        # This matches 'staid' and 'time', plus coordinates if named exactly the same
-        merge_keys <- intersect(c("staid", "time", "X", "Y"), names(predictions))
-
-        # 3. Merge them together. This keeps ONLY rows successfully predicted by pred.rfsi
-        aligned_results <- merge(val_plain, predictions, by.x = c("staid", month_col, "X", "Y"), by.y = merge_keys)
-
-        # 4. Safely append the perfectly paired observed outcomes and predicted probabilities
+        
+        # pred.rfsi often renames the temporal column to 'time'
+        pred_time_col <- if("time" %in% names(predictions)) "time" else "true_date"
+        
+        # Merge ONLY on unique station ID and the date string
+        # Change "true_date" to whatever your sftime time_column_name is
+        aligned_results <- merge(
+          x = val_plain, 
+          y = predictions, 
+          by.x = c("staid", "true_date"), 
+          by.y = c("staid", pred_time_col)
+        )
+        
+        if(nrow(aligned_results) == 0) {
+          cat("\n[WARNING] Merge failed on fold", f, "- Check date column names!\n")
+          next 
+        }
+        
+        # Safely append perfectly paired observed outcomes and predicted probabilities
+        # Note: verify if presence probability is in column "1" or "2" for your specific output
         all_observed        <- c(all_observed, aligned_results[[pa_col]])
-        all_predicted_probs <- c(all_predicted_probs, aligned_results[["2"]])
+        all_predicted_probs <- c(all_predicted_probs, aligned_results[["2"]]) 
       }
-
-      # --- 3. Compute AUC Score ---
+      
+      # --- COMPUTE SPATIAL AUC SCORE ---
       roc_obj <- pROC::roc(all_observed, all_predicted_probs, quiet = TRUE)
       current_auc <- as.numeric(pROC::auc(roc_obj))
-
-      cat(sprintf("Variables (%d): %s | CV AUC: %.4f\n",
-                  length(current_predictors),
-                  paste(current_predictors, collapse = ", "),
+      
+      cat(sprintf("Variables (%d): %s | Spatial CV AUC: %.4f\n", 
+                  length(current_predictors), 
+                  paste(current_predictors, collapse = ", "), 
                   current_auc))
-
+      
       # Save iteration details
       history[[length(current_predictors)]] <- list(vars = current_predictors, auc = current_auc)
-
-      # Base Case: Stop if only 1 environmental predictor remains
-      if (length(current_predictors) == 1) { break }
-
-      # --- 4. Identify Weakest Variable to Drop ---
-      # Fit once on full dataset to get final importance
+      
+      # Base Case: Stop if only 3 environmental predictors remain (prevents 1-variable spatial dominance)
+      if (length(current_predictors) <= 3) { break }
+      
+      # --- IDENTIFY WEAKEST VARIABLE TO DROP ---
+      # Fit once on full dataset to get final importance for this iteration
       global_fit <- meteo::rfsi(
         formula = current_formula, data = stDF,
         data.staid.x.y.z = c('staid', 'X', 'Y'), cpus = 1, progress = FALSE,
@@ -269,13 +283,15 @@ build_sdm <- function(
         splitrule = "extratrees", min.node.size = 5, sample.fraction = 0.95,
         probability = TRUE, importance = "impurity"
       )
-
+      
       imp_scores <- global_fit$variable.importance[current_predictors]
       weakest_var <- names(which.min(imp_scores))
-
+      
       # Remove the weakest link
       current_predictors <- setdiff(current_predictors, weakest_var)
     }
+    
+    # --- Continue to print your parsimonious model as before ---
 
     # --- 5. Print out the Optimal Parsimonious Model Matrix ---
     history_df <- do.call(rbind, lapply(history, function(x) {
@@ -307,7 +323,7 @@ build_sdm <- function(
       seed = 42,
       num.trees = 200,
       s.crs = sf::st_crs(stDF),
-      use.idw = T,
+      use.idw = F,
       write.forest = T,
       splitrule = "extratrees",
       min.node.size = 5,

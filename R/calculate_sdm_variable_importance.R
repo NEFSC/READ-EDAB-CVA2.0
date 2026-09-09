@@ -92,14 +92,25 @@ calculate_sdm_variable_importance <- function(mod,
     
     # 2. Get baseline predictions and calculate a performance metric 
     # (Assuming probability predictions for Presence/Absence)
-    base_preds <- stats::predict(mod, data = se_df)$predictions
+    base_preds_df <- meteo::pred.rfsi(
+      model = mod,
+      data = stDF,
+      obs.col = pa_col,
+      data.staid.x.y.z = c('staid', 'X', 'Y'),
+      newdata = stDF,
+      newdata.staid.x.y.z = c('staid', 'X', 'Y'),
+      s.crs = sf::st_crs(stDF),
+      newdata.s.crs = sf::st_crs(stDF),
+      progress = FALSE
+    )
     
-    # If your model outputs probabilities for classes, make sure to select the "Presence" column
-    if(is.matrix(base_preds)) base_preds <- base_preds[, "1"] 
+    # Extract the probability of presence (assuming class '1')
+    base_preds <- base_preds_df[["1"]] 
     
-    # Calculate baseline performance (e.g., using a simple metric like Log Loss or Brier Score)
-    # Here we use Brier Score (Mean Squared Error for probabilities, lower is better)
-    base_brier <- mean((base_preds - se_df[[pa_col]])^2)
+    # Calculate baseline Brier Score (Mean Squared Error)
+    base_brier <- mean((base_preds - stDF[[pa_col]])^2)
+    
+    var_names <- c(var_names, month_col, year_col)
     
     importance_df <- data.frame(Variable = var_names, Importance = NA)
     
@@ -112,11 +123,23 @@ calculate_sdm_variable_importance <- function(mod,
       perm_data[[v]] <- stats::ave(perm_data[[v]], perm_data$sp.tm, FUN = sample)
       
       # Predict on the spatially shuffled data
-      perm_preds <- stats::predict(mod, data = perm_data)$predictions
-      if(is.matrix(perm_preds)) perm_preds <- perm_preds[, "1"]
+      # CRITICAL: 'data' is the pure stDF (keeps spatial lag intact), 'newdata' is permuted
+      perm_preds_df <- meteo::pred.rfsi(
+        model = mod,
+        data = stDF,
+        obs.col = pa_col,
+        data.staid.x.y.z = c('staid', 'X', 'Y'),
+        newdata = perm_stDF,
+        newdata.staid.x.y.z = c('staid', 'X', 'Y'),
+        s.crs = sf::st_crs(stDF),
+        newdata.s.crs = sf::st_crs(stDF),
+        progress = FALSE
+      )
+      
+      perm_preds <- perm_preds_df[["1"]]
       
       # Calculate degraded performance
-      perm_brier <- mean((perm_preds - perm_data[[pa_col]])^2)
+      perm_brier <- mean((perm_preds - perm_stDF[[pa_col]])^2)
       
       # Importance is the INCREASE in error (larger increase = more important)
       # Bounded at 0 in case random noise slightly improves the model by chance
