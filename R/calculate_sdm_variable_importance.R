@@ -101,7 +101,7 @@ calculate_sdm_variable_importance <- function(mod,
     )
     
     # Extract the probability of presence (assuming class '1')
-    base_preds <- base_preds_df[["1"]] 
+    base_preds <- base_preds_df[["pred"]] 
     
     # Calculate baseline Brier Score (Mean Squared Error)
     base_brier <- mean((base_preds - stDF[[pa_col]])^2)
@@ -132,7 +132,7 @@ calculate_sdm_variable_importance <- function(mod,
         progress = FALSE
       )
       
-      perm_preds <- perm_preds_df[["1"]]
+      perm_preds <- perm_preds_df[["pred"]]
       
       # Calculate degraded performance
       perm_brier <- mean((perm_preds - perm_data[[pa_col]])^2)
