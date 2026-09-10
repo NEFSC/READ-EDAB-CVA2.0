@@ -65,15 +65,30 @@ pull_mom6_hindcast <- function(
   lonInd <- which(lon >= bounds[1] & lon <= bounds[2])
   latInd <- which(lat >= bounds[3] & lat <= bounds[4])
   
-  #pull variable at each time stamp
-  varArr <- NULL
-  for (z in 1:length(tm)) {
-    var <- ncdf4::ncvar_get(v, 
-                            names(v$var),
-                            start = c(lonInd[1], latInd[1], z),
-                            count = c(length(lonInd), length(latInd), 1))
-    varArr <- abind::abind(varArr, var, along = 3)
+  # Define a chunk size (number of time steps to pull per request).
+  # If you still get the DATADDS error, lower this number (e.g., 12 or 24).
+  chunk_size <- 50 
+  var <- NULL
+  # Loop through time using chunks
+  for (start_t in seq(1, length(tm), by = chunk_size)) {
+    
+    # Calculate how many time steps to pull in this specific chunk
+    # (Prevents overshooting the end of the time series)
+    count_t <- min(chunk_size, length(tm) - start_t + 1)
+    
+    # Pull the chunk
+    v_chunk <- ncdf4::ncvar_get(
+      v,
+      names(v$var),
+      start = c(lonInd[1], latInd[1], start_t),
+      count = c(length(lonInd), length(latInd), count_t)
+    )
+    
+    # Bind the chunk along the 3rd dimension (Time)
+    var <- abind::abind(var, v_chunk, along = 3)
   }
+  
+  # Close the NetCDF connection once finished
   ncdf4::nc_close(v)
   
   # Convert the array to a SpatRaster

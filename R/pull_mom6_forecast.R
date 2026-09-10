@@ -63,43 +63,54 @@ pull_mom6_forecast <- function(
   
   tm <- ncdf4::ncvar_get(r, 'lead')
   for (m in 1:10) {
-    vm <- NULL
-    for (z in 1:length(tm)) {
-      v <- ncdf4::ncvar_get(
-        r,
-        names(r$var),
-        start = c(lonInd[1], latInd[1], z, m),
-        count = c(length(lonInd), length(latInd), 1, 1)
-      )
-      vm <- abind::abind(vm, v, along = 3)
-    } #end z
-    var <- abind::abind(var, vm, along = 4)
+    #vm <- NULL
+    # for (z in 1:length(tm)) {
+    v <- ncdf4::ncvar_get(
+      r,
+      names(r$var),
+      start = c(lonInd[1], latInd[1], 1, m),
+      count = c(length(lonInd), length(latInd), length(tm), 1)
+    )
+    #vm <- abind::abind(vm, v, along = 3)
+    #} #end z
+    var <- abind::abind(var, v, along = 4)
   } #end m
   ncdf4::nc_close(r)
   
-  ##take average of ensemble members
-  varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = T)
-  
-  # Convert the array to a SpatRaster
-  # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time] 
-  # so terra reads the rows and columns correctly.
-  r_list <- lapply(1:dim(varAvg)[3], function(i) {
-    terra::rast(t(varAvg[,,i]))
-  })
-  cropped_rast <- terra::rast(r_list)
-  
-  # Apply the correct spatial metadata
-  terra::ext(cropped_rast) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
-  terra::crs(cropped_rast) <- "EPSG:4326" # Or whatever coordinate system the data uses
-  
-  #create and set names
+  # Generate base time names (Month.Year)
   yrInit <- as.numeric(substr(init, 2, 5))
   d <- as.POSIXct(tm * 60 * 60 * 24, origin = paste(yrInit, '01', '01', sep = '-'))
-  nms <- cbind(lubridate::month(d), lubridate::year(d))
-  names(cropped_rast) <- paste(nms[, 1], nms[, 2], sep = '.') #set names
+  time_names <- paste(lubridate::month(d), lubridate::year(d), sep = '.') 
   
-  #flip it
-  cropped_rast <- terra::flip(cropped_rast, direction="vertical")
+  # --- 1. Process the Ensemble Average ---
+  varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = TRUE)
   
-  return(cropped_rast)
+  r_list_avg <- lapply(1:dim(varAvg)[3], function(i) terra::rast(t(varAvg[,,i])))
+  rast_avg <- terra::rast(r_list_avg)
+  
+  terra::ext(rast_avg) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
+  terra::crs(rast_avg) <- "EPSG:4326" 
+  names(rast_avg) <- paste0(time_names, ".avg")
+  rast_avg <- terra::flip(rast_avg, direction="vertical")
+  
+  # --- 2. Process the Raw Ensembles ---
+  # Reshape 4D array [Lon, Lat, Time, Ens] into 3D [Lon, Lat, Time * Ens] natively
+  var_flat <- array(var, dim = c(dim(var)[1], dim(var)[2], length(tm) * 10))
+  
+  r_list_raw <- lapply(1:dim(var_flat)[3], function(i) terra::rast(t(var_flat[,,i])))
+  rast_raw <- terra::rast(r_list_raw)
+  
+  terra::ext(rast_raw) <- c(min(lon[lonInd]), max(lon[lonInd]), min(lat[latInd]), max(lat[latInd]))
+  terra::crs(rast_raw) <- "EPSG:4326" 
+  
+  # Construct names combining time step and ensemble member
+  raw_names <- paste0(rep(time_names, times = 10), ".ens", rep(1:10, each = length(tm)))
+  names(rast_raw) <- raw_names
+  rast_raw <- terra::flip(rast_raw, direction="vertical")
+  
+  # Return both as a list
+  return(list(
+    average = rast_avg,
+    raw = rast_raw
+  ))
 }
