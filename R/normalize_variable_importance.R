@@ -22,6 +22,9 @@ normalize_variable_importance <- function(vars, ens_weights, imp_list) {
     if (inherits(imp, 'data.frame') & grepl('SDMTMB', names(imp_list)[x])) {
       v <- merge(v, imp[,1:2], by.x = 'var', by.y = 'Variable', all.x = T)
     } 
+    if (inherits(imp, 'data.frame') & grepl('RF', names(imp_list)[x])) {
+      v <- merge(v, imp[,1:2], by.x = 'var', by.y = 'Variable', all.x = T)
+    } 
     if(!inherits(imp, 'data.frame')){
       imp.df <- data.frame(var = names(imp)[!is.na(names(imp))], var.imp = imp[!is.na(names(imp))])
       v <- merge(v, imp.df, by = 'var', all.x = T)
