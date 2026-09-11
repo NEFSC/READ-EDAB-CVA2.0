@@ -58,6 +58,11 @@ make_sdm_reports <- function(
     srow <- unlist(as.vector(srow[-1]))
     snames <- colnames(sources)[-1][srow] #isolate column names 
     sTab <- source_key[source_key$Short.Name %in% snames, 1] #should be full names of sources
+    
+    #pull raw weights instead of weights figure
+    mm <- mrow[,grepl('.WT', colnames(model_metrics))]
+    mm <- round(mm, digits = 3)
+    mm <- replace(mm, is.na(mm), "Model Did\nNot Converge")
 
     # 3. Render the report
     quarto::quarto_render(
@@ -70,15 +75,16 @@ make_sdm_reports <- function(
         fTab = as.data.frame(fTab),
         hTab = as.data.frame(hTab),
         sTab = sTab,
+        mTab = mm,
         n_pres = mrow$N.PRESENCE,
         n_abs = mrow$N.ABSENCE,
         # Assuming your PDFs follow a naming convention:
-        weight_plot_pdf =  paste0(
-          file.path(spp_dir, 'figures'),
-          '/component_model_weights_', 
-          release, 
-          '.pdf'
-        ),
+       # weight_plot_pdf =  paste0(
+        #  file.path(spp_dir, 'figures'),
+        #  '/component_model_weights_', 
+        #  release, 
+         # '.pdf'
+       # ),
         imp_plot_pdf = paste0(
           file.path(spp_dir, 'figures'),
           '/variable_importance_radars_', 
