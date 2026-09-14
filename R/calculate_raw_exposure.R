@@ -35,7 +35,7 @@ calculate_raw_exposure <- function(present, future, spatial_temporal, mask_bathy
   pSD <- sd_model_data(present, spatial_temporal)
 
   #calculate exposure
-  EXP <- (fAvg - pAvg) / pSD
+  EXP <- normalize_model_data(raw = fAvg, avg = pAvg, sd = pSD, spatial_temporal = spatial_temporal) #spatial_temporal matches what is used to calculate present avg/sd so that right methods are used  
   
   return(EXP)
 }
