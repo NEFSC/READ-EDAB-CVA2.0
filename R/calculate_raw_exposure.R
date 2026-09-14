@@ -30,6 +30,9 @@ calculate_raw_exposure <- function(present, future, spatial_temporal, mask_bathy
   pAvg <- avg_model_data(present, spatial_temporal = spatial_temporal) #can change whether z-score is calculated relative to spatially/temporally explicit present averages or global averages 
   
   fAvg <- avg_model_data(future, spatial_temporal = TRUE) #always want future averages done across time and space (create monthly, spatially-explicit averages) so that exposure calculation is spatially/temporally explicit
+  if(spatial_temporal){ #if using spatially explicit present data 
+    fAvg <- terra::resample(fAvg, pAvg, method = "bilinear")
+  }
   
   #calculate present SD 
   pSD <- sd_model_data(present, spatial_temporal)
