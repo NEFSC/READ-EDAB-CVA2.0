@@ -4,8 +4,8 @@
 #'
 #' @param type designates desired output, must equal 'map' or 'timeseries'
 #' @param variable_exposure If \code{type == 'map'}, a spatRaster output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix or list output from \code{make_variable_exposure(type == 'timeseries')}.
-#' @param count_all TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables
-#' @param variable_weights output from \code{combine_weights} - a vector of variable weights in ensemble SDM
+#' @param count_all TRUE/FALSE to use \code{variable_weights} and \code{weight_threshold} to subset variables to only important variables
+#' @param variable_weights output from \code{normalize_variable_weights} - a vector of variable weights in ensemble SDM
 #' @param weight_threshold numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation
 #'
 #' @return If \code{type == 'map'}, the output is a raster representing total exposure across space. If \code{type == 'timeseries'}, the output is a vector representing total exposure across time if a single matrix is supplied in variable_exposure, or a matrix with a number of rows equal to the length of the list supplied in variable_exposure.
@@ -23,8 +23,8 @@ make_total_exposure <- function(
     if (count_all) {
       mapSub <- variable_exposure
     } else {
-      wi <- which(weights >= weight_threshold)
-      mapSub <- variable_exposure[wi]
+      wi <- variable_weights >= weight_threshold
+      mapSub <- variable_exposure[[wi]]
     }
 
     #count how many layers have each rank within each cell
@@ -50,7 +50,7 @@ make_total_exposure <- function(
           #if counting all included factors and not taking weight into account
           matSub <- variable_exposure[[v]]
         } else {
-          wi <- which(weights > weight_threshold)
+          wi <- variable_weights >= weight_threshold
           matSub <- variable_exposure[[v]][wi, ]
         }
         
@@ -69,16 +69,17 @@ make_total_exposure <- function(
         expV <- replace(expV, hr >= 3, 4)
         
         vMat[v,] <- expV
-        return(vMat)
       }
       rownames(vMat) <- names(variable_exposure)
       colnames(vMat) <- month.abb
+      
+      return(vMat)
     } else {
       if (count_all) {
         #if counting all included factors and not taking weight into account
         matSub <- variable_exposure
       } else {
-        wi <- which(weights > weight_threshold)
+        wi <- variable_weights >= weight_threshold
         matSub <- variable_exposure[wi, ]
       }
   
