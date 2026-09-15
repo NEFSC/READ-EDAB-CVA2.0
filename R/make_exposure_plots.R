@@ -79,7 +79,8 @@ make_exposure_plots <- function(
         graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
        terra::plot(
           varMaps[[y]],
-          zlim = c(1, 4),
+          type = 'continuous',
+          range = c(1, 4),
           col = cmocean::cmocean('matter')(4),
           legend = F,
           legend.mar = 0,
@@ -220,7 +221,8 @@ make_exposure_plots <- function(
       #map
       terra::plot(
         varMaps,
-        zlim = c(1, 4),
+        type = 'continuous',
+        range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
@@ -348,7 +350,8 @@ make_exposure_plots <- function(
       #map
       terra::plot(
         varMaps,
-        zlim = c(1, 4),
+        type = 'continuous',
+        range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
