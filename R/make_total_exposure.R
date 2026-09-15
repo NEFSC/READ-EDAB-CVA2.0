@@ -34,9 +34,9 @@ make_total_exposure <- function(
 
     #apply logic rule from Hare et al 2015
     expL <- ifel(!is.na(hr), 1, NA) #everything starts as 1 (low)
-    expL <- ifel(md >= 2, expL + 1, expL + 0) #add 1 if moderate threshold met, max now = 2
-    expL <- ifel(hh >= 2, expL + 1, expL + 0) #add 1 if high threshold met, max now = 3
-    expL <- ifel(hr >= 3, expL + 1, expL + 0) #add 1 if very high threshold met, max now = 4
+    expL <- ifel(md >= 2, 2, expL) #set to 2 if moderate threshold met, max now = 2
+    expL <- ifel(hh >= 2, 3, expL) #set to 3 if high threshold met, max now = 3
+    expL <- ifel(hr >= 3, 4, expL) #set to 4 if very high threshold met, max now = 4
     
 
     return(expL)
@@ -83,20 +83,23 @@ make_total_exposure <- function(
         matSub <- variable_exposure[wi, ]
       }
   
-      #count each rank in each column
-      hr <- hh <- md <- vector(length = ncol(matSub))
-      for (x in 1:ncol(matSub)) {
-        hr[x] <- length(which(matSub[, x] >= 3.5))
-        hh[x] <- length(which(matSub[, x] >= 3))
-        md[x] <- length(which(matSub[, x] >= 2.5))
+      if(inherits(matSub, 'matrix')){ #if matSub is a matrix (which it should be 99% of the time)
+        #count each rank in each column
+        hr <- hh <- md <- vector(length = ncol(matSub))
+        for (x in 1:ncol(matSub)) {
+          hr[x] <- length(which(matSub[, x] >= 3.5))
+          hh[x] <- length(which(matSub[, x] >= 3))
+          md[x] <- length(which(matSub[, x] >= 2.5))
+        }
+    
+        #apply logic rule
+        expV <- rep(1, times = ncol(matSub))
+        expV <- replace(expV, md >= 2, 2)
+        expV <- replace(expV, hh >= 2, 3)
+        expV <- replace(expV, hr >= 3, 4)
+      } else { #if it's not, meaning it's a vector, meaning that there is only one important variable and therefore exposure must be 1 because you don't have enough variables to satisfy the logic rule at higher levels
+        expV <- rep(1, times = length(matSub))
       }
-  
-      #apply logic rule
-      expV <- rep(1, times = ncol(matSub))
-      expV <- replace(expV, md >= 2, 2)
-      expV <- replace(expV, hh >= 2, 3)
-      expV <- replace(expV, hr >= 3, 4)
-  
       names(expV) <- month.abb
       return(expV)
     } #end if 

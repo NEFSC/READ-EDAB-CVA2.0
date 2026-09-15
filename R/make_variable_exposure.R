@@ -38,7 +38,15 @@ make_variable_exposure <- function(type, ranked_exposure, sdm_raster, stock_poly
         r <- s[[m]]
         h <- sdm_raster[[m]]
 
-        meanExp[m] <- terra::global(r*h, 'sum', na.rm = T) / terra::global(h, 'sum', na.rm = T) #calculate global weighted average by hand 
+        # 1. Mask 'h' so it only contains weights where 'r' has valid data
+        h_masked <- terra::mask(h, r)
+        
+        # 2. Calculate numerator and denominator, extracting the numeric '$sum' column
+        numerator <- terra::global(r * h, 'sum', na.rm = TRUE)$sum
+        denominator <- terra::global(h_masked, 'sum', na.rm = TRUE)$sum
+        
+        # 3. Calculate final average
+        meanExp[m] <- numerator / denominator #calculate global weighted average by hand 
       }
       matExp[x, ] <- unlist(meanExp)
       #print(x)
