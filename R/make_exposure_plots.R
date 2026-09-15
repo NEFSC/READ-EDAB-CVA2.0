@@ -3,8 +3,10 @@
 #' Produces exposure plots. Requires directory to be set up per directions in the package documentation/manual.
 #'
 #' @param species names of the species to plot. Must match folder name to pull correct data and save figures correctly.
-#' @param type at least one of the following: 'variable', 'total', 'important', 'radar. Used to determine what to plot. Defaults to all.
-#' @param present_time,future_time character strings indicating the present and future time series to compare. Example: '1993-2019'. Used to pull correct calculations and save the data properly
+#' @param type at least one of the following: 'variable', 'total', 'important', 'radar'. Used to determine what to plot. Defaults to all.
+#' @param forecast_release,hindcast_release MOM6 release codes for the (f)orecast and (h)indcasts used. Used to pull correct variable exposures
+#' @param forecast_init forecast_initialization code corresponding to the forecast_initalization date of the desired forecast data. Used to pull correct variable exposures
+#' @param hindcast_yr_range character string corresponding to the years in the hindcast data used. Used to pull correct data and save the data properly
 #' @param variable_df a data.frame containing all possible environmental variables, such as from the MOM6 model. Must contain columns \code{Long.Name} and \code{Short.Name}, containing the full names and abbreviated names of the variables. Abbreviated names should correspond to those in the weights vector produced by \code{combineWeights}
 #' @param coastline shapefile used to plot land in model prediction plots
 #'
@@ -15,8 +17,10 @@
 make_exposure_plots <- function(
   species,
   type = c('variable', 'total', 'important', 'radar'),
-  present_time,
-  future_time,
+  forecast_release, 
+  forecast_init,
+  hindcast_release, 
+  hindcast_yr_range,
   variable_df,
   coastline
 ) {
@@ -30,114 +34,109 @@ make_exposure_plots <- function(
       message(paste("Plotting Variable-Specific Exposure..."))
       ###VARIABLE-LEVEL EXPOSURE
       #load variable weights
-      load(paste0(
+      imp <- readRDS(paste0(
         file.path(getwd(), x, 'Data'),
-        '/combined_variable_weights.RData'
-      )) #cW
+        '/normalized_dynamic_variable_importance.rds'
+      )) 
 
       #load maps
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/variable_exposure_maps.RData'
-      )) #mapExp
-      #subset timeseries matrix by rownames
-      i <- names(mapExp) %in% names(cW)
-      mapSub <- raster::subset(mapExp, which(i == T))
+      varMaps <- terra::rast(file.path(getwd(), x, 'Data',
+      paste0('variable_exposure_maps_', forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range, '.tif')))
 
       #load timeseries
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/variable_exposure_timeseries.RData'
-      )) #vecExp
-      #subset timeseries matrix by rownames
-      i <- rownames(vecExp) %in% names(cW)
-      vecSub <- vecExp[i, ]
+      vecExp <- readRDS(
+        file.path(getwd(), x, 'Data',
+        paste0('variable_exposure_timeseries_', forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.rds')
+      ))
 
       #plot
       grDevices::pdf(
         paste0(
-          file.path(getwd(), x, 'Figures'),
-          '/',
-          present_time,
-          ' vs ',
-          future_time,
-          '/variable_exposure_maps_inset_timeseries.pdf'
+          file.path(getwd(), x, 'Figures',
+          paste0('variable_exposure_maps_inset_timeseries',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
         ),
         width = 8,
         height = 11
       )
       #set up panels according to the number of variables
-      if (raster::nlayers(mapSub) < 6) {
-        graphics::par(mfrow = c(2, 3))
+      if (terra::nlyr(varMaps) < 6) {
+        graphics::par(mfrow = c(2, 3), mar = c(2, 2.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
       } else {
-        graphics::par(mfrow = c(3, 3))
+        graphics::par(mfrow = c(3, 3), mar = c(2, 2.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
       }
 
-      for (y in 1:raster::nlayers(mapSub)) {
+      for (y in 1:terra::nlyr(varMaps)) {
         #get full name of variable
-        i <- variable_df$Short.Name %in% names(mapSub)[y]
+        i <- variable_df$Short.Name %in% names(varMaps)[y]
 
         #map
-        graphics::par(plt = c(0.2, 0.9, 0.15, 0.875))
-        plot(
-          raster::subset(mapSub, y),
+        graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
+       terra::plot(
+          varMaps[[y]],
           zlim = c(1, 4),
           col = cmocean::cmocean('matter')(4),
           legend = F,
           legend.mar = 0,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
-          xaxt = 'n',
-          yaxt = 'n',
-          main = variable_df$Long.Name[i]
-        )
-        graphics::axis(
-          2,
-          at = seq(30, 50, by = 1),
-          labels = seq(30, 50, by = 1),
-          las = 2
-        )
-        graphics::axis(
-          1,
-          at = seq(-85, -65, by = 1),
-          labels = seq(-85, -65, by = 1)
+          pax = list(cex = 1.3, xat = seq(-80, -60, by = 2)),
+          main = variable_df$Long.Name[i],
+          cex.main = 1.5
         )
         plot(coastline['id'], col = 'grey', add = T)
+        plot(stocks, add = T)
 
         #inset timeseries
-        graphics::par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
-        plot(
-          vecSub[y, ],
-          t = 'b',
-          lty = 8,
-          lwd = 0.8,
-          cex = 0.8,
-          pch = y,
-          ylim = c(1, 4),
-          ylab = "",
-          xlab = "",
-          yaxt = 'n',
-          xaxt = 'n'
-        )
-        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+        graphics::par(plt = c(0.55, 0.9, 0.3, 0.5), new = TRUE)
+        if(!inherits(vecExp, 'list')){ #if vecExp is NOT a list and is just a single matrix, just plot a single line 
+          plot(
+            vecExp[y, ],
+            t = 'b',
+            lty = 1,
+            lwd = 0.8,
+            cex = 0.8,
+            pch = 1,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "",
+            yaxt = 'n',
+            xaxt = 'n'
+          )
+        } else { #if vecExp is a list, then exposure is calculated within multiple stocks 
+          vecSub <- do.call(rbind, lapply(vecExp, function(s) s[y,]))
+          plot( #explicitly call the first row, which is the global value and then add the additional ones 
+            vecSub[1, ],
+            t = 'b',
+            lty = 1,
+            lwd = 0.8,
+            cex = 0.8,
+            pch = 1,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "",
+            yaxt = 'n',
+            xaxt = 'n'
+          )
+          for(m in 2:nrow(vecSub)){
+            lines(vecSub[m,], 
+                  t = 'b', 
+                  lty = m,
+                  lwd = 0.8,
+                  cex = 0.8,
+                  pch = m)
+          } #end m
+        } #end if vecExp is a list
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2, cex.lab = 0.5)
         graphics::axis(
           2,
           at = 1:4,
           labels = c('L', "M", "H", "VH"),
           las = 2,
-          cex.lab = 0.75
+          cex.lab = 0.5
         )
-      }
+      } #end y 
 
-      if (raster::nlayers(mapSub) != 6) {
+      if (terra::nlyr(varMaps) != 6) {
         #add legend on the last one if the number of variables is not 6
         plot(
           1:10,
