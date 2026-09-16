@@ -39,11 +39,6 @@ make_exposure_plots <- function(
     if (ind[1]) {
       message(paste("Plotting Variable-Specific Exposure..."))
       ###VARIABLE-LEVEL EXPOSURE
-      #load variable weights
-      imp <- readRDS(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/normalized_dynamic_variable_importance.rds'
-      )) 
 
       #load maps
       varMaps <- terra::rast(file.path(getwd(), x, 'Data',
@@ -74,15 +69,17 @@ make_exposure_plots <- function(
       for (y in 1:terra::nlyr(varMaps)) {
         #get full name of variable
         i <- variable_df$Short.Name %in% names(varMaps)[y]
+        
+        draw_legend <- if(y == terra::nlyr(varMaps)) TRUE else FALSE
 
         #map
-        graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
+        #graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
        terra::plot(
           varMaps[[y]],
           type = 'continuous',
           range = c(1, 4),
           col = cmocean::cmocean('matter')(4),
-          legend = F,
+          legend = draw_legend,
           legend.mar = 0,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
@@ -97,21 +94,21 @@ make_exposure_plots <- function(
       } #end y 
 
       #add legend to final plot
-      fields::image.plot(
-        matrix(seq(1, 4, length.out = 16), 4, 4),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.5, 0.9, 0.25, 0.3),
-        legend.args = list(text = 'Exposure', cex = 1, side = 3, line = 0.1),
-        axis.args = list(
-          cex.axis = 1,
-          at = 1:4,
-          labels = c('L', "M", "H", "VH"),
-          mgp = c(3, 0.5, 0)
-        ),
-        col = cmocean::cmocean('matter')(4)
-      )
+    #  fields::image.plot(
+     #   matrix(seq(1, 4, length.out = 16), 4, 4),
+     #   legend.only = T,
+     #   horizontal = T,
+     #   legend.shrink = 0.7,
+     #   smallplot = c(0.5, 0.9, 0.25, 0.3),
+      ##  legend.args = list(text = 'Exposure', cex = 1, side = 3, line = 0.1),
+     #   axis.args = list(
+     #     cex.axis = 1,
+     #     at = 1:4,
+    #      labels = c('L', "M", "H", "VH"),
+    #      mgp = c(3, 0.5, 0)
+    #    ),
+    #    col = cmocean::cmocean('matter')(4)
+   #   )
 
       grDevices::dev.off()
       
@@ -287,9 +284,13 @@ make_exposure_plots <- function(
           cex.lab = 0.75
         )
       } else {
-        if (nrow(vecExp) < 6) {
+        if (nrow(vecExp) == 3) {
+          graphics::par(mfrow = c(2, 2))
+        } 
+        if (nrow(vecExp) <= 6 & nrow(vecExp) >= 4) {
           graphics::par(mfrow = c(2, 3))
-        } else {
+        } 
+        if (nrow(vecExp) > 6) {
           graphics::par(mfrow = c(3, 3))
         }
         for(s in 1:nrow(vecExp)){
@@ -416,9 +417,13 @@ make_exposure_plots <- function(
           cex.lab = 0.75
         )
       } else {
-        if (nrow(vecExp) < 6) {
+        if (nrow(vecExp) == 3) {
+          graphics::par(mfrow = c(2, 2))
+        } 
+        if (nrow(vecExp) <= 6 & nrow(vecExp) >= 4) {
           graphics::par(mfrow = c(2, 3))
-        } else {
+        } 
+        if (nrow(vecExp) > 6) {
           graphics::par(mfrow = c(3, 3))
         }
         for(s in 1:nrow(vecExp)){
@@ -470,7 +475,7 @@ make_exposure_plots <- function(
         width = 8,
         height = 8
       )
-      fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5), axistype = 2)
+      fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5), seg = 10)
       grDevices::dev.off()
     }
   } #end x
