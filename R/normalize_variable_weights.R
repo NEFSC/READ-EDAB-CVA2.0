@@ -43,7 +43,7 @@ normalize_variable_weights <- function(vars, ens_weights, imp_flist) {
     x / sum(x, na.rm = T)
   }))
   dfV <- replace(dfV, is.na(dfV), 0)
-  ws <- apply(dfV, MARGIN = 2, FUN = weighted.mean, w = ens_weights, na.rm = T) #weighted average of weights
+  ws <- apply(dfV, MARGIN = 2, FUN = stats::weighted.mean, w = ens_weights, na.rm = T) #weighted average of weights
 
   return(ws)
 }

@@ -12,6 +12,7 @@ build_sdm(
   year_col = "year",
   var_names,
   model,
+  year_range = range(se[, year_col], na.rm = T),
   ensemble_weights = NULL,
   ensemble_preds = NULL
 )
@@ -28,6 +29,8 @@ build_sdm(
 \item{var_names}{a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}.}
 
 \item{model}{one of the following indicating the desired model to build: gam, maxent, brt, rf, sdmtmb, or ens}
+
+\item{year_range}{vector with length of two including the maximum and minimum years to include in the model. Only used if \code{model = 'sdmtmb'}. Should include maximum desired year if predicting as well; i.e. if training data range from 1993-2019, but you want to forecast out to 2035, the \code{year_range} should be c(1993,2035). Defaults to the range of the \code{year_col} in \code{se}}
 
 \item{ensemble_weights}{vector of model weights used to build ensemble model. The vector must have the same length and be in the same order as the corresponding predictions list.}
 

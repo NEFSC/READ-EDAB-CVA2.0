@@ -12,7 +12,8 @@
 #' @param weights a vector of model weights - used for building the ensemble model
 #'
 #' @return returns a rasterStack of predicted habitat suitability. The number of layers will be equal to the number of layers in \code{rasts}
-#'
+#' @importFrom maxnet maxnet
+#' 
 #'@export
 
 # --- MAIN SDM PREDICTION FUNCTION ---

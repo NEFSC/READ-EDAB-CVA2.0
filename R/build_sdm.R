@@ -171,7 +171,7 @@ build_sdm <- function(
     # 1. HANDLE MISSING DATA UPFRONT
     # Ensure perfect alignment and identical datasets for every RFE iteration
     all_model_cols <- c(pa_col, current_predictors)
-    complete_rows <- complete.cases(sf::st_drop_geometry(stDF)[, all_model_cols])
+    complete_rows <- stats::complete.cases(sf::st_drop_geometry(stDF)[, all_model_cols])
     stDF <- stDF[complete_rows, ]
     
     # 2. SETUP SPATIAL BLOCK FOLDS
