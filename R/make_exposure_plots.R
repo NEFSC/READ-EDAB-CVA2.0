@@ -246,7 +246,7 @@ make_exposure_plots <- function(
 
       #add bathy contours, coastline, and stocks if necessary
       terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), add = T)
-      plot(coastline['id'], col = 'grey', add = T)
+      terra::plot(coastline['id'], col = 'grey', add = T)
       if(!is.null(stocks)){
         terra::plot(stocks, add = T, lwd = 2)
       }
