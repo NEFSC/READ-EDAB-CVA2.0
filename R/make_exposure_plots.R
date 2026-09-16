@@ -22,8 +22,12 @@ make_exposure_plots <- function(
   hindcast_release, 
   hindcast_yr_range,
   variable_df,
-  coastline
+  coastline, 
+  bathymetry
 ) {
+  # Failsafe: If the function crashes, forcefully close any open PDFs
+  on.exit(while (grDevices::dev.cur() > 1) grDevices::dev.off(), add = TRUE)
+  
   #determine what to plot
   ind <- c('variable', 'total', 'important', 'radar') %in% type
 
@@ -54,16 +58,16 @@ make_exposure_plots <- function(
       grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures',
-          paste0('variable_exposure_map_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
+          paste0('variable_exposure_maps_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
         ),
         width = 11,
         height = 8
       )
       #set up panels according to the number of variables
       if (terra::nlyr(varMaps) <= 6) {
-        graphics::par(mfrow = c(2, 3), mar = c(2, 2.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
+        graphics::par(mfrow = c(2, 3), mar = c(2, 3.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
       } else {
-        graphics::par(mfrow = c(3, 3), mar = c(2, 2.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
+        graphics::par(mfrow = c(3, 3), mar = c(2, 3.5, 1.5, 0.5), mgp = c(1.2, 0.5, 0))
       }
 
       for (y in 1:terra::nlyr(varMaps)) {
@@ -82,23 +86,17 @@ make_exposure_plots <- function(
           legend = FALSE,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
-          pax = list(cex = 2, xat = seq(-80, -60, by = 2)),
           main = variable_df$Long.Name[i],
-          cex.main = 1.5, cex.axis = 1.5,
-          plg = list(
-            title = "Exposure",
-            title.cex = 1.5,
-            cex = 1.5,
-            horizontal = TRUE,       # Make legend horizontal
-            x = -72,
-            y = 36,
-            at = 1:4, n = 4),      # Place inside bottom right of panel 12
+          pax = list(cex.axis = 1.5, xat = seq(-80, -60, by = 2)), cex.lab = 1.25
        )
         
-        plot(coastline['id'], col = 'grey', add = T)
-        if(!is.null(stocks)){
-          plot(stocks, add = T)
-        }
+       #add bathy contours, coastline, and stocks if necessary
+       terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), add = T)
+       plot(coastline['id'], col = 'grey', add = T)
+       if(!is.null(stocks)){
+         terra::plot(stocks, add = T, lwd = 2)
+       }
+        
       } #end y 
       # 2. Draw the legend independently if it is the last panel
       if (draw_legend) {
@@ -113,9 +111,15 @@ make_exposure_plots <- function(
             title.cex = 1.5,
             cex = 1.5,
             horizontal = TRUE,
-            x = -72,
-            y = 36,
-            at = 1:4, n = 4
+            x = -73.5,
+            y = 36.5,
+            at = 1:4, n = 4,
+            # 1. Scale the size of the color bar itself (width, height)
+            size = c(1, 2.5), 
+            # 2. Control the distance of the labels from the bar
+            pax = list(
+              mgp = c(3, 2, 0) 
+            )
           )
         )
       }
@@ -220,7 +224,7 @@ make_exposure_plots <- function(
       grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures',
-                    paste0('total_exposure_all_vars_map_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
+                    paste0('total_exposure_all_var_map_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
         ),
         width = 8,
         height = 8
@@ -228,35 +232,41 @@ make_exposure_plots <- function(
       #map
       terra::plot(
         varMaps,
-        type = 'continuous',
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
         range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
+        pax = list(cex.axis = 1.5), cex.lab = 1.25,
         xlab = expression('Longitude (' * degree * ')'),
         ylab = expression('Latitude (' * degree * ')'),
-        pax = list(cex.axis = 1.5), cex.lab = 1.25
+        mar = c(3,3,1.5,0.5)
       )
 
+      #add bathy contours, coastline, and stocks if necessary
+      terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), add = T)
       plot(coastline['id'], col = 'grey', add = T)
       if(!is.null(stocks)){
-        plot(stocks, add = T)
+        terra::plot(stocks, add = T, lwd = 2)
       }
       
-      fields::image.plot(
-        matrix(seq(1, 4, length.out = 16), 4, 4),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.5, 0.9, 0.2, 0.25),
-        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-        axis.args = list(
-          cex.axis = 1,
-          at = 1:4,
-          labels = c('Low', "Moderate", "High", "Very High"),
-          mgp = c(3, 0.5, 0)
-        ),
-        col = cmocean::cmocean('matter')(4)
+    #legend
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        legend.only = TRUE, # <-- Draws only the legend elements
+        plg = list(
+          title = "Exposure",
+          title.cex = 1.5,
+          cex = 1.5,
+          x = -68,
+          y = 38, 
+          legend = c("Low", "Moderate", "High", "Very High")
+        )
       )
       grDevices::dev.off()
       
@@ -353,43 +363,50 @@ make_exposure_plots <- function(
       grDevices::pdf(
         paste0(
           file.path(getwd(), x, 'Figures',
-                    paste0('total_exposure_imp_vars_map_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
+                    paste0('total_exposure_imp_var_map_',forecast_release, '_', forecast_init, '_', hindcast_release,'_',hindcast_yr_range,'.pdf'))
         ),
         width = 8,
         height = 8
       )
+      #graphics::par(mar = c(5, 5, 1.5, 0.5))
       #map
       terra::plot(
         varMaps,
-        type = 'continuous',
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
         range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
         xlab = expression('Longitude (' * degree * ')'),
         ylab = expression('Latitude (' * degree * ')'),
-        pax = list(cex.axis = 1.5), cex.lab = 1.25
+        pax = list(cex.axis = 1.5), cex.lab = 1.25,
+        mar = c(3,3,1.5,0.5)
       )
       
+      #add bathy contours, coastline, and stocks if necessary
+      terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), add = T)
       plot(coastline['id'], col = 'grey', add = T)
       if(!is.null(stocks)){
-        plot(stocks, add = T)
+        terra::plot(stocks, add = T, lwd = 2)
       }
       
-      fields::image.plot(
-        matrix(seq(1, 4, length.out = 16), 4, 4),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.5, 0.9, 0.2, 0.25),
-        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-        axis.args = list(
-          cex.axis = 1,
-          at = 1:4,
-          labels = c('Low', "Moderate", "High", "Very High"),
-          mgp = c(3, 0.5, 0)
-        ),
-        col = cmocean::cmocean('matter')(4)
+      #legend
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        legend.only = TRUE, # <-- Draws only the legend elements
+        plg = list(
+          title = "Exposure",
+          title.cex = 1.5,
+          cex = 1.5,
+          x = -68,
+          y = 38, 
+          legend = c("Low", "Moderate", "High", "Very High")
+        )
       )
       grDevices::dev.off()
       
