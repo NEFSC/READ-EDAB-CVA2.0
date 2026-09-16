@@ -70,7 +70,7 @@ make_exposure_plots <- function(
         #get full name of variable
         i <- variable_df$Short.Name %in% names(varMaps)[y]
         
-        draw_legend <- if(y == terra::nlyr(varMaps)) TRUE else FALSE
+        draw_legend <- y == terra::nlyr(varMaps)
 
         #map
         #graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
@@ -78,37 +78,47 @@ make_exposure_plots <- function(
           varMaps[[y]],
           type = 'continuous',
           range = c(1, 4),
-          col = cmocean::cmocean('matter')(4),
-          legend = draw_legend,
-          legend.mar = 0,
+          col = cmocean::cmocean('matter')(64),
+          legend = FALSE,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
           pax = list(cex = 2, xat = seq(-80, -60, by = 2)),
           main = variable_df$Long.Name[i],
-          cex.main = 1.5, cex.axis = 1.5
-        )
+          cex.main = 1.5, cex.axis = 1.5,
+          plg = list(
+            title = "Exposure",
+            title.cex = 1.5,
+            cex = 1.5,
+            horizontal = TRUE,       # Make legend horizontal
+            x = -72,
+            y = 36,
+            at = 1:4, n = 4),      # Place inside bottom right of panel 12
+       )
+        
         plot(coastline['id'], col = 'grey', add = T)
         if(!is.null(stocks)){
           plot(stocks, add = T)
         }
       } #end y 
-
-      #add legend to final plot
-    #  fields::image.plot(
-     #   matrix(seq(1, 4, length.out = 16), 4, 4),
-     #   legend.only = T,
-     #   horizontal = T,
-     #   legend.shrink = 0.7,
-     #   smallplot = c(0.5, 0.9, 0.25, 0.3),
-      ##  legend.args = list(text = 'Exposure', cex = 1, side = 3, line = 0.1),
-     #   axis.args = list(
-     #     cex.axis = 1,
-     #     at = 1:4,
-    #      labels = c('L', "M", "H", "VH"),
-    #      mgp = c(3, 0.5, 0)
-    #    ),
-    #    col = cmocean::cmocean('matter')(4)
-   #   )
+      # 2. Draw the legend independently if it is the last panel
+      if (draw_legend) {
+        terra::plot(
+          varMaps[[y]],
+          type = 'continuous',
+          range = c(1, 4),
+          col = cmocean::cmocean('matter')(64),
+          legend.only = TRUE, # <-- Draws only the legend elements
+          plg = list(
+            title = "Exposure",
+            title.cex = 1.5,
+            cex = 1.5,
+            horizontal = TRUE,
+            x = -72,
+            y = 36,
+            at = 1:4, n = 4
+          )
+        )
+      }
 
       grDevices::dev.off()
       
