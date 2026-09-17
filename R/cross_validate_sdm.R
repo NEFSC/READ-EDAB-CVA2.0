@@ -91,13 +91,13 @@ cross_validate_sdm <- function(
     }
 
     #convert dataframe to spatial object
-    stDF = sf::st_as_sf(
+    stDF <- sf::st_as_sf(
       seSub[stats::complete.cases(seSub), ],
       coords = xy_col,
       crs = 4326,
       agr = "constant"
     )
-    stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+    stDF <- sftime::st_sftime(stDF, time_column_name = month_col)
 
     #create formula
     form <- "value ~ "
@@ -125,7 +125,7 @@ cross_validate_sdm <- function(
     splitrule <- "variance"
     ntree <- mod$num.trees # 500
     mtry <- mod$mtry
-    tgrid = data.frame(
+    tgrid <- data.frame(
       min.node.size = min.node.size,
       num.trees = ntree,
       mtry = mtry,
