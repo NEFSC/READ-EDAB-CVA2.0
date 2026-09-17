@@ -10,11 +10,10 @@
 #'
 #'@export
 
-calculate_sdm_auc <- function(model, data_type, data,  prediction_rasters) {
-
+calculate_sdm_auc <- function(model, data_type, data, prediction_rasters) {
   data <- data[stats::complete.cases(data), ]
 
-  if(data_type == 'cv'){
+  if (data_type == 'cv') {
     #get Pred based on model-specific outputs
     if (model == 'gam' | model == 'maxent') {
       Pred <- ROCR::prediction(data$cvpred, data$abund)
@@ -31,21 +30,23 @@ calculate_sdm_auc <- function(model, data_type, data,  prediction_rasters) {
     #calculate AUC
     Perf <- ROCR::performance(Pred, 'auc')
     met <- Perf@y.values[[1]]
-
   } #end if data_type = 'cv'
 
-  if(data_type == 'external'){
+  if (data_type == 'external') {
     #follow same framework as match_fisheries_environment_data
     #the same methods regardless of model type
 
     ###building data.frame moved to helper function since this is repeated a bit
-    preds <- build_preds_df(observations = data, xy_col = c("grid.lon", "grid.lat"), prediction_rasters = prediction_rasters)
+    preds <- build_preds_df(
+      observations = data,
+      xy_col = c("grid.lon", "grid.lat"),
+      prediction_rasters = prediction_rasters
+    )
 
     #get AUC
     Pred <- ROCR::prediction(preds$predicted, preds$pa)
     Perf <- ROCR::performance(Pred, 'auc')
     met <- Perf@y.values[[1]]
-
   }
 
   return(met)
