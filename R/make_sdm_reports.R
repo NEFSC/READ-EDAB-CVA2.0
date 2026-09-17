@@ -39,9 +39,9 @@ make_sdm_reports <- function(
 
     # Clean species name for file paths (e.g., "Blue Whale" -> "Blue_Whale")
     clean_name <- row$Name
-    
+
     # Define standard paths
-    spp_dir        <- file.path(getwd(), clean_name)
+    spp_dir <- file.path(getwd(), clean_name)
 
     #match to metrics
     mrow <- model_metrics[which(model_metrics$Common.Name == row$Common.Name), ]
@@ -52,15 +52,15 @@ make_sdm_reports <- function(
     hList <- habitat_key[, which(names(habitat_key) == row$Habitat.Guild)]
     hTab <- variable_key[variable_key$Short.Name %in% hList, ]
     #fhTab <- c(fTab, hTab)
-    
+
     #match to sources
-    srow <- sources[which(sources$Common.Name == row$Common.Name), ] #isolate T/F in appropriate row 
+    srow <- sources[which(sources$Common.Name == row$Common.Name), ] #isolate T/F in appropriate row
     srow <- unlist(as.vector(srow[-1]))
-    snames <- colnames(sources)[-1][srow] #isolate column names 
+    snames <- colnames(sources)[-1][srow] #isolate column names
     sTab <- source_key[source_key$Short.Name %in% snames, 1] #should be full names of sources
-    
+
     #pull raw weights instead of weights figure
-    mm <- mrow[,grepl('.WT', colnames(model_metrics))]
+    mm <- mrow[, grepl('.WT', colnames(model_metrics))]
     mm <- round(mm, digits = 3)
     mm <- replace(mm, is.na(mm), "Model Did\nNot Converge")
 
@@ -79,19 +79,19 @@ make_sdm_reports <- function(
         n_pres = mrow$N.PRESENCE,
         n_abs = mrow$N.ABSENCE,
         # Assuming your PDFs follow a naming convention:
-       # weight_plot_pdf =  paste0(
+        # weight_plot_pdf =  paste0(
         #  file.path(spp_dir, 'figures'),
-        #  '/component_model_weights_', 
-        #  release, 
-         # '.pdf'
-       # ),
+        #  '/component_model_weights_',
+        #  release,
+        # '.pdf'
+        # ),
         imp_plot_pdf = paste0(
           file.path(spp_dir, 'figures'),
-          '/variable_importance_radars_', 
-          release, 
+          '/variable_importance_radars_',
+          release,
           '.pdf'
         ),
-        results_pdf =  paste0(
+        results_pdf = paste0(
           file.path(spp_dir, 'figures'),
           '/mean_SDM_hindcast_',
           release,
@@ -114,11 +114,18 @@ make_sdm_reports <- function(
 
     #move to final folder
     # Determine where Quarto actually saved the file
-    rendered_file <- file.path(dirname(template), paste0("SDM_Report_", clean_name, ".pdf"))
-    
+    rendered_file <- file.path(
+      dirname(template),
+      paste0("SDM_Report_", clean_name, ".pdf")
+    )
+
     # Define your intended destination
-    final_destination <- file.path(getwd(), report_path, paste0("SDM_Report_", clean_name, ".pdf"))
-    
+    final_destination <- file.path(
+      getwd(),
+      report_path,
+      paste0("SDM_Report_", clean_name, ".pdf")
+    )
+
     # Move to final folder
     file.rename(
       from = rendered_file,
