@@ -3,6 +3,7 @@
 #' Compiles sample sizes and performance metrics for the component and ensemble modelsThe final product is a saved csv file containing all of the performance metrics.
 #'
 #' @param spp_list the data.frame containing species names and alternative names for \code{test_ens}. Must contain the column \code{Name}, which matches the names of the species folders to help pull correct data.
+#' @param component_models vector containing the names of the component models used in the ensemble. Must match file names in evaluation directory to pull correct values. 
 #' @param training_years vector with length equal to 2, indicating the maximum and minimum years that identify the desired training datasets
 #' @param pa_col column name for presence/absence column
 #' @param release release code for MOM6 data. Helps pull correct training dataset associated with the MOM6 data with the same name
@@ -33,6 +34,7 @@
 
 make_evaluation_csv <- function(
   spp_list,
+  component_models,
   training_years,
   pa_col,
   release,
@@ -94,9 +96,13 @@ make_evaluation_csv <- function(
       full.names = T
     )
 
-    #reorder evalFlist to put ensemble last
-    evalFlist <- evalFlist[c(1, 3:6, 2)]
-
+  
+    #subset list to desired models 
+    evalFlist <- evalFlist[grepl(paste(toupper(c('ensemble', component_models)),collapse = "|"),  evalFlist)]
+    
+  #reorder evalFlist to put ensemble last
+    evalFlist <- evalFlist[c(1, 3:(length(component_models)+1), 2)]
+    
     eval <- vector(length = length(evalFlist))
     for (y in 1:length(evalFlist)) {
       if (!is.na(evalFlist[y])) {
@@ -113,8 +119,8 @@ make_evaluation_csv <- function(
       'model_output',
       'ensemble_weights.rds'
     )) #weights
-    if (length(weights) < 5) {
-      weights <- c(weights, NA) #if weights only has 4 mondels, append an NA
+    if (length(weights) < length(component.models)) {
+      weights <- c(weights, NA) #if weights only has 4 models, append an NA
     }
 
     #put it all together and add names
@@ -125,13 +131,11 @@ make_evaluation_csv <- function(
       'BRT.AUC',
       'GAM.AUC',
       "MAXENT.AUC",
-      "RF.AUC",
       'SDMTMB.AUC',
       'ENS.AUC',
       'BRT.WT',
       'GAM.WT',
       "MAXENT.WT",
-      "RF.WT",
       'SDMTMB.WT'
     )
 
