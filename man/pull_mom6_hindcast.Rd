@@ -6,21 +6,17 @@
 \usage{
 pull_mom6_hindcast(
   var_url,
-  req_vars,
-  short_names,
+  req_var,
   gt = "regrid",
   of = "monthly",
   bounds = c(-78, -65, 35, 45),
-  static,
   release
 )
 }
 \arguments{
 \item{var_url}{URL pointing to JSON table variable lists for desired MOM6 hindcast and domain}
 
-\item{req_vars}{vector of variable names to pull. Must match names in the 'cefi_long_name' column provided JSON table}
-
-\item{short_names}{vector of simplified variable names to help name resulting raster files. Must be the same length as req_vars.}
+\item{req_var}{name of variable to pull. Must match names in the 'cefi_long_name' column provided JSON table}
 
 \item{gt}{desired grid type. Must match one of the options in the 'cefi_grid_type' column in provided JSON table}
 
@@ -28,12 +24,10 @@ pull_mom6_hindcast(
 
 \item{bounds}{xmin, xmax, ymin, ymax of desired output raster}
 
-\item{static}{URL to static grid for MOM6}
-
 \item{release}{release code. Must match one of the options in the 'cefi_release' column in provided JSON table}
 }
 \value{
-a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
+a spatRaster of data associated with the requested variable
 }
 \description{
 Pull hindcast data from the MOM6 model output based on provided URL from the CEFI portal

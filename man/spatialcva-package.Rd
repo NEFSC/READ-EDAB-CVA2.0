@@ -12,6 +12,8 @@ This package provides the tools to build a spatial Climate Vulnerability Assessm
 Useful links:
 \itemize{
   \item \url{https://nefsc.github.io/READ-EDAB-CVA2.0/}
+  \item \url{https://github.com/NEFSC/READ-EDAB-CVA2.0/}
+  \item Report bugs at \url{https://github.com/NEFSC/READ-EDAB-CVA2.0/issues/new?template=bug_report.yml}
 }
 
 }

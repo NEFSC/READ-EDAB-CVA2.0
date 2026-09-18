@@ -4,14 +4,16 @@
 \alias{sd_model_data}
 \title{Calculate Standard Deviation on MOM6 Data}
 \usage{
-sd_model_data(raw_list)
+sd_model_data(raw, spatial_temporal)
 }
 \arguments{
-\item{raw_list}{List of output rasters from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}}
+\item{raw}{spatRaster from \code{pull_mom6_hindcast} or \code{pull_mom6_forecast}}
+
+\item{spatial_temporal}{TRUE/FALSE to determine how standard deviations are calculated If TRUE, standard deviation calculations are spatially and temporally explicit. If FALSE, the calculation occurs across space and time}
 }
 \value{
-a list whose length is equal to the number of variables supplied, where each item in the list is a rasterStack of data associated with that variable
+If \code{spatial.temporal} is TRUE, a spatRaster is returned. If FALSE, a single value is returned.
 }
 \description{
-Calculate monthly standard deviations from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any rasterStack of gridded data.
+Calculate monthly or global standard deviations from raw model data across the entire provided timeseries. This is built specifically for MOM6 output, but would work on any spatRaster of gridded data.
 }

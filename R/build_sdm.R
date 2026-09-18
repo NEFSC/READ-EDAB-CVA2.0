@@ -4,8 +4,10 @@
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param pa_col column name for presence/absence column
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
-#' @param month_col,year_col column names for month and year columns respectively
+#' @param month_col,year_col column names for month and year columns respectively. Defaults to 'month' and 'year' respectively.
+#' @param var_names a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}.
 #' @param model one of the following indicating the desired model to build: gam, maxent, brt, rf, sdmtmb, or ens
+#' @param year_range vector with length of two including the maximum and minimum years to include in the model. Only used if \code{model = 'sdmtmb'}. Should include maximum desired year if predicting as well; i.e. if training data range from 1993-2019, but you want to forecast out to 2035, the \code{year_range} should be c(1993,2035). Defaults to the range of the \code{year_col} in \code{se}
 #' @param ensemble_weights vector of model weights used to build ensemble model. The vector must have the same length and be in the same order as the corresponding predictions list.
 #' @param ensemble_preds a list of prediction values from component models used to build ensemble model. The list of predictions must have the same length and be in the same order as the corresponding weight vector.
 #'
@@ -17,25 +19,22 @@ build_sdm <- function(
   se,
   pa_col,
   xy_col,
-  month_col,
-  year_col,
+  month_col = 'month',
+  year_col = 'year',
+  var_names,
   model,
+  year_range = range(se[, year_col], na.rm = T),
   ensemble_weights = NULL,
   ensemble_preds = NULL
 ) {
-  if (
-    mod != 'gam' |
-      mod != 'maxent' |
-      mod != 'rf' |
-      mod != 'brt' |
-      mod != 'sdmtmb' |
-      mod != 'ens'
-  ) {
-    stop('model is not gam, maxent, rf, brt, sdmtmb, or ens')
+  # Fail fast check
+  valid_models <- c("gam", "maxent", "rf", "brt", "sdmtmb", "ensemble")
+  if (!model %in% valid_models) {
+    stop("Model must be one of: ", paste(valid_models, collapse = ", "))
   }
 
   #now build model of choice
-  if (model == 'gam') {
+  if (model == "gam") {
     #build gam model
     print('Building GAM...')
     #build formula
@@ -53,17 +52,12 @@ build_sdm <- function(
     if (!is.null(month_col)) {
       form <- paste0(form, "+ s(", month_col, ", bs = 'cc', k = 6)")
     }
-    #loop through remaining covariates since they will all have the same smoother
-    for (x in 1:ncol(se)) {
-      if (
-        colnames(se)[x] != pa_col &
-          colnames(se)[x] != month_col &
-          colnames(se)[x] != xy_col[1] &
-          colnames(se)[x] != xy_col[2]
-      ) {
-        #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + s(', colnames(se)[x], ", bs = 'ts', k = 6)")
-      }
+    if (!is.null(year_col)) {
+      form <- paste0(form, "+ s(", year_col, ", bs = 'ts', k = 6)")
+    }
+    #loop through covariates since they will all have the same smoother
+    for (x in var_names) {
+      form <- paste0(form, ' + s(', x, ", bs = 'ts', k = 6)")
     } #end for x
 
     #run model
@@ -76,24 +70,26 @@ build_sdm <- function(
     )
   } #end if gam
 
-  if (model == 'maxent') {
+  if (model == "maxent") {
     print('Building MAXENT...')
     #run model - no formula needed
+    #need to remove extraneous variables
+    seSub <- se[,
+      names(se) %in% c(pa_col, xy_col, month_col, year_col, var_names)
+    ]
     mod <- EFHSDM::FitMaxnet(
-      data = se,
+      data = seSub,
       species = pa_col,
-      vars = names(se)[-which(names(se) == pa_col)],
+      vars = names(seSub)[-which(names(seSub) == pa_col)],
       reduce = T
     ) #fit maxent with all covariates in dataframe since we've already subset the dataframe to be only relevant covariates
   } #end if maxent
 
-  if (model == 'rf') {
+  if (model == "rf") {
     print('Building Random Forest with Spatial Interpolation...')
 
     se <- cbind(1:nrow(se), se) #stand in station ids
     colnames(se)[1] <- "staid"
-    se$month.year <- paste(se[, month_col], se[, year_col], sep = '-')
-    se$year <- lubridate::year(lubridate::my(se$month.year))
 
     #subsample by space-time
     set.seed(2025)
@@ -115,8 +111,8 @@ build_sdm <- function(
     for (x in sptm) {
       sub <- se[se$sp.tm == x, ]
 
-      abs <- sub[sub$value == 0, ]
-      pres <- sub[sub$value == 1, ]
+      abs <- sub[sub[, pa_col] == 0, ]
+      pres <- sub[sub[, pa_col] == 1, ]
 
       if (nrow(pres) <= 5) {
         #if there are few presences
@@ -135,30 +131,34 @@ build_sdm <- function(
       seSub <- rbind(seSub, allSub)
     }
 
-    #convert dataframe to spatial object
-    stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    seSub$true_date <- as.Date(
+      paste0("01.", seSub$month.year),
+      format = "%d.%m.%Y"
+    )
+    
+    seSub$day_of_year <- as.integer(strftime(seSub$true_date, format = "%j"))
+
+    # 2. Convert dataframe to spatial object
+    stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
+
+    # 3. Use the new true_date column for your sftime temporal dimension
+    stDF <- sftime::st_sftime(stDF, time_column_name = "day_of_year")
+
+    #make clean coordinate columns to help with cv
+    coords <- sf::st_coordinates(stDF)
+    stDF$X <- coords[, "X"]
+    stDF$Y <- coords[, "Y"]
 
     #create formula
-    form <- "value ~ "
-    for (x in 2:ncol(se)) {
-      if (
-        colnames(se)[x] != pa_col &
-          colnames(se)[x] != xy_col[1] &
-          colnames(se)[x] != xy_col[2] &
-          colnames(se)[x] != year_col &
-          colnames(se)[x] != month_col &
-          colnames(se)[x] != 'month.year' &
-          colnames(se)[x] != 'region' &
-          colnames(se)[x] != 'sp.tm' &
-          colnames(se)[x] != 'staid'
-      ) {
-        #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + ', colnames(se)[x])
-      }
-    } #end for x
+    # Build formula string
+    form <- paste(
+      pa_col,
+      "~",
+      paste(c(var_names, month_col, year_col), collapse = " + ")
+    )
 
-    #tune model
+    #build model
     mod <- meteo::rfsi(
       formula = stats::formula(form),
       data = stDF,
@@ -169,23 +169,256 @@ build_sdm <- function(
       seed = 42,
       num.trees = 200,
       s.crs = sf::st_crs(stDF),
-      use.idw = T,
-      classification = F,
+      use.idw = FALSE,
       write.forest = T,
-      splitrule = "variance",
+      splitrule = "extratrees",
+      min.node.size = 5,
+      sample.fraction = 0.95
+    )
+
+    #reduce parameters
+    history <- list()
+    current_predictors <- c(var_names, month_col, year_col)
+
+    # 1. HANDLE MISSING DATA UPFRONT
+    # Ensure perfect alignment and identical datasets for every RFE iteration
+    all_model_cols <- c(pa_col, current_predictors)
+    complete_rows <- stats::complete.cases(sf::st_drop_geometry(stDF)[,
+      all_model_cols
+    ])
+    stDF <- stDF[complete_rows, ]
+
+    # 2. SETUP SPATIAL BLOCK FOLDS
+    # Grouping by 'staid' ensures no spatial overlap between training and validation
+    unique_stations <- unique(stDF$staid)
+    set.seed(42)
+    num_folds <- 5
+    station_folds <- split(
+      sample(unique_stations),
+      rep(1:num_folds, length.out = length(unique_stations))
+    )
+
+    # 3. RECURSIVE FEATURE ELIMINATION LOOP
+    repeat {
+      # Build formula string
+      form_string <- paste(
+        pa_col,
+        "~",
+        paste(current_predictors, collapse = " + ")
+      )
+      current_formula <- stats::formula(form_string)
+
+      all_observed <- c()
+      all_predicted_probs <- c()
+
+      # --- MANUAL CROSS-VALIDATION LOOP ---
+      for (f in 1:num_folds) {
+        val_stations <- station_folds[[f]]
+
+        # Split data based on spatial station IDs
+        train_df <- stDF[!stDF$staid %in% val_stations, ]
+        val_df <- stDF[stDF$staid %in% val_stations, ]
+
+        # --- NEW FIX: TEMPORAL OVERLAP SAFETY ---
+        # Find the name of your active time column in the sftime object
+        # (Replace 'true_date' if you named your time column something else)
+        time_col_name <- "true_date"
+
+        # Identify dates present in the training fold
+        valid_train_dates <- unique(train_df[[time_col_name]])
+
+        # Filter validation fold to ONLY include dates the training fold knows about
+        val_df <- val_df[val_df[[time_col_name]] %in% valid_train_dates, ]
+
+        # If the validation fold is now empty because of this, skip to the next fold
+        if (nrow(val_df) == 0) {
+          next
+        }
+
+        # Fit the RFSI model (probability = TRUE required for AUC)
+        model_fit <- tryCatch(
+          {
+            meteo::rfsi(
+              formula = current_formula,
+              data = train_df,
+              data.staid.x.y.z = c('staid', 'X', 'Y'),
+              cpus = 1,
+              progress = FALSE,
+              num.trees = 200,
+              s.crs = sf::st_crs(stDF),
+              use.idw = FALSE,
+              splitrule = "extratrees",
+              min.node.size = 5,
+              sample.fraction = 0.95,
+              probability = TRUE,
+              importance = "impurity"
+            )
+          },
+          error = function(e) NULL
+        )
+
+        if (is.null(model_fit)) {
+          next
+        }
+
+        # Generate predictions on the validation fold
+        predictions <- meteo::pred.rfsi(
+          model = model_fit,
+          data = train_df,
+          obs.col = pa_col,
+          data.staid.x.y.z = c('staid', 'X', 'Y'),
+          newdata = val_df,
+          newdata.staid.x.y.z = c('staid', 'X', 'Y'),
+          s.crs = sf::st_crs(stDF),
+          newdata.s.crs = sf::st_crs(stDF),
+          progress = FALSE
+        )
+
+        # --- ROBUST MERGE ---
+        val_plain <- as.data.frame(val_df)
+
+        # pred.rfsi often renames the temporal column to 'time'
+        pred_time_col <- if ("time" %in% names(predictions)) {
+          "time"
+        } else {
+          "true_date"
+        }
+
+        # Merge ONLY on unique station ID and the date string
+        # Change "true_date" to whatever your sftime time_column_name is
+        aligned_results <- merge(
+          x = val_plain,
+          y = predictions,
+          by.x = c("staid", "true_date"),
+          by.y = c("staid", pred_time_col)
+        )
+
+        if (nrow(aligned_results) == 0) {
+          cat(
+            "\n[WARNING] Merge failed on fold",
+            f,
+            "- Check date column names!\n"
+          )
+          next
+        }
+
+        # Safely append perfectly paired observed outcomes and predicted probabilities
+        # Note: verify if presence probability is in column "1" or "2" for your specific output
+        all_observed <- c(all_observed, aligned_results[[pa_col]])
+        all_predicted_probs <- c(all_predicted_probs, aligned_results[["2"]])
+      }
+
+      # --- COMPUTE SPATIAL AUC SCORE ---
+      roc_obj <- pROC::roc(all_observed, all_predicted_probs, quiet = TRUE)
+      current_auc <- as.numeric(pROC::auc(roc_obj))
+
+      cat(sprintf(
+        "Variables (%d): %s | Spatial CV AUC: %.4f\n",
+        length(current_predictors),
+        paste(current_predictors, collapse = ", "),
+        current_auc
+      ))
+
+      # Save iteration details
+      history[[length(current_predictors)]] <- list(
+        vars = current_predictors,
+        auc = current_auc
+      )
+
+      # Base Case: Stop if only 3 environmental predictors remain (prevents 1-variable spatial dominance)
+      if (length(current_predictors) <= 3) {
+        break
+      }
+
+      # --- IDENTIFY WEAKEST VARIABLE TO DROP ---
+      # Fit once on full dataset to get final importance for this iteration
+      global_fit <- meteo::rfsi(
+        formula = current_formula,
+        data = stDF,
+        data.staid.x.y.z = c('staid', 'X', 'Y'),
+        cpus = 1,
+        progress = FALSE,
+        num.trees = 200,
+        s.crs = sf::st_crs(stDF),
+        use.idw = TRUE,
+        splitrule = "extratrees",
+        min.node.size = 5,
+        sample.fraction = 0.95,
+        probability = TRUE,
+        importance = "impurity"
+      )
+
+      imp_scores <- global_fit$variable.importance[current_predictors]
+      weakest_var <- names(which.min(imp_scores))
+
+      # Remove the weakest link
+      current_predictors <- setdiff(current_predictors, weakest_var)
+    }
+
+    # --- Continue to print your parsimonious model as before ---
+
+    # --- 5. Print out the Optimal Parsimonious Model Matrix ---
+    history_df <- do.call(
+      rbind,
+      lapply(history, function(x) {
+        if (is.null(x)) {
+          return(NULL)
+        }
+        data.frame(
+          num_vars = length(x$vars),
+          auc = x$auc,
+          vars = paste(x$vars, collapse = ", ")
+        )
+      })
+    )
+
+    # Parse out the 1% parsimony option we implemented earlier
+    max_auc <- max(history_df$auc)
+    parsimonious_row <- history_df[history_df$auc >= (max_auc * 0.99), ]
+    best_row <- parsimonious_row[which.min(parsimonious_row$num_vars), ]
+
+    cat("\n--- Manual Optimization Complete ---\n")
+    cat("Selected Parsimonious Model:\n")
+    cat("Number of Predictors:", best_row$num_vars, "\n")
+    cat("Parsimonious CV AUC :", round(best_row$auc, 4), "\n")
+    cat("Selected Variables  :", best_row$vars, "\n")
+
+    ##build final model
+    form_string <- stats::formula(paste(
+      pa_col,
+      "~",
+      paste(strsplit(best_row$vars, ', ')[[1]], collapse = " + ")
+    ))
+
+    mod <- meteo::rfsi(
+      formula = stats::formula(form_string),
+      data = stDF,
+      data.staid.x.y.z = c('staid', 'X', 'Y'),
+      cpus = 1,
+      progress = F,
+      importance = "impurity",
+      seed = 42,
+      num.trees = 200,
+      s.crs = sf::st_crs(stDF),
+      use.idw = F,
+      write.forest = T,
+      splitrule = "extratrees",
       min.node.size = 5,
       sample.fraction = 0.95
     )
   } #end if RF
 
-  if (model == 'brt') {
+  if (model == "brt") {
     print('Building Boosted Regression Trees...')
 
-    se <- se[stats::complete.cases(se), ]
+    #need to remove extraneous variables
+    seSub <- se[,
+      names(se) %in% c(pa_col, xy_col, month_col, year_col, var_names)
+    ]
 
     modAll <- dismo::gbm.step(
-      data = se,
-      gbm.x = names(se)[-which(names(se) == pa_col)],
+      data = seSub,
+      gbm.x = names(seSub)[-which(names(seSub) == pa_col)],
       gbm.y = pa_col,
       family = 'bernoulli',
       tree.complexity = 5,
@@ -200,7 +433,7 @@ build_sdm <- function(
 
     #re-run model with best parameters
     mod <- dismo::gbm.step(
-      data = se,
+      data = seSub,
       gbm.x = simpBRT$pred.list[[length(simpBRT$pred.list)]],
       gbm.y = pa_col,
       family = 'bernoulli',
@@ -212,143 +445,372 @@ build_sdm <- function(
     )
   } #end if BRT
 
-  if (model == 'sdmtmb') {
+  if (model == "sdmtmb") {
     print('Building sdmTMB...')
+
+    se <- se[stats::complete.cases(se), ]
 
     #build formula
     form <- paste0(pa_col, " ~ ")
-    #loop through covariates since they will all have the same smoother
-    for (x in 1:ncol(se)) {
-      if (
-        colnames(se)[x] != pa_col &
-          colnames(se)[x] != xy_col[1] &
-          colnames(se)[x] != xy_col[2] &
-          colnames(se)[x] != year_col
-      ) {
-        #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + s(', colnames(se)[x], ", k = 6)")
-      }
-    } #end for x
+    # Keep seasonal anchors as smoothers if desired (common practice)
+    if (!is.null(month_col)) {
+      form <- paste0(form, " s(", month_col, ", k = 4)") # Lowered k slightly for stability
+    }
+    if (!is.null(year_col)) {
+      form <- paste0(form, " + s(", year_col, ", k = 4)")
+    }
 
-    se <- se[stats::complete.cases(se), ]
+    # LOOP UPDATE: Add environmental covariates as strictly LINEAR effects
+    for (x in var_names) {
+      form <- paste0(form, " + ", x) # <-- No more s() or k = 6!
+    }
 
     #make mesh
     mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
     #MOM6 resolution is 1/12 = ~8 km
 
-    ##add extra years to help with forecasting
-    forecast_years <- 2020:2035 #probably more than we need but to be safe - will need to add options to define
+    # --- NEW: Initialize tracking flag ---
+    current_anisotropy <- TRUE
 
-    #following general parameters from Andrew Allyn's work with lobster off the coast of Maine
-    #see sp/spatiotemporal model code - https://github.com/aallyn/lobSDM/blob/main/Code/5_AdultLob_SDM.R
-    tryMod <- tryCatch(
+    # --- SECTION 1: Try Initial Global Model ---
+    mod <- tryCatch(
       expr = {
-        mod <- sdmTMB::sdmTMB(
+        # 1. Fit initial model with Anisotropy = TRUE
+        m <- sdmTMB::sdmTMB(
           formula = stats::formula(form),
           data = se,
           mesh = mesh,
           family = stats::binomial(link = 'logit'),
-          #spatial = "on",
           spatiotemporal = 'iid',
-          time = 'year',
-          reml = T,
-          anisotropy = T,
-          share_range = F,
-          do_fit = T,
-          extra_time = forecast_years
+          time = year_col,
+          reml = FALSE,
+          anisotropy = TRUE,
+          share_range = TRUE,
+          do_fit = TRUE,
+          extra_time = year_range[1]:year_range[2]
         )
+
+        # 2. Check gradient and presence of NA standard errors
+        max_grad <- max(abs(m$gradients), na.rm = TRUE)
+        fe_tidy <- tryCatch(
+          broom::tidy(m, effects = "fixed"),
+          error = function(e) NULL
+        )
+        has_na_se <- if (!is.null(fe_tidy)) {
+          any(is.na(fe_tidy$std.error))
+        } else {
+          TRUE
+        }
+
+        # 3. Run extra optimization if needed
+        if (max_grad > 0.001 || has_na_se) {
+          m <- sdmTMB::run_extra_optimization(
+            m,
+            nlminb_loops = 1,
+            newton_steps = 1
+          )
+
+          # Re-check after optimization
+          max_grad <- max(abs(m$gradients), na.rm = TRUE)
+          fe_tidy <- tryCatch(
+            broom::tidy(m, effects = "fixed"),
+            error = function(e) NULL
+          )
+          has_na_se <- if (!is.null(fe_tidy)) {
+            any(is.na(fe_tidy$std.error))
+          } else {
+            TRUE
+          }
+
+          # If STILL bad, intentionally throw an error to trigger the fallback
+          if (max_grad > 0.001 || has_na_se) {
+            message("Gradients/SEs still bad after extra optimization.")
+            return(NA)
+          }
+        }
+
+        m # Return the successful model
       },
-      #end expr
       error = function(e) {
-        message('model did not converge')
-        return(NA)
-      }
-    ) #end tryCatch
+        message(
+          'Initial model (anisotropy = TRUE) failed. Trying with anisotropy = FALSE...'
+        )
 
-    if (exists('mod')) {
-      #if modS exists == model was simplified; it will not exist if simplifying fails
+        # --- NEW: Flip the flag for downstream sections ---
+        current_anisotropy <<- FALSE
 
-      try2simp <- tryCatch(
-        expr = {
-          print('Simplifying model...')
-          #remove "bad" covariates using edf following methods from EFHSDM
-          sdmEDF <- sdmTMB::cAIC(mod, 'EDF')
-          i <- which(round(sdmEDF, digits = 3) < 1)
-
-          while (length(i) > 0) {
-            #if standard errors are large, try reducing model
-            #it may not fix the problem but it might help
-
-            cn <- gsub('s\\(', '', names(i))
-            badvars <- names(se) %in% cn
-            print(paste('Removing', names(se)[badvars]))
-            se <- se[, -which(badvars == TRUE)]
-
-            #make new formula
-            #build formula
-            form <- paste0(pa_col, " ~ ")
-            #loop through covariates since they will all have the same smoother
-            for (x in 1:ncol(se)) {
-              if (
-                colnames(se)[x] != pa_col &
-                  colnames(se)[x] != xy_col[1] &
-                  colnames(se)[x] != xy_col[2] &
-                  colnames(se)[x] != year_col &
-                  colnames(se)[x] != 'sp.tm' &
-                  colnames(se)[x] != 'region'
-              ) {
-                #make sure you don't add the responseSub variable or the variables you've already added
-                form <- paste0(form, ' + s(', colnames(se)[x], ", k = 6)")
-              }
-            } #end for x
-
-            #make mesh
-            mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1)
-
-            #re-run sdm
-            modS <- sdmTMB::sdmTMB(
+        # --- FALLBACK: Try again with anisotropy = FALSE ---
+        tryCatch(
+          expr = {
+            m_fallback <- sdmTMB::sdmTMB(
               formula = stats::formula(form),
               data = se,
               mesh = mesh,
               family = stats::binomial(link = 'logit'),
-              #spatial = "on",
               spatiotemporal = 'iid',
-              time = 'year',
-              reml = T,
-              anisotropy = T,
-              share_range = F,
-              do_fit = T,
-              extra_time = forecast_years
+              time = year_col,
+              reml = FALSE,
+              anisotropy = FALSE, # CHANGED TO FALSE
+              share_range = TRUE,
+              do_fit = TRUE,
+              extra_time = year_range[1]:year_range[2]
             )
 
-            #recheck
-            sdmEDF <- sdmTMB::cAIC(modS, 'EDF')
-            i <- which(round(sdmEDF, digits = 3) < 1)
+            # Check gradients for the fallback
+            max_grad <- max(abs(m_fallback$gradients), na.rm = TRUE)
+            fe_tidy <- tryCatch(
+              broom::tidy(m_fallback, effects = "fixed"),
+              error = function(e) NULL
+            )
+            has_na_se <- if (!is.null(fe_tidy)) {
+              any(is.na(fe_tidy$std.error))
+            } else {
+              TRUE
+            }
+
+            if (max_grad > 0.001 || has_na_se) {
+              m_fallback <- sdmTMB::run_extra_optimization(
+                m_fallback,
+                nlminb_loops = 1,
+                newton_steps = 1
+              )
+            }
+
+            m_fallback # Return fallback model
+          },
+          error = function(e2) {
+            message('Fallback model also failed to converge.')
+            return(NA)
           }
-        }, #end expr
+        )
+      }
+    )
+
+    # --- SECTION 2: Automated Fast AIC Reduction ---
+    if (exists('mod') && inherits(mod, 'sdmTMB')) {
+      try2simp <- tryCatch(
+        expr = {
+          print('Simplifying model using fast AIC evaluations...')
+
+          # Step 2a: Get baseline AIC from the initial global model
+          # Using stats::AIC() is standard and instantaneous
+          best_aic <- stats::AIC(mod)
+
+          simplifying <- TRUE
+
+          while (simplifying && length(var_names) > 1) {
+            # Step 2b: Identify the weakest fixed-effect or smooth term link
+            fe_summary <- broom::tidy(mod, effects = "fixed")
+            env_summary <- fe_summary[fe_summary$term %in% var_names, ]
+
+            # Standard Z-score selection for valid/mixed SEs
+            env_summary$z_stat <- abs(
+              env_summary$estimate / env_summary$std.error
+            )
+
+            weakest_var <- env_summary$term[which.min(env_summary$z_stat)]
+
+            test_vars <- setdiff(var_names, weakest_var)
+
+            # Step 2c: Build the candidate test formula string with linear effects
+            test_form_str <- paste0(pa_col, " ~ ")
+            if (!is.null(month_col)) {
+              test_form_str <- paste0(
+                test_form_str,
+                " + s(",
+                month_col,
+                ", k = 4)"
+              )
+            }
+            if (!is.null(year_col)) {
+              test_form_str <- paste0(
+                test_form_str,
+                " + s(",
+                year_col,
+                ", k = 4)"
+              )
+            }
+
+            # Append the remaining test covariates linearly
+            for (x in test_vars) {
+              test_form_str <- paste0(test_form_str, " + ", x) # <-- Strict linear integration
+            }
+            test_formula <- stats::formula(test_form_str)
+
+            print(paste('Testing removal of:', weakest_var))
+
+            # Step 2d: Run the candidate model ONCE (no cross-validation loops!)
+            test_fit <- sdmTMB::sdmTMB(
+              formula = test_formula,
+              data = se,
+              mesh = mesh, # Keep original high-resolution mesh since speed is no longer an issue
+              family = stats::binomial(link = 'logit'),
+              spatiotemporal = 'iid',
+              time = year_col,
+              reml = FALSE,
+              anisotropy = current_anisotropy,
+              share_range = TRUE,
+              do_fit = TRUE,
+              extra_time = year_range[1]:year_range[2]
+            )
+
+            # Calculate the candidate model's AIC
+            test_aic <- stats::AIC(test_fit)
+
+            # Information Theory Rule: Accept the drop if the AIC stays lower,
+            # flat, or increases by less than 2 points (AIC tolerance rule-of-thumb).
+            if (test_aic <= (best_aic + 2)) {
+              print(paste(
+                'Successfully removed:',
+                weakest_var,
+                "| New AIC:",
+                round(test_aic, 2)
+              ))
+
+              # Update tracking metrics and permanent variables
+              best_aic <- test_aic
+              var_names <- test_vars
+              form <- test_form_str
+
+              # Save this candidate as our current champion
+              mod <- test_fit
+            } else {
+              print(paste(
+                'Drop rejected. AIC spiked too high for:',
+                weakest_var
+              ))
+              simplifying <- FALSE # Stop reducing if dropping this variable hurts the model
+            }
+          }
+        },
         error = function(e) {
-          message('model could not be simplified')
+          message(
+            'Model could not be simplified further due to an internal optimization error.'
+          )
           return(NA)
         }
-      ) #end tryCatch
+      )
     } else {
-      #end if mod exists
       mod <- NA
     }
 
-    if (exists('modS')) {
-      #if modS exists == model was simplified; it will not exist if simplifying fails
-      mod <- modS #overwrite existing model
+    # --- SECTION 3: Final Champion Re-Fit (REML = TRUE) ---
+    if (!is.null(mod) && inherits(mod, "sdmTMB")) {
+      print(
+        'Re-fitting final champion model with REML = TRUE for optimal spatial variance estimation...'
+      )
+
+      # Option A: Using stats::update (Fastest & standard in R)
+      final_mod <- tryCatch(
+        expr = {
+          mod <- stats::update(mod, reml = TRUE)
+          # Check gradient and presence of NA standard errors
+          max_grad <- max(abs(mod$gradients), na.rm = TRUE)
+          fe_tidy <- tryCatch(
+            broom::tidy(mod, effects = "fixed"),
+            error = function(e) NULL
+          )
+          has_na_se <- if (!is.null(fe_tidy)) {
+            any(is.na(fe_tidy$std.error))
+          } else {
+            TRUE
+          }
+
+          if (max_grad > 0.001 || has_na_se) {
+            mod <- sdmTMB::run_extra_optimization(
+              mod,
+              nlminb_loops = 1,
+              newton_steps = 1
+            )
+          }
+
+          mod
+        },
+        error = function(e) {
+          message('REML update failed. Falling back to explicit sdmTMB fit...')
+          NULL
+        }
+      )
+
+      # Option B: Fallback explicit call if update() fails
+      if (is.null(final_mod)) {
+        final_mod <- tryCatch(
+          expr = {
+            #build formula
+            form <- paste0(pa_col, " ~ ")
+            # Keep seasonal anchors as smoothers if desired (common practice)
+            if (!is.null(month_col)) {
+              form <- paste0(form, " s(", month_col, ", k = 4)") # Lowered k slightly for stability
+            }
+            if (!is.null(year_col)) {
+              form <- paste0(form, " + s(", year_col, ", k = 4)")
+            }
+
+            # LOOP UPDATE: Add environmental covariates as strictly LINEAR effects
+            for (x in var_names) {
+              form <- paste0(form, " + ", x) # <-- No more s() or k = 6!
+            }
+
+            mod <- sdmTMB::sdmTMB(
+              formula = stats::formula(form),
+              data = se,
+              mesh = mesh,
+              family = stats::binomial(link = 'logit'),
+              spatiotemporal = 'iid',
+              time = year_col,
+              reml = TRUE, # Final model fitted with REML
+              anisotropy = current_anisotropy,
+              share_range = TRUE,
+              do_fit = TRUE,
+              extra_time = year_range[1]:year_range[2]
+            )
+            # Check gradient and presence of NA standard errors
+            max_grad <- max(abs(mod$gradients), na.rm = TRUE)
+            fe_tidy <- tryCatch(
+              broom::tidy(mod, effects = "fixed"),
+              error = function(e) NULL
+            )
+            has_na_se <- if (!is.null(fe_tidy)) {
+              any(is.na(fe_tidy$std.error))
+            } else {
+              TRUE
+            }
+
+            if (max_grad > 0.001 || has_na_se) {
+              mod <- sdmTMB::run_extra_optimization(
+                mod,
+                nlminb_loops = 1,
+                newton_steps = 1
+              )
+            }
+
+            mod
+          },
+          error = function(e) {
+            message(
+              'Final REML fit failed completely. Returning ML champion model instead.'
+            )
+            return(mod)
+          }
+        )
+      }
+
+      # Assign final model object
+      mod <- final_mod
+      print('Final model fit complete.')
+    } else {
+      message('No valid model was produced.')
+      mod <- NA
     }
   } #end if sdmtmb
 
-  if (model == 'ens') {
+  if (model == "ensemble") {
     # weights <- MakeEnsemble(rmse = mets) #make weights
     mod <- EFHSDM::ValidateEnsemble(
       pred.list = ensemble_preds,
       model.weights = ensemble_weights,
       make.plots = F,
-      latlon = F
+      latlon = T
     ) #validate to get preds/obs to metrics
   } #end if ensemble
 
