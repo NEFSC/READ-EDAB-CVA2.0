@@ -37,15 +37,15 @@ make_total_exposure <- function(
     expL <- ifel(md >= 2, 2, expL) #set to 2 if moderate threshold met, max now = 2
     expL <- ifel(hh >= 2, 3, expL) #set to 3 if high threshold met, max now = 3
     expL <- ifel(hr >= 3, 4, expL) #set to 4 if very high threshold met, max now = 4
-    
 
     return(expL)
   }
 
   if (type == 'timeseries') {
-    if(inherits(variable_exposure, 'list')){ #if variable_exposure is a list, meaning that the variable-level exposures were averaged within different stock polygons, then repeat the procedure for each matrix in the list
+    if (inherits(variable_exposure, 'list')) {
+      #if variable_exposure is a list, meaning that the variable-level exposures were averaged within different stock polygons, then repeat the procedure for each matrix in the list
       vMat <- matrix(nrow = length(variable_exposure), ncol = 12)
-      for(v in 1:length(variable_exposure)){
+      for (v in 1:length(variable_exposure)) {
         if (count_all) {
           #if counting all included factors and not taking weight into account
           matSub <- variable_exposure[[v]]
@@ -53,7 +53,7 @@ make_total_exposure <- function(
           wi <- variable_weights >= weight_threshold
           matSub <- variable_exposure[[v]][wi, ]
         }
-        
+
         #count each rank in each column
         hr <- hh <- md <- vector(length = ncol(matSub))
         for (x in 1:ncol(matSub)) {
@@ -61,18 +61,18 @@ make_total_exposure <- function(
           hh[x] <- length(which(matSub[, x] >= 3))
           md[x] <- length(which(matSub[, x] >= 2.5))
         }
-        
+
         #apply logic rule
         expV <- rep(1, times = ncol(matSub))
         expV <- replace(expV, md >= 2, 2)
         expV <- replace(expV, hh >= 2, 3)
         expV <- replace(expV, hr >= 3, 4)
-        
-        vMat[v,] <- expV
+
+        vMat[v, ] <- expV
       }
       rownames(vMat) <- names(variable_exposure)
       colnames(vMat) <- month.abb
-      
+
       return(vMat)
     } else {
       if (count_all) {
@@ -82,8 +82,9 @@ make_total_exposure <- function(
         wi <- variable_weights >= weight_threshold
         matSub <- variable_exposure[wi, ]
       }
-  
-      if(inherits(matSub, 'matrix')){ #if matSub is a matrix (which it should be 99% of the time)
+
+      if (inherits(matSub, 'matrix')) {
+        #if matSub is a matrix (which it should be 99% of the time)
         #count each rank in each column
         hr <- hh <- md <- vector(length = ncol(matSub))
         for (x in 1:ncol(matSub)) {
@@ -91,17 +92,18 @@ make_total_exposure <- function(
           hh[x] <- length(which(matSub[, x] >= 3))
           md[x] <- length(which(matSub[, x] >= 2.5))
         }
-    
+
         #apply logic rule
         expV <- rep(1, times = ncol(matSub))
         expV <- replace(expV, md >= 2, 2)
         expV <- replace(expV, hh >= 2, 3)
         expV <- replace(expV, hr >= 3, 4)
-      } else { #if it's not, meaning it's a vector, meaning that there is only one important variable and therefore exposure must be 1 because you don't have enough variables to satisfy the logic rule at higher levels
+      } else {
+        #if it's not, meaning it's a vector, meaning that there is only one important variable and therefore exposure must be 1 because you don't have enough variables to satisfy the logic rule at higher levels
         expV <- rep(1, times = length(matSub))
       }
       names(expV) <- month.abb
       return(expV)
-    } #end if 
+    } #end if
   } #end if timeseries
 }
