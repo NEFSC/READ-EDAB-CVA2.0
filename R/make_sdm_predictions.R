@@ -102,8 +102,20 @@ make_sdm_predictions <- function(
       })
     )
 
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    seSub$true_date <- as.Date(
+      paste0("01.", seSub$month.year),
+      format = "%d.%m.%Y"
+    )
+
+    seSub$day_of_year <- as.integer(strftime(seSub$true_date, format = "%j"))
+
+    # 2. Convert dataframe to spatial object
     stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF <- sftime::st_sftime(stDF, time_column_name = month_col)
+
+    # 3. Use the new true_date column for your sftime temporal dimension
+    stDF <- sftime::st_sftime(stDF, time_column_name = "day_of_year")
   }
 
   if (model == 'sdmtmb') {
@@ -177,13 +189,26 @@ make_sdm_predictions <- function(
       sr_df <- prep_time_step_df(x, rasts, static_variables)
       sr_df$staid <- 1:nrow(sr_df)
 
+      sr_df$true_date <- as.Date(
+        paste("01", sr_df$month, sr_df$year, sep = '.'),
+        format = "%d.%m.%Y"
+      )
+
+      sr_df$day_of_year <- as.integer(strftime(sr_df$true_date, format = "%j"))
+
+      # 2. Convert dataframe to spatial object
+      stDF <- sf::st_as_sf(sr_df, coords = xy_col, crs = 4326, agr = "constant")
+
+      # 3. Use the new true_date column for your sftime temporal dimension
+      sr_df <- sftime::st_sftime(sr_df, time_column_name = "day_of_year")
+
       sr_sf <- sf::st_as_sf(
         sr_df,
         coords = c('x', 'y'),
         crs = 4326,
         agr = "constant"
       ) |>
-        sftime::st_sftime(time_column_name = month_col)
+        sftime::st_sftime(time_column_name = "day_of_year")
 
       predDF <- meteo::pred.rfsi(
         model = mod,

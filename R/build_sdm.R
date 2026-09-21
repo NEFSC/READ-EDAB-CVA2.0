@@ -137,11 +137,13 @@ build_sdm <- function(
       format = "%d.%m.%Y"
     )
 
+    seSub$day_of_year <- as.integer(strftime(seSub$true_date, format = "%j"))
+
     # 2. Convert dataframe to spatial object
     stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
 
     # 3. Use the new true_date column for your sftime temporal dimension
-    stDF <- sftime::st_sftime(stDF, time_column_name = "true_date")
+    stDF <- sftime::st_sftime(stDF, time_column_name = "day_of_year")
 
     #make clean coordinate columns to help with cv
     coords <- sf::st_coordinates(stDF)

@@ -24,10 +24,14 @@ merge_fisheries_dfs <- function(df_dir) {
     d$source <- flist[x]
     data <- rbind(data, d)
   }
-  
-  paMax <- stats::aggregate(data, by = list(data$year, data$month, data$gridID), FUN = max) #combine by grid cell ID to get max presence/absence within each grid cell
-  paMax <- paMax[,-grep('Group', names(paMax))]
-  paMax <- paMax[order(paMax$year, paMax$month),]
+
+  paMax <- stats::aggregate(
+    data,
+    by = list(data$year, data$month, data$gridID),
+    FUN = max
+  ) #combine by grid cell ID to get max presence/absence within each grid cell
+  paMax <- paMax[, -grep('Group', names(paMax))]
+  paMax <- paMax[order(paMax$year, paMax$month), ]
 
   return(paMax)
 }
