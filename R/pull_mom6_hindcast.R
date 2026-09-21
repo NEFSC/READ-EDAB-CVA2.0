@@ -96,8 +96,8 @@ pull_mom6_hindcast <- function(
   # Convert the array to a SpatRaster
   # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time]
   # so terra reads the rows and columns correctly.
-  r_list <- lapply(1:dim(varArr)[3], function(i) {
-    terra::rast(t(varArr[,, i]))
+  r_list <- lapply(1:dim(var)[3], function(i) {
+    terra::rast(t(var[,, i]))
   })
   cropped_rast <- terra::rast(r_list)
 

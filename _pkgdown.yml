@@ -20,9 +20,12 @@ reference:
   desc: "Functions used to pull and process data"
 - contents:
   - build_fisheries_raster
+  - build_fisheries_df
   - match_guilds
   - match_pa_model_rasters
+  - match_fisheries_environment_data
   - merge_fisheries_rasters
+  - merge_fisheries_dfs
   - normalize_model_data
   - normalize_variable_weights
   - predict_to_raster

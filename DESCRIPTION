@@ -58,3 +58,4 @@ Remotes:
 URL: https://nefsc.github.io/READ-EDAB-CVA2.0/, https://github.com/NEFSC/READ-EDAB-CVA2.0/
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3
