@@ -78,7 +78,27 @@ pull_mom6_forecast <- function(
   } #end m
   ncdf4::nc_close(r)
 
-  # Generate base time names (Month.Year)
+  ##take average of ensemble members
+  varAvg <- apply(var, MARGIN = c(1:3), FUN = mean, na.rm = T)
+
+  # Convert the array to a SpatRaster
+  # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time]
+  # so terra reads the rows and columns correctly.
+  r_list <- lapply(1:dim(varAvg)[3], function(i) {
+    terra::rast(t(varAvg[,, i]))
+  })
+  cropped_rast <- terra::rast(r_list)
+
+  # Apply the correct spatial metadata
+  terra::ext(cropped_rast) <- c(
+    min(lon[lonInd]),
+    max(lon[lonInd]),
+    min(lat[latInd]),
+    max(lat[latInd])
+  )
+  terra::crs(cropped_rast) <- "EPSG:4326" # Or whatever coordinate system the data uses
+
+  #create and set names
   yrInit <- as.numeric(substr(init, 2, 5))
   d <- as.POSIXct(
     tm * 60 * 60 * 24,

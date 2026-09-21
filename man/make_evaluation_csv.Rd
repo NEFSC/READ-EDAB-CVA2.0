@@ -4,22 +4,45 @@
 \alias{make_evaluation_csv}
 \title{Create a spreadsheet containing all SDM performance metrics}
 \usage{
-make_evaluation_csv(spp_list, test_ens = T, yr_min, yr_max)
+make_evaluation_csv(
+  spp_list,
+  component_models,
+  training_years,
+  pa_col,
+  release,
+  spatial_temporal,
+  mask_bathy,
+  rm_corr,
+  add_data,
+  additional_data
+)
 }
 \arguments{
 \item{spp_list}{the data.frame containing species names and alternative names for \code{test_ens}. Must contain the column \code{Name}, which matches the names of the species folders to help pull correct data.}
 
-\item{test_ens}{a TRUE/FALSE indicating whether or not to test the ensemble model on an external dataset}
+\item{component_models}{vector containing the names of the component models used in the ensemble. Must match file names in evaluation directory to pull correct values.}
 
-\item{yr_min}{start of year range to specify which predictions to use. Only used if \code{test_ens == TRUE}}
+\item{training_years}{vector with length equal to 2, indicating the maximum and minimum years that identify the desired training datasets}
 
-\item{yr_max}{end of year range to specify which predictions to use. Only used if \code{test_ens == TRUE}}
+\item{pa_col}{column name for presence/absence column}
+
+\item{release}{release code for MOM6 data. Helps pull correct training dataset associated with the MOM6 data with the same name}
+
+\item{spatial_temporal}{TRUE/FALSE to determine method for normalizing. Helps pull correct training dataset associated with the MOM6 data with the same name}
+
+\item{mask_bathy}{TRUE/FALSE indicating whether or not bathymetry data was used as a mask for raw data before normalization. Helps pull correct training dataset associated with the MOM6 data with the same name}
+
+\item{rm_corr}{TRUE/FALSE indicating whether or not correlated environmental covariates were removed. Helps to pull correct training dataframe}
+
+\item{add_data}{TRUE/FALSE indicating whether or not to add additional data to the dataset, for example, AUCs calculated on different time periods}
+
+\item{additional_data}{a data.frame of additional data to add to the data.frame. column names should be desired column names}
 }
 \value{
 nothing is returned. The resulting CSV file called 'species_evaluation_metrics.csv' is saved in the working directory.
 }
 \description{
-Loads existing performance metrics for component models, and calculates Area under the Curve (AUC) for the ensemble model 2 ways. This function also has the option to test the model on an external dataset using \code{test_ens}. The final product is a saved csv file containing all of the performance metrics.
+Compiles sample sizes and performance metrics for the component and ensemble modelsThe final product is a saved csv file containing all of the performance metrics.
 }
 \details{
 The resulting CSV file contains the following columns:
@@ -31,8 +54,7 @@ The resulting CSV file contains the following columns:
 \item{N.PRESENCE, N.ABSENCE}{number of presences/absences in the data set used to build the model}
 \item{BRT, GAM, MAXENT, RF, SDMTMB}{AUC for each component model}
 \item{BRT.WT, GAM.WT, MAXENT.WT, RF.WT, SDMTMB.WT}{weights for each component model in the final ensemble}
-\item{ENS.AUC}{Ensemble model AUC based on weighted sum of CV predictions from each component model}
-\item{WAVG.ENS.AUC}{Ensemble model AUC calculated as a weighted average of AUCs, using the corresponding weights}
-\item{AUC.yr_min.yr_max}{Ensemble model AUC calculated on the external data, if \code{test_ens == TRUE}. Column name will reflect the timeseries used}
+\item{ENS.AUC}{Ensemble model AUC}
+\item{...}{Any additional columns from \code{add_data}}
 }
 }
