@@ -63,6 +63,7 @@ make_sdm_reports <- function(
     mm <- mrow[, grepl('.WT', colnames(model_metrics))]
     mm <- round(mm, digits = 3)
     mm <- replace(mm, is.na(mm), "Model Did\nNot Converge")
+    names(mm) <- gsub('.WT', '', names(mm))
 
     # 3. Render the report
     quarto::quarto_render(

@@ -157,7 +157,7 @@ make_sdm_plots <- function(
         names = toupper(component_models),
         ylab = 'Weight',
         xlab = 'Component Model',
-        ylim = c(0, 0.3)
+        ylim = c(0, ifelse(length(which(!is.na(m))) == 4, 0.3, 0.4))
       )
       graphics::box()
       grDevices::dev.off()

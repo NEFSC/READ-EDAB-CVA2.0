@@ -119,7 +119,7 @@ make_evaluation_csv <- function(
       'model_output',
       'ensemble_weights.rds'
     )) #weights
-    if (length(weights) < length(component.models)) {
+    if (length(weights) < length(component_models)) {
       weights <- c(weights, NA) #if weights only has 4 models, append an NA
     }
 
