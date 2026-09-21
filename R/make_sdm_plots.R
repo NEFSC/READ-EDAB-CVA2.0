@@ -6,6 +6,7 @@
 #' @param type at least one of the following: 'ensemble', 'weights', 'importance', 'residuals'. Used to determine what to plot.
 #' @param source 'hindcast' or 'forecast' to determine which MOM6 data to pull
 #' @param release release code for MOM6 data. Helps pull correct model projections associated with the MOM6 data with the same name
+#' @param training_years vector with length equal to 2, indicating the maximum and minimum years that identify the desired training datasets
 #' @param spatial_temporal TRUE/FALSE to determine method for normalizing. Helps pull correct model projections associated with the MOM6 data with the same name
 #' @param mask_bathy TRUE/FALSE indicating whether or not bathymetry data was used as a mask for raw data before normalization. Helps pull correct model projections associated with the MOM6 data with the same name
 #' @param rm_corr TRUE/FALSE indicating whether or not correlated environmental covariates were removed. Helps to pull correct model projections
@@ -213,7 +214,7 @@ make_sdm_plots <- function(
         return(NULL) # Exit function gracefully
       }
 
-      dfT <- read.csv(file.path(training_name))
+      dfT <- utils::read.csv(file.path(training_name))
 
       #normalized variable importance
       #read in variable importance outputs & create list
@@ -337,7 +338,7 @@ make_sdm_plots <- function(
           '.csv'
         )
       )
-      obs <- read.csv(obs_name)
+      obs <- utils::read.csv(obs_name)
 
       preds <- build_preds_df(obs, xy_col = c("grid.lon", "grid.lat"), abund)
 
@@ -441,7 +442,7 @@ make_sdm_plots <- function(
           'Mean (+/- SD) =\n',
           round(mean(preds$residuals, na.rm = T), 2),
           ' +/- ',
-          round(sd(preds$residuals, na.rm = T), 2)
+          round(stats::sd(preds$residuals, na.rm = T), 2)
         ),
         bty = 'n'
       )

@@ -83,7 +83,7 @@ make_evaluation_csv <- function(
     if (!file.exists(training_name)) {
       stop("Aborting: training dataset not found.")
     }
-    dfT <- read.csv(file.path(training_name))
+    dfT <- utils::read.csv(file.path(training_name))
 
     n.pres <- length(which(dfT[, pa_col] == 1))
     n.abs <- length(which(dfT[, pa_col] == 0))
