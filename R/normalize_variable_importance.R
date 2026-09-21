@@ -46,7 +46,13 @@ normalize_variable_importance <- function(vars, ens_weights, imp_list) {
   colnames(dfI) <- v$var
 
   #get weighted average of all according to component model weights
-  ws <- apply(dfI, MARGIN = 2, FUN = stats::weighted.mean, w = ens_weights, na.rm = T) #weighted average of weights
+  ws <- apply(
+    dfI,
+    MARGIN = 2,
+    FUN = stats::weighted.mean,
+    w = ens_weights,
+    na.rm = T
+  ) #weighted average of weights
 
   #combine
   dfI <- rbind(dfI, ws)

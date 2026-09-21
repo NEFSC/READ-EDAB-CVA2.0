@@ -261,7 +261,14 @@ make_exposure_plots <- function(
             main = variable_df$Long.Name[i]
           )
           for (m in 2:nrow(vecSub)) {
-            graphics::lines(vecSub[m, ], t = 'b', lty = m, lwd = 1, cex = 1, pch = m)
+            graphics::lines(
+              vecSub[m, ],
+              t = 'b',
+              lty = m,
+              lwd = 1,
+              cex = 1,
+              pch = m
+            )
           } #end m
         } #end if vecExp is a list
         graphics::axis(1, at = 1:12, labels = month.abb, las = 2, cex.lab = 0.5)
