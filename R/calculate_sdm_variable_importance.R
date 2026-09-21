@@ -5,20 +5,20 @@
 #' @param se data frame containing species presence/absence data and desired environmental covariate data.
 #' @param pa_col column name for presence/absence column
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
-#' @param month_col,year_col column names for month and year columns respectively
+#' @param month_col,year_col column names for month and year columns respectively. Defaults to 'month' and 'year' respectively.
+#' @param var_names a vector of covariate names to use in the desired model. Should match some or all of the column names in \code{se}.
 #' @param model one of the following indicating the desired model to calculate variable importance for: gam, maxent, brt, rf, or sdmtmb
 #'
 #' @return a vector of the variable importance for the given model. Each model calculates these differently, so the values should be normalized in order to compare across models.
-#'
-#'@export
 
 calculate_sdm_variable_importance <- function(
   mod,
   se,
   pa_col,
   xy_col,
-  month_col,
-  year_col,
+  month_col = 'month',
+  year_col = 'year',
+  var_names,
   model
 ) {
   if (model == 'gam') {
@@ -37,8 +37,6 @@ calculate_sdm_variable_importance <- function(
 
     se <- cbind(1:nrow(se), se) #stand in station ids
     colnames(se)[1] <- "staid"
-    se$month.year <- paste(se[, month_col], se[, year_col], sep = '-')
-    se$year <- lubridate::year(lubridate::my(se$month.year))
 
     #subsample by space-time
     set.seed(2025)
@@ -60,12 +58,12 @@ calculate_sdm_variable_importance <- function(
     for (x in sptm) {
       sub <- se[se$sp.tm == x, ]
 
-      abs <- sub[sub$value == 0, ]
-      pres <- sub[sub$value == 1, ]
+      abs <- sub[sub[, pa_col] == 0, ]
+      pres <- sub[sub[, pa_col] == 1, ]
 
       if (nrow(pres) <= 5) {
         #if there are few presences
-        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs) / 4)), ] #subsample absences to a minimum number per month and region
+        absSub <- abs[sample(x = nrow(abs), size = round(nrow(abs) / 4)), ] #subsample absences to a 1/4 of the absences within month and region
         allSub <- rbind(absSub, pres) #combine with presences (if any are absent)
         #this will allow all regions, years, and months to be present in the final time series to help predictions while also making the ratio of presences/absences somewhat more even
       } else if (nrow(abs) > nrow(pres)) {
@@ -80,35 +78,87 @@ calculate_sdm_variable_importance <- function(
       seSub <- rbind(seSub, allSub)
     }
 
-    #convert dataframe to spatial object
-    stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF <- sftime::st_sftime(stDF, time_column_name = year_col)
-
-    #create formula
-    form <- "value ~ "
-    for (x in 2:ncol(se)) {
-      if (
-        colnames(se)[x] != pa_col &
-          colnames(se)[x] != xy_col[1] &
-          colnames(se)[x] != xy_col[2] &
-          colnames(se)[x] != year_col &
-          colnames(se)[x] != 'month.year' &
-          colnames(se)[x] != 'region' &
-          colnames(se)[x] != 'sp.tm' &
-          colnames(se)[x] != 'staid'
-      ) {
-        #make sure you don't add the response variable or the variables you've already added
-        form <- paste0(form, ' + ', colnames(se)[x])
-      }
-    } #end for x
-
-    ##get important covariates
-    RDE <- ranger::importance(
-      x = mod,
-      method = 'altmann',
-      formula = stats::formula(form),
-      data = stDF
+    # 1. Create a proper Date column by appending "01." (the 1st day of the month)
+    seSub$true_date <- as.Date(
+      paste0("01.", seSub$month.year),
+      format = "%d.%m.%Y"
     )
+
+    seSub$day_of_year <- as.integer(strftime(seSub$true_date, format = "%j"))
+
+    # 2. Convert dataframe to spatial object
+    stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
+
+    # 3. Use the new true_date column for your sftime temporal dimension
+    stDF <- sftime::st_sftime(stDF, time_column_name = "day_of_year")
+
+    # 1. Get baseline predictions and calculate a performance metric
+    # (Assuming probability predictions for Presence/Absence)
+    base_preds_df <- meteo::pred.rfsi(
+      model = mod,
+      data = stDF,
+      obs.col = pa_col,
+      data.staid.x.y.z = c('staid', 'X', 'Y'),
+      newdata = stDF,
+      newdata.staid.x.y.z = c('staid', 'X', 'Y'),
+      s.crs = sf::st_crs(stDF),
+      newdata.s.crs = sf::st_crs(stDF),
+      progress = FALSE
+    )
+
+    # Extract the probability of presence (assuming class '1')
+    base_preds <- base_preds_df[["pred"]]
+
+    # Calculate baseline Brier Score (Mean Squared Error)
+    base_brier <- mean((base_preds - stDF[[pa_col]])^2)
+
+    var_names <- c(var_names, month_col, year_col)
+
+    importance_df <- data.frame(Variable = var_names, Importance = NA)
+
+    # 3. Perform Block Permutation Importance
+    for (i in seq_along(var_names)) {
+      v <- var_names[i]
+      perm_data <- stDF
+
+      # SHUFFLE WITHIN BLOCKS: ave() applies the sample function within each sp.tm group
+      perm_data[[v]] <- stats::ave(
+        perm_data[[v]],
+        perm_data$sp.tm,
+        FUN = sample
+      )
+
+      # Predict on the spatially shuffled data
+      # CRITICAL: 'data' is the pure stDF (keeps spatial lag intact), 'newdata' is permuted
+      perm_preds_df <- meteo::pred.rfsi(
+        model = mod,
+        data = stDF,
+        obs.col = pa_col,
+        data.staid.x.y.z = c('staid', 'X', 'Y'),
+        newdata = perm_data,
+        newdata.staid.x.y.z = c('staid', 'X', 'Y'),
+        s.crs = sf::st_crs(stDF),
+        newdata.s.crs = sf::st_crs(stDF),
+        progress = FALSE
+      )
+
+      perm_preds <- perm_preds_df[["pred"]]
+
+      # Calculate degraded performance
+      perm_brier <- mean((perm_preds - perm_data[[pa_col]])^2)
+
+      # Importance is the INCREASE in error (larger increase = more important)
+      # Bounded at 0 in case random noise slightly improves the model by chance
+      importance_df$Importance[i] <- max(0, perm_brier - base_brier)
+    }
+
+    # Normalize to percentages
+    importance_df$Pct_Importance <- (importance_df$Importance /
+      sum(importance_df$Importance)) *
+      100
+
+    # Sort from most to least important
+    RDE <- importance_df[order(-importance_df$Pct_Importance), ]
   } #end if RF
 
   if (model == 'brt') {
@@ -117,53 +167,49 @@ calculate_sdm_variable_importance <- function(
   } #end if BRT
 
   if (model == 'sdmtmb') {
-    se <- se[stats::complete.cases(se), ]
+    requireNamespace("sdmTMB", quietly = TRUE)
 
-    #make mesh
-    mesh <- sdmTMB::make_mesh(se, xy_cols = xy_col, cutoff = 1) #using lon/lat since this is on the reprojected regular lat/lon grid, and the domain crosses multiple UTM zones
-    #MOM6 resolution is 1/12 = ~8 km
+    # 1. Calculate a baseline performance metric (e.g., Pseudo R-squared of the fixed effects)
+    pred_baseline <- stats::predict(mod, re_form = NA)$est
 
-    ### get relative importance of model using type 3 anova method
-    # model with *only* intercept and no random fields:
-    fit_null <- sdmTMB::sdmTMB(
-      stats::formula(paste0(pa_col, " ~ 1")),
-      spatial = "off",
-      family = stats::binomial(link = 'logit'),
-      data = se,
-      mesh = mesh
-    )
+    # Replace 'response_var' with the actual name of your dependent variable
+    base_r2 <- stats::cor(
+      pred_baseline,
+      mod$data[, pa_col],
+      use = "complete.obs"
+    )^2
 
-    #loop across variables and get their partial deviance explained
-    RDE <- vector(length = ncol(se))
-    for (y in 1:ncol(se)) {
-      if (
-        colnames(se)[y] != pa_col &
-          colnames(se)[y] != xy_col[1] &
-          colnames(se)[y] != xy_col[2] &
-          colnames(se)[y] != year_col &
-          colnames(se)[y] != 'region' &
-          colnames(se)[y] != 'sp.tm'
-      ) {
-        #don't do this for the response variable, xy vars, or year
-        #isolate covariate
+    dyn_names <- c(var_names, month_col, year_col)
 
-        #build formula with single covariate
-        formSub <- paste0(pa_col, " ~ + s(", colnames(se)[y], ", k = 6)")
+    importance_df <- data.frame(Variable = dyn_names, Importance = NA)
 
-        # model with *only* variable of choice and no random fields (can get random fields later):
-        fitSub <- sdmTMB::sdmTMB(
-          formula = stats::formula(formSub),
-          spatial = "off",
-          family = stats::binomial(link = 'logit'),
-          data = se,
-          mesh = mesh
-        )
+    # 2. Shuffle each variable to see how much performance drops
+    for (i in seq_along(dyn_names)) {
+      v <- dyn_names[i]
 
-        RDE[y] <- 1 - stats::deviance(fitSub) / stats::deviance(fit_null)
-        print(y)
-      } #end if
-    } #end for
-    names(RDE) <- names(se)
+      # Create a copy of the data and randomly shuffle the target variable
+      perm_data <- mod$data
+      perm_data[[v]] <- sample(perm_data[[v]])
+
+      # Predict using the shuffled data
+      pred_perm <- stats::predict(mod, newdata = perm_data, re_form = NA)$est
+
+      # Calculate performance with the shuffled variable
+      perm_r2 <- stats::cor(
+        pred_perm,
+        mod$data[, pa_col],
+        use = "complete.obs"
+      )^2
+
+      # Importance is the drop in R-squared (larger drop = more important)
+      importance_df$Importance[i] <- max(0, base_r2 - perm_r2)
+    }
+
+    # Normalize to percentages
+    importance_df$Pct_Importance <- (importance_df$Importance /
+      sum(importance_df$Importance)) *
+      100
+    RDE <- importance_df
   } #end if sdmtmb
 
   return(RDE)
