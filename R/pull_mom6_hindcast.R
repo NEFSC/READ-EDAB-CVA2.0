@@ -8,6 +8,7 @@
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
+#' @param chunk_size number of timestamps to pull at once to avoid OpenDap data limits
 #'
 #' @return  a spatRaster of data associated with the requested variable
 #'
@@ -19,7 +20,8 @@ pull_mom6_hindcast <- function(
   gt = 'regrid',
   of = 'monthly',
   bounds = c(-78, -65, 35, 45),
-  release
+  release,
+  chunk_size = 50
 ) {
   #e <- terra::ext(min(lon), max(lon), min(lat), max(lat)) #define grid extent
   se <- terra::ext(bounds) #define extent to subset to
@@ -70,7 +72,7 @@ pull_mom6_hindcast <- function(
 
   # Define a chunk size (number of time steps to pull per request).
   # If you still get the DATADDS error, lower this number (e.g., 12 or 24).
-  chunk_size <- 50
+  #chunk_size <- 50
   var <- NULL
   # Loop through time using chunks
   for (start_t in seq(1, length(tm), by = chunk_size)) {
