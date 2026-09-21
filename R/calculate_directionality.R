@@ -15,7 +15,7 @@ calculate_directionality <- function(
   samples = 10000
 ) {
   scores.only <- species[, c('Negative', 'Neutral', "Positive")] #isolate scores
-  scores.clean <- scores.only[apply(!is.na(scores.only), 1, any), ] #remove NAs from non existent scores for the species 
+  scores.clean <- scores.only[apply(!is.na(scores.only), 1, any), ] #remove NAs from non existent scores for the species
 
   if (bootstrap) {
     #if bootstrap is TRUE, perform bootstrap

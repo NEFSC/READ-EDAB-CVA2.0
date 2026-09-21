@@ -81,8 +81,8 @@ calculate_sdm_variable_importance <- function(
     }
 
     #convert dataframe to spatial object
-    stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-    stDF = sftime::st_sftime(stDF, time_column_name = year_col)
+    stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
+    stDF <- sftime::st_sftime(stDF, time_column_name = year_col)
 
     #create formula
     form <- "value ~ "
