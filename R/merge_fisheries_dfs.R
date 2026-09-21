@@ -9,17 +9,14 @@
 #'@export
 
 merge_fisheries_dfs <- function(df_dir) {
-  
   #check for combined dataframe and remove from list if present
   flist <- dir(df_dir, full.names = T)
-  if (
-    any(grepl('combined', flist))
-  ) {
+  if (any(grepl('combined', flist))) {
     flist <- flist[-grepl('combined', flist)]
   }
-  
+
   data <- NULL
-  for(x in 1:length(flist)){
+  for (x in 1:length(flist)) {
     d <- read.csv(flist[x])
     d$source <- flist[x]
     data <- rbind(data, d)
