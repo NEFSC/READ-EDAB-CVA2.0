@@ -184,8 +184,8 @@ make_sdm_predictions <- function(
       }
 
       #convert dataframe to spatial object
-      stDF = sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
-      stDF = sftime::st_sftime(stDF, time_column_name = month_col)
+      stDF <- sf::st_as_sf(seSub, coords = xy_col, crs = 4326, agr = "constant")
+      stDF <- sftime::st_sftime(stDF, time_column_name = month_col)
 
       for (x in 1:raster::nlayers(rasts[[1]][[1]])) {
         #all the rasters in rasts have the same number of layers so it doesn't matter which one we call
@@ -227,8 +227,13 @@ make_sdm_predictions <- function(
         #srDF$month <- month(my(paste(srDF$month, srDF$year, sep = '-')))
 
         #convert dataframe to spatial object
-        srDF = sf::st_as_sf(srDF, coords = xy_col, crs = 4326, agr = "constant")
-        srDF = sftime::st_sftime(srDF, time_column_name = 'month')
+        srDF <- sf::st_as_sf(
+          srDF,
+          coords = xy_col,
+          crs = 4326,
+          agr = "constant"
+        )
+        srDF <- sftime::st_sftime(srDF, time_column_name = 'month')
 
         predDF <- meteo::pred.rfsi(
           model = mod,

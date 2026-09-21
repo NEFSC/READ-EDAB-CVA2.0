@@ -5,7 +5,7 @@
 #' @param exposure output from \code{calculate_raw_exposure}
 #' @param flip TRUE/FALSE option to multiply exposure by -1 to ensure that positive exposure values represent negative variable change (increasing temperatures, decreasing oxygen concentrations, etc).
 #'
-#' @return A spatRaster with each layer containing ranked values between 1 - 4. 
+#' @return A spatRaster with each layer containing ranked values between 1 - 4.
 #'
 #'@export
 
@@ -13,19 +13,18 @@ rank_exposure <- function(
   exposure,
   flip = F
 ) {
+  #change sign - negative = exposure to worse habitat?
+  if (flip) {
+    exposure <- exposure * -1
+  }
 
-    #change sign - negative = exposure to worse habitat?
-    if (flip) {
-      exposure <- exposure * -1
-      }
-
-    #rank
-    QR <- terra::ifel(!is.na(exposure), 1, NA) #everything starts as 1 and we build from there 
-    QR <- terra::ifel(exposure > 0.5 & exposure <= 1.5, 2, QR) #set to 2 if exposure is between 0.5 and 1.5
-    QR <- terra::ifel(exposure > 1.5 & exposure <= 2, 3, QR) #set to 3 if exposure is between 1.5 and 2 
-    QR <- terra::ifel(exposure > 2, 4, QR) #set to 4 if exposure is greater than 2
+  #rank
+  QR <- terra::ifel(!is.na(exposure), 1, NA) #everything starts as 1 and we build from there
+  QR <- terra::ifel(exposure > 0.5 & exposure <= 1.5, 2, QR) #set to 2 if exposure is between 0.5 and 1.5
+  QR <- terra::ifel(exposure > 1.5 & exposure <= 2, 3, QR) #set to 3 if exposure is between 1.5 and 2
+  QR <- terra::ifel(exposure > 2, 4, QR) #set to 4 if exposure is greater than 2
 
   names(QR) <- names(exposure)
-  
+
   return(QR)
 }

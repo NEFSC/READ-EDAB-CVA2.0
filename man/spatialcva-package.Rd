@@ -20,10 +20,5 @@ Useful links:
 \author{
 \strong{Maintainer}: Katherine Gallagher \email{katherine.gallagher@noaa.gov}
 
-Authors:
-\itemize{
-  \item Katherine Gallagher \email{katherine.gallagher@noaa.gov}
-}
-
 }
 \keyword{internal}
