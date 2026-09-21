@@ -136,7 +136,7 @@ build_sdm <- function(
       paste0("01.", seSub$month.year),
       format = "%d.%m.%Y"
     )
-    
+
     seSub$day_of_year <- as.integer(strftime(seSub$true_date, format = "%j"))
 
     # 2. Convert dataframe to spatial object
