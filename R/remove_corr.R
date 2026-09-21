@@ -2,26 +2,18 @@
 #' @description
 #' This function removed correlated covariates to prepare data for modeling
 #'
-#' @param se data.frame of fisheries and environmental data
-#' @param pa_col column name for presence/absence column
-#' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
-#' @param month_col,year_col column names for month and year columns respectively
+#' @param df data.frame of fisheries and environmental data
+#' @param var_names a vector containing the names of the environmental variables to check for correlation
 #'
 #' @return a data frame with correlated covariates removed
 #'
 #'@export
 
-remove_corr <- function(se, pa_col, xy_col, month_col, year_col) {
-  ind <- which(
-    colnames(se) == pa_col |
-      colnames(se) == xy_col[1] |
-      colnames(se) == xy_col[2] |
-      colnames(se) == month_col |
-      colnames(se) == year_col
-  )
-  corInd <- caret::findCorrelation(stats::cor(se[, -ind]), names = T) #find correlated variables
+remove_corr <- function(df, var_names) {
+  ind <- names(df) %in% var_names
+  corInd <- caret::findCorrelation(stats::cor(df[, ind]), names = T) #find correlated variables
   if (length(corInd) != 0) {
-    se <- se[, -which(colnames(se) == corInd)]
+    df <- df[, -which(colnames(df) == corInd)]
   }
-  return(se)
+  return(df)
 }

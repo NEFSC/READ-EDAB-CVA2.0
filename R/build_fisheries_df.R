@@ -6,7 +6,7 @@
 #' \item 1 - Target species caught in the cell
 #' }
 #'
-#' @param data a data.frame containing the data to use from a specific source
+#' @param data a data.frame containing the data to use from a specific source 
 #' @param is_obs a TRUE/FALSE indicating whether or not the data source is observer or similar fisheries-dependent data. Will force function to check if species is observed at least 30 times throughout timeseries before creating using data
 #' @param grid static link to a ncdcf object with the variables lon, lat, time - can be link to remote data - must be able to be read with nc_open
 #' @param tm_multiplier multiplier to help convert timestep to POSIX (seconds since origin), defaults to 86400 (number of seconds in a day)
