@@ -13,9 +13,7 @@ Imports:
     ncdf4,
     caret,
     sf,
-    raster,
     sdmTMB,
-    ranger,
     sp,
     EFHSDM,
     terra,
@@ -29,13 +27,11 @@ Imports:
     dplyr,
     PredictABEL,
     grDevices,
-    gt, ggplot2, purrr
+    gt, ggplot2, purrr, broom, pROC, maxnet
 Suggests: 
     DBI,
+    raster,
     survdat,
-    foreach,
-    parallel,
-    doParallel,
     ROCR,
     jsonlite,
     data.table,
