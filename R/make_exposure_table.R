@@ -41,48 +41,61 @@ make_exposure_table <- function(
 
     ###load data for each species
     #load variable weights
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/combined_variable_weights.RData'
+    readRDS(paste0(
+      file.path(here::here('Exposure'), s, 'Data'),
+      'normalized_dynamic_variable_importance.rds'
     )) #cW
 
-    ##### MAPS
     #load maps
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/variable_exposure_maps.RData'
-    )) #mapExp
-    #subset timeseries matrix by rownames
-    i <- names(mapExp) %in% names(cW)
-    mapSub <- raster::subset(mapExp, which(i == T))
+    #variable exposure 
+    varExp <- terra::rast(paste0(
+      file.path(here::here('Exposure'), spp, 'Data'),
+      paste0(
+        '/variable_exposure_maps_',
+        forecast_release,
+        '_',
+        forecast_init,
+        '_',
+        hindcast_release,
+        '_',
+        hindcast_yr_range,
+        '.tif'
+      )
+    )) 
 
     #load total exposure maps - all vars
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/total_exposure_maps_all.RData'
-    )) #totalM
-    totalAll <- totalM
+    totAll <- terra::rast(paste0(
+      file.path(here::here('Exposure'), spp, 'Data'),
+      paste0(
+        '/total_exposure_map_all_var_',
+        forecast_release,
+        '_',
+        forecast_init,
+        '_',
+        hindcast_release,
+        '_',
+        hindcast_yr_range,
+        '.tif'
+      )
+    )) 
 
     #load total exposure maps - important vars
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/total_exposure_maps_subset.RData'
-    )) #totalM
-    totalImp <- totalM
+    totImp <- terra::rast(paste0(
+      file.path(here::here('Exposure'), spp, 'Data'),
+      paste0(
+        '/total_exposure_map_imp_var_',
+        forecast_release,
+        '_',
+        forecast_init,
+        '_',
+        hindcast_release,
+        '_',
+        hindcast_yr_range,
+        '.tif'
+      )
+    )) 
 
-    ##create means and standard deviations
+    ##create means and standard deviations - across range and within stocks if available
     allMean <- mean(totalAll[], na.rm = T)
     allSD <- stats::sd(totalAll[], na.rm = T)
     impMean <- mean(totalImp[], na.rm = T)
@@ -353,12 +366,8 @@ make_exposure_table <- function(
     gt::gtsave(
       summary.table,
       paste0(
-        file.path(getwd(), s, 'Figures'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/exposure_summary_table.pdf'
+        file.path(here::here('Exposure'), s, 'Figures'),
+        'exposure_summary_table.pdf'
       )
     )
   } #end s
