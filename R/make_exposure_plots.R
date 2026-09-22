@@ -112,21 +112,17 @@ make_exposure_plots <- function(
             )
           )
         ),
-        width = 11,
-        height = 8
+        width = 8,
+        height = 11
       )
       #set up panels according to the number of variables
       if (terra::nlyr(varMaps) <= 6) {
         graphics::par(
-          mfrow = c(2, 3),
-          mar = c(2, 3.5, 1.5, 0.5),
-          mgp = c(1.2, 0.5, 0)
+          mfrow = c(2, 3)
         )
       } else {
         graphics::par(
-          mfrow = c(3, 3),
-          mar = c(2, 3.5, 1.5, 0.5),
-          mgp = c(1.2, 0.5, 0)
+          mfrow = c(3, 3)
         )
       }
 
@@ -143,6 +139,7 @@ make_exposure_plots <- function(
           type = 'continuous',
           range = c(1, 4),
           col = cmocean::cmocean('matter')(64),
+          mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
           legend = FALSE,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
@@ -165,11 +162,14 @@ make_exposure_plots <- function(
       } #end y
       # 2. Draw the legend independently if it is the last panel
       if (draw_legend) {
+        graphics::par(mgp = c(3, 0.1, 0))
+        
         terra::plot(
           varMaps[[y]],
           type = 'continuous',
           range = c(1, 4),
           col = cmocean::cmocean('matter')(64),
+          mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
           legend.only = TRUE, # <-- Draws only the legend elements
           plg = list(
             title = "Exposure",
@@ -177,15 +177,11 @@ make_exposure_plots <- function(
             cex = 1.5,
             horizontal = TRUE,
             x = -73.5,
-            y = 36.5,
+            y = 37,
             at = 1:4,
             n = 4,
             # 1. Scale the size of the color bar itself (width, height)
-            size = c(1, 2.5),
-            # 2. Control the distance of the labels from the bar
-            pax = list(
-              mgp = c(3, 2, 0)
-            )
+            size = c(1, 2.5)
           )
         )
       }
