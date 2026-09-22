@@ -28,15 +28,15 @@ make_exposure_table <- function(
     #auc
     mod.auc <- model_metrics[which(model_metrics$Common.Name == s), auc_col]
 
-    #model_confidence
-    mc.mean <- model_confidence[
-      which(model_confidence$Species == s),
-      'meanConfidence'
-    ]
-    mc.sd <- model_confidence[
-      which(model_confidence$Species == s),
-      'sdConfidence'
-    ]
+   # #model_confidence
+  #  mc.mean <- model_confidence[
+   #   which(model_confidence$Species == s),
+  #    'meanConfidence'
+   # ]
+  #mc.sd <- model_confidence[
+   #   which(model_confidence$Species == s),
+    #  'sdConfidence'
+  #  ]
     ####
 
     ###load data for each species
@@ -45,100 +45,6 @@ make_exposure_table <- function(
       file.path(getwd(), s, 'Data'),
       '/combined_variable_weights.RData'
     )) #cW
-
-    ####TIMESERIES
-    #load timeseries
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/variable_exposure_timeseries.RData'
-    )) #vecExp
-    #subset timeseries matrix by rownames
-    i <- rownames(vecExp) %in% names(cW)
-    vecSub <- vecExp[i, ]
-
-    #load total exposure timeseries - all vars
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/total_exposure_timeseries_all.RData'
-    )) #totalT
-    totalAll <- totalT
-
-    #load total exposure timeseries - important vars
-    load(paste0(
-      file.path(getwd(), s, 'Data'),
-      '/',
-      present_time,
-      ' vs ',
-      future_time,
-      '/total_exposure_timeseries_subset.RData'
-    )) #totalT
-    totalImp <- totalT
-
-    ##create means and standard deviations
-    allMean <- mean(totalAll, na.rm = T)
-    allSD <- stats::sd(totalAll, na.rm = T)
-    impMean <- mean(totalImp, na.rm = T)
-    impSD <- stats::sd(totalImp, na.rm = T)
-    timeMean <- c(apply(vecSub, 1, FUN = mean, na.rm = T), allMean, impMean)
-    timeSD <- c(apply(vecSub, 1, FUN = sd, na.rm = T), allSD, impSD)
-    names(timeMean)[(length(timeMean) - 1):length(timeMean)] <- names(timeSD)[
-      (length(timeSD) - 1):length(timeSD)
-    ] <- c('expAll', 'expImp')
-
-    #make summary table
-    timeTab <- as.data.frame(cbind(timeMean, timeSD))
-    timeTab <- round(timeTab, 2)
-    #clean up
-    timeTab$Factor.Name <- rownames(timeTab)
-    rownames(timeTab) <- NULL
-    timeTab <- timeTab[, c(3, 1, 2)]
-    colnames(timeTab)[2:3] <- c("Mean", 'Std.Dev.')
-
-    for (x in 1:(nrow(timeTab) - 2)) {
-      timeTab$Factor.Name[x] <- variable_df$Long.Name[which(
-        variable_df$Short.Name == timeTab$Factor.Name[x]
-      )]
-    }
-    timeTab$Factor.Name[nrow(timeTab) - 1] <- 'Exposure - All Variables'
-    timeTab$Factor.Name[nrow(timeTab)] <- 'Exposure - Important Variables'
-
-    #make plots
-    #add totals
-    vecSub <- rbind(vecSub, totalAll, totalImp)
-    vecSub <- as.data.frame(vecSub)
-    # 1. Convert rows of the matrix/df into a list of vectors
-    row_list <- split(as.matrix(vecSub), seq_len(nrow(vecSub)))
-    # 2. Use map to build the plots
-    plot_dist_time <- purrr::map(row_list, function(row_vals) {
-      # Create a data frame for the row
-      df <- data.frame(v = row_vals)
-
-      ggplot2::ggplot(df, ggplot2::aes(x = v, fill = ggplot2::after_stat(x))) +
-        ggplot2::geom_histogram(
-          breaks = seq(0.5, 4.5, by = 1), # Force exactly 4 bins at 1, 2, 3, 4
-          color = "grey25",
-          linewidth = 4,
-          show.legend = FALSE
-        ) +
-        # Map your 4 specific colors to the 4 x-axis positions
-        ggplot2::scale_fill_gradientn(
-          colors = c("green", "yellow", "orange", "red"),
-          guide = "none"
-        ) +
-        ggplot2::scale_x_continuous(limits = c(0.5, 4.5)) +
-        ggplot2::theme_void() +
-        ggplot2::theme(
-          plot.margin = ggplot2::margin(0, 0, 0, 0) # Remove all internal ggplot whitespace
-        )
-    })
 
     ##### MAPS
     #load maps
