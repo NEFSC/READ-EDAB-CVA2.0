@@ -8,6 +8,7 @@
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
+#' @param chunk_size number of timestamps to pull at once to avoid OpenDap data limits
 #'
 #' @return  a spatRaster of data associated with the requested variable
 #'
@@ -19,7 +20,8 @@ pull_mom6_hindcast <- function(
   gt = 'regrid',
   of = 'monthly',
   bounds = c(-78, -65, 35, 45),
-  release
+  release,
+  chunk_size = 50
 ) {
   #e <- terra::ext(min(lon), max(lon), min(lat), max(lat)) #define grid extent
   se <- terra::ext(bounds) #define extent to subset to
@@ -68,24 +70,36 @@ pull_mom6_hindcast <- function(
   lonInd <- which(lon >= bounds[1] & lon <= bounds[2])
   latInd <- which(lat >= bounds[3] & lat <= bounds[4])
 
-  #pull variable at each time stamp
-  varArr <- NULL
-  for (z in 1:length(tm)) {
-    var <- ncdf4::ncvar_get(
+  # Define a chunk size (number of time steps to pull per request).
+  # If you still get the DATADDS error, lower this number (e.g., 12 or 24).
+  #chunk_size <- 50
+  var <- NULL
+  # Loop through time using chunks
+  for (start_t in seq(1, length(tm), by = chunk_size)) {
+    # Calculate how many time steps to pull in this specific chunk
+    # (Prevents overshooting the end of the time series)
+    count_t <- min(chunk_size, length(tm) - start_t + 1)
+
+    # Pull the chunk
+    v_chunk <- ncdf4::ncvar_get(
       v,
       names(v$var),
-      start = c(lonInd[1], latInd[1], z),
-      count = c(length(lonInd), length(latInd), 1)
+      start = c(lonInd[1], latInd[1], start_t),
+      count = c(length(lonInd), length(latInd), count_t)
     )
-    varArr <- abind::abind(varArr, var, along = 3)
+
+    # Bind the chunk along the 3rd dimension (Time)
+    var <- abind::abind(var, v_chunk, along = 3)
   }
+
+  # Close the NetCDF connection once finished
   ncdf4::nc_close(v)
 
   # Convert the array to a SpatRaster
   # Because ncdf4 loads arrays as [Lon, Lat, Time], we transpose it to [Lat, Lon, Time]
   # so terra reads the rows and columns correctly.
-  r_list <- lapply(1:dim(varArr)[3], function(i) {
-    terra::rast(t(varArr[,, i]))
+  r_list <- lapply(1:dim(var)[3], function(i) {
+    terra::rast(t(var[,, i]))
   })
   cropped_rast <- terra::rast(r_list)
 
