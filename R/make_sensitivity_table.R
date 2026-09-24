@@ -5,6 +5,7 @@
 #' @param species names of species to produce table for. Must match \code{Stock.Name} in \code{raw_data}
 #' @param species_col,stock_col name of column with species and stock names to help subset data. Should be the same across \code{raw_data}, \code{sensitivity}, and \code{data_quality}
 #' @param attribute_names_raw,attribute_names_clean vectors of raw attribute names to help subset \code{sensitivity} and \code{data_quality}, and cleaned up names to use in table
+#' @param stock_order stock names in desired order for them to appear in the table. Provide all possible stock names. Need to match names in \code{raw_data[,stock_col]}
 #' @param total_sens_col,certainty_col names of column containing total sensitivity scores and associated certainty in \code{sensitivity}
 #' @param raw_data raw data exported from FCVA database, including the column \code{Stock.Name} to subset data to correct species
 #' @param sensitivity data.frame with attribute scores and final sensitivity and certainty. Generated from \code{calculate.sensitivity} and \code{sensitivity.bootstrap}. Must include the column \code{Stock.Name} to subset data to correct species
@@ -22,6 +23,7 @@ make_sensitivity_table <- function(
   stock_col,
   attribute_names_raw,
   attribute_names_clean,
+  stock_order,
   total_sens_col,
   certainty_col,
   raw_data,
@@ -87,6 +89,14 @@ make_sensitivity_table <- function(
       ) %>%
       dplyr::mutate(data_quality = round(as.numeric(data_quality), 2))
     
+    # Standardize stock order: 'global' first, then set by provided order
+    raw_stocks <- unique(spSens_long[[stock_col]])
+    ordered_stocks <- stock_order[stock_order %in% raw_stocks]
+    
+    # Failsafe: if the data contains a new stock not in your master list, append it to the end
+    extra_stocks <- setdiff(raw_stocks, stock_order)
+    ordered_stocks <- c(ordered_stocks, extra_stocks)
+    
     # 5. Join into Final Summary Table and Pivot WIDER
     tab_wide <- spSens_long %>%
       dplyr::left_join(spDQ_long, by = c(stock_col, "Attribute.Raw")) %>%
@@ -95,7 +105,8 @@ make_sensitivity_table <- function(
       # Ensure rows are sorted by the intended attribute order
       dplyr::mutate(Attribute.Name = factor(Attribute.Name, levels = attribute_names_clean)) %>%
       dplyr::select(Attribute.Name, !!rlang::sym(stock_col), expert.scores, data_quality, p) %>%
-      # Pivot wide
+      # Lock the column order before pivoting
+      dplyr::mutate(!!rlang::sym(stock_col) := factor(!!rlang::sym(stock_col), levels = ordered_stocks)) %>%
       tidyr::pivot_wider(
         names_from = dplyr::all_of(stock_col),
         values_from = c(expert.scores, data_quality, p),
@@ -116,7 +127,7 @@ make_sensitivity_table <- function(
     
     summary_row <- data.frame(Attribute.Name = "Total Sensitivity | Certainty")
     
-    for(s in stocks) {
+    for(s in ordered_stocks) {
       # Use %in% instead of == to safely match NA values if a species has no stocks
       s_sens <- spSens[[total_sens_col]][spSens[[stock_col]] %in% s][1]
       s_cert <- spSens[[certainty_col]][spSens[[stock_col]] %in% s][1]
@@ -137,6 +148,23 @@ make_sensitivity_table <- function(
     
     tab_wide <- dplyr::bind_rows(tab_wide, summary_row)
     
+    # ---------------------------------------------------------
+    # FORCE EXACT COLUMN ORDER (North to South, Grouped by Stock)
+    # ---------------------------------------------------------
+    desired_cols <- "Attribute.Name"
+    for (s in ordered_stocks) {
+      desired_cols <- c(
+        desired_cols, 
+        paste0("expert.scores_", s), 
+        paste0("data_quality_", s), 
+        paste0("p_", s)
+      )
+    }
+    
+    # Reorder the dataframe columns to match the exact custom order
+    tab_wide <- tab_wide %>% dplyr::select(dplyr::all_of(desired_cols))
+    # ---------------------------------------------------------
+    
     # 6. Initialize gt table
     summary.table <- gt::gt(tab_wide) %>%
       gt::tab_header(title = 'Sensitivity') %>%
@@ -145,13 +173,16 @@ make_sensitivity_table <- function(
       gt::cols_align(align = "left", columns = c("Attribute.Name"))
     
     # Dynamically add spanners for each stock present
-    for (s in stocks) {
+    for (s in ordered_stocks) {
       
       # If a species has no stocks (NA or empty string), skip the spanner entirely
       if (is.na(s) || s == "" || s == "None") next 
       
+      # Translate 'global' to 'Range', otherwise keep the original stock name
+      display_name <- ifelse(s == "global", "Range", s)
+      
       wrapped_label <- stringr::str_replace_all(
-        stringr::str_wrap(s, width = 15), 
+        stringr::str_wrap(display_name, width = 15), 
         pattern = "\n", 
         replacement = "  \n"
       )
