@@ -7,22 +7,31 @@
 make_exposure_plots(
   species,
   type = c("variable", "total", "important", "radar"),
-  present_time,
-  future_time,
+  forecast_release,
+  forecast_init,
+  hindcast_release,
+  hindcast_yr_range,
   variable_df,
-  coastline
+  coastline,
+  bathymetry
 )
 }
 \arguments{
 \item{species}{names of the species to plot. Must match folder name to pull correct data and save figures correctly.}
 
-\item{type}{at least one of the following: 'variable', 'total', 'important', 'radar. Used to determine what to plot. Defaults to all.}
+\item{type}{at least one of the following: 'variable', 'total', 'important', 'radar'. Used to determine what to plot. Defaults to all.}
 
-\item{present_time, future_time}{character strings indicating the present and future time series to compare. Example: '1993-2019'. Used to pull correct calculations and save the data properly}
+\item{forecast_release, hindcast_release}{MOM6 release codes for the (f)orecast and (h)indcasts used. Used to pull correct variable exposures}
+
+\item{forecast_init}{forecast_initialization code corresponding to the forecast_initalization date of the desired forecast data. Used to pull correct variable exposures}
+
+\item{hindcast_yr_range}{character string corresponding to the years in the hindcast data used. Used to pull correct data and save the data properly}
 
 \item{variable_df}{a data.frame containing all possible environmental variables, such as from the MOM6 model. Must contain columns \code{Long.Name} and \code{Short.Name}, containing the full names and abbreviated names of the variables. Abbreviated names should correspond to those in the weights vector produced by \code{combineWeights}}
 
 \item{coastline}{shapefile used to plot land in model prediction plots}
+
+\item{bathymetry}{spatRaster file of bathymetry data; used to plot bathymetry in stock boundary plots}
 }
 \value{
 Function does not return anything. Figures are saved to species-specific \code{figures} folder.
