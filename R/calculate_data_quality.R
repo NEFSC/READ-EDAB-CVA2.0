@@ -2,7 +2,7 @@
 #' @description Calculates mean data quality score
 #'
 #' @param species_attributes a data frame containing all of the expert scores for one species. See example for how to generate this list from the FCVA output.
-#' @param id_col column name to use as unique identifier for row names 
+#' @param id_col column name to use as unique identifier for row names. Defaults to Stock.Name 
 #'
 #' @return a vector of mean data quality scores for each attribute with the length of the number of attributes.
 #'
@@ -19,7 +19,7 @@
 #'
 #'@export
 
-calculate_data_quality <- function(species_attributes, id_col) {
+calculate_data_quality <- function(species_attributes, id_col = 'Stock.Name') {
   #calculate mean data quality
   dq <- stats::aggregate(
     Data.Quality ~ Attribute.Name,
