@@ -11,7 +11,7 @@
 #' @param stock_order a vector containing the long stock names in the desired order
 #' @param table_dir file path to folder to save tables in
 #'
-#' @return Function does not return anything. The table is saved as a png to the \code{table_dir} folder. 
+#' @return Function does not return anything. The table is saved as a png to the \code{table_dir} folder.
 #'
 #'@export
 
@@ -26,37 +26,38 @@ make_exposure_table <- function(
   stock_order,
   table_dir
 ) {
-  
-  attribute_names_clean <- c(variable_df$Long.Name, 'Total Exposure - All Variables', "Total Exposure - Important Variables")
-  attribute_names_raw <-  c(variable_df$Short.Name, 'totalAll', 'totalImp')
-  
-  attr_map <- setNames(attribute_names_clean, 
-                      attribute_names_raw)
-  
-  for (s in species) {
+  attribute_names_clean <- c(
+    variable_df$Long.Name,
+    'Total Exposure - All Variables',
+    "Total Exposure - Important Variables"
+  )
+  attribute_names_raw <- c(variable_df$Short.Name, 'totalAll', 'totalImp')
 
+  attr_map <- setNames(attribute_names_clean, attribute_names_raw)
+
+  for (s in species) {
     ###load data for each species
     #load variable weights
     var_imp <- readRDS(paste0(
       file.path(here::here('Exposure'), s, 'Data'),
       '/normalized_dynamic_variable_importance.rds'
     )) #cW
-    
-    var_imp_nms <- colnames(var_imp)[var_imp[nrow(var_imp),] >= 0.1]
-    
+
+    var_imp_nms <- colnames(var_imp)[var_imp[nrow(var_imp), ] >= 0.1]
+
     #load stocks if available
     if (file.exists(paste0('../shpfiles/species_stock_areas/', s, '.shp'))) {
       stocks <- terra::vect(paste0(
         '../shpfiles/species_stock_areas/',
         s,
         '.shp'
-      )) 
+      ))
     } else {
       stocks <- NULL
     }
 
     #load maps
-    #variable exposure 
+    #variable exposure
     varExp <- terra::rast(paste0(
       file.path(here::here('Exposure'), s, 'Data'),
       paste0(
@@ -70,7 +71,7 @@ make_exposure_table <- function(
         hindcast_yr_range,
         '.tif'
       )
-    )) 
+    ))
 
     #load total exposure maps - all vars
     totAll <- terra::rast(paste0(
@@ -86,7 +87,7 @@ make_exposure_table <- function(
         hindcast_yr_range,
         '.tif'
       )
-    )) 
+    ))
 
     #load total exposure maps - important vars
     totImp <- terra::rast(paste0(
@@ -102,14 +103,14 @@ make_exposure_table <- function(
         hindcast_yr_range,
         '.tif'
       )
-    )) 
-    
-    #stack all rasters 
+    ))
+
+    #stack all rasters
     rastStack <- c(varExp, totAll, totImp)
     nl <- terra::nlyr(rastStack)
-    names(rastStack)[(nl-1):nl] <- c('totalAll', 'totalImp')
+    names(rastStack)[(nl - 1):nl] <- c('totalAll', 'totalImp')
 
-    ##load means and standard deviations 
+    ##load means and standard deviations
     rastMeans <- readRDS(paste0(
       file.path(here::here('Exposure'), s, 'Data'),
       paste0(
@@ -123,9 +124,8 @@ make_exposure_table <- function(
         hindcast_yr_range,
         '.rds'
       )
-    )
-    )   
-    
+    ))
+
     rastSD <- readRDS(paste0(
       file.path(here::here('Exposure'), s, 'Data'),
       paste0(
@@ -139,27 +139,26 @@ make_exposure_table <- function(
         hindcast_yr_range,
         '.rds'
       )
-    )
-    )
+    ))
 
     # 2. Extract raster pixels within each stock polygon
-    if(!is.null(stocks)){
+    if (!is.null(stocks)) {
       # This returns a dataframe with 'ID' (polygon index) and one column per raster layer
       ext_vals <- terra::extract(rastStack, stocks)
-      
+
       # Map the polygon ID back to the actual stock names
       ext_vals$stock <- stocks$stock_area[ext_vals$ID]
       ext_vals$ID <- NULL
-      
-      #extract all pixels 
+
+      #extract all pixels
       global_vals <- as.data.frame(terra::values(rastStack))
       global_vals$stock <- 'global'
-      
+
       all_vals <- dplyr::bind_rows(ext_vals, global_vals)
     } else {
       all_vals <- as.data.frame(terra::values(rastStack))
       all_vals$stock <- 'global'
-      
+
       #if stocks is null, this will also mean that rastMeans/SD is missing a stocks column
       rastMeans <- as.data.frame(rastMeans)
       rastMeans$stock <- 'global'
@@ -179,141 +178,179 @@ make_exposure_table <- function(
       dplyr::summarise(
         p = list(
           data.frame(x = pixel_value) %>%
-            # Bin the continuous pixels into 4 categories 
+            # Bin the continuous pixels into 4 categories
             dplyr::mutate(
               cat = cut(
-                x, 
-                breaks = c(-Inf, 1.5, 2.5, 3.5, Inf), 
+                x,
+                breaks = c(-Inf, 1.5, 2.5, 3.5, Inf),
                 labels = c("A", "B", "C", "D")
               )
             ) %>%
             ggplot2::ggplot(ggplot2::aes(x = cat, fill = cat)) +
-            ggplot2::geom_bar(show.legend = FALSE, width = 0.95, color = 'grey25', linewidth = 0.5) +
+            ggplot2::geom_bar(
+              show.legend = FALSE,
+              width = 0.95,
+              color = 'grey25',
+              linewidth = 0.5
+            ) +
             # Use a named vector and drop = FALSE to lock the colors to the correct bars
             ggplot2::scale_fill_manual(
-              values = c("A" = "green", "B" = "yellow", "C" = "orange", "D" = "red"),
-              drop = FALSE 
+              values = c(
+                "A" = "green",
+                "B" = "yellow",
+                "C" = "orange",
+                "D" = "red"
+              ),
+              drop = FALSE
             ) +
             # Ensures all 4 categories always appear on the x-axis, even if empty
-            ggplot2::scale_x_discrete(drop = FALSE) + 
+            ggplot2::scale_x_discrete(drop = FALSE) +
             ggplot2::theme_void() +
             ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
         ),
         .groups = "drop"
       ) %>%
       dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw])
-    
+
     # 4. Pivot Exposure Means and DQ to Long Format
     spMeans_long <- rastMeans %>%
-      dplyr::select(!!rlang::sym('stock'), dplyr::any_of(attribute_names_raw)) %>% # Changed
+      dplyr::select(
+        !!rlang::sym('stock'),
+        dplyr::any_of(attribute_names_raw)
+      ) %>% # Changed
       tidyr::pivot_longer(
         cols = dplyr::any_of(attribute_names_raw), # Changed
         names_to = "Attribute.Raw",
         values_to = "expert.scores"
       ) %>%
       dplyr::mutate(expert.scores = round(as.numeric(expert.scores), 2))
-    
+
     spDQ_long <- rastSD %>%
-      dplyr::select(!!rlang::sym('stock'), dplyr::any_of(attribute_names_raw)) %>% # Changed
+      dplyr::select(
+        !!rlang::sym('stock'),
+        dplyr::any_of(attribute_names_raw)
+      ) %>% # Changed
       tidyr::pivot_longer(
         cols = dplyr::any_of(attribute_names_raw), # Changed
         names_to = "Attribute.Raw",
         values_to = "data_quality"
       ) %>%
       dplyr::mutate(data_quality = round(as.numeric(data_quality), 2))
-    
+
     # ---------------------------------------------------------
     # STANDARDIZE STOCK ORDER (Matches short data names to long order list)
     # ---------------------------------------------------------
     raw_stocks <- unique(spMeans_long$stock)
-    
+
     # Temporarily translate the short raw names into long names using your stock_key
-    long_names_present <- ifelse(raw_stocks %in% names(stock_key), stock_key[raw_stocks], raw_stocks)
-    
+    long_names_present <- ifelse(
+      raw_stocks %in% names(stock_key),
+      stock_key[raw_stocks],
+      raw_stocks
+    )
+
     # Sort the short raw_stocks based on where their long names appear in your stock_order
-    ordered_stocks <- raw_stocks[order(match(long_names_present, stock_order), na.last = TRUE)]
+    ordered_stocks <- raw_stocks[order(
+      match(long_names_present, stock_order),
+      na.last = TRUE
+    )]
     # ---------------------------------------------------------
-    
+
     # 5. Join into Final Summary Table and Pivot WIDER
     tab_wide <- spMeans_long %>%
       dplyr::left_join(spDQ_long, by = c('stock', "Attribute.Raw")) %>%
       dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw]) %>%
-      dplyr::left_join(plot_data, by = c("Attribute.Name", 'stock', "Attribute.Raw")) %>%
-      dplyr::mutate(Attribute.Name = factor(Attribute.Name, levels = attribute_names_clean)) %>%
-      dplyr::select(Attribute.Name, !!rlang::sym('stock'), expert.scores, data_quality, p) %>%
+      dplyr::left_join(
+        plot_data,
+        by = c("Attribute.Name", 'stock', "Attribute.Raw")
+      ) %>%
+      dplyr::mutate(
+        Attribute.Name = factor(Attribute.Name, levels = attribute_names_clean)
+      ) %>%
+      dplyr::select(
+        Attribute.Name,
+        !!rlang::sym('stock'),
+        expert.scores,
+        data_quality,
+        p
+      ) %>%
       # Lock the column order before pivoting
-      dplyr::mutate(stock = factor(stock, levels = ordered_stocks)) %>% 
+      dplyr::mutate(stock = factor(stock, levels = ordered_stocks)) %>%
       tidyr::pivot_wider(
         names_from = dplyr::all_of('stock'),
         values_from = c(expert.scores, data_quality, p),
         names_glue = paste0("{.value}_{", 'stock', "}")
       ) %>%
       dplyr::arrange(Attribute.Name)
-    
+
     # 5.5 Extract plot list-columns to avoid 'gt' conversion error
     plot_cols <- grep("^p_", colnames(tab_wide), value = TRUE)
     plot_list_wide <- list()
     for (p_col in plot_cols) {
-      plot_list_wide[[p_col]] <- tab_wide[[p_col]] 
-      tab_wide[[p_col]] <- "" 
+      plot_list_wide[[p_col]] <- tab_wide[[p_col]]
+      tab_wide[[p_col]] <- ""
     }
-    
+
     # ---------------------------------------------------------
     # FORCE EXACT COLUMN ORDER (North to South, Grouped by Stock)
     # ---------------------------------------------------------
     desired_cols <- "Attribute.Name"
     for (k in ordered_stocks) {
       desired_cols <- c(
-        desired_cols, 
-        paste0("expert.scores_", k), 
-        paste0("data_quality_", k), 
+        desired_cols,
+        paste0("expert.scores_", k),
+        paste0("data_quality_", k),
         paste0("p_", k)
       )
     }
-    
+
     # Reorder the dataframe columns to match the exact custom order
     tab_wide <- tab_wide %>% dplyr::select(dplyr::all_of(desired_cols))
     # ---------------------------------------------------------
-    
+
     # 6. Initialize gt table
     # 1. Filter the exact list that aligns with your TRUE/FALSE vector
     important_raw_names <- attribute_names_raw %in% var_imp_nms
-    
+
     # 2. Translate those specific raw names into their clean display names
     important_clean_names <- attr_map[important_raw_names]
-    
+
     # 3. Append the exact string of your bottom row so it also becomes italic
-    important_clean_names <- c(important_clean_names, "Total Exposure - Important Variables")
-    
+    important_clean_names <- c(
+      important_clean_names,
+      "Total Exposure - Important Variables"
+    )
+
     summary.table <- gt::gt(tab_wide) %>%
       gt::tab_header(title = 'Exposure') %>%
       gt::opt_row_striping() %>%
       gt::cols_align(align = "center", columns = gt::everything()) %>%
       gt::cols_align(align = "left", columns = c("Attribute.Name"))
-    
+
     # Dynamically add spanners for each stock present
     stock_nms <- unique(rastMeans$stock)
     for (k in ordered_stocks) {
-      
       # If a species has no stocks (NA or empty string), skip the spanner entirely
-      if (is.na(k) || k == "" || k == "None") next 
-      
+      if (is.na(k) || k == "" || k == "None") {
+        next
+      }
+
       # Translate the abbreviation if it exists in the map; otherwise use the original string
       display_name <- ifelse(k %in% names(stock_key), stock_key[[k]], k)
-      
+
       wrapped_label <- stringr::str_replace_all(
-        stringr::str_wrap(display_name, width = 15), 
-        pattern = "\n", 
+        stringr::str_wrap(display_name, width = 15),
+        pattern = "\n",
         replacement = "  \n"
       )
-      
+
       summary.table <- summary.table %>%
         gt::tab_spanner(
           label = gt::md(wrapped_label),
           columns = gt::ends_with(as.character(k))
         )
     }
-    
+
     # 7. Apply styling, column renaming, and rendering
     summary.table <- summary.table %>%
       # Clean up the Attribute Name header
@@ -323,19 +360,19 @@ make_exposure_table <- function(
       # Rename grouped columns
       gt::cols_label_with(
         columns = gt::starts_with("expert.scores"),
-        fn = ~ "Mean"
+        fn = ~"Mean"
       ) %>%
       gt::cols_label_with(
         columns = gt::starts_with("data_quality"),
-        fn = ~ "SD"
+        fn = ~"SD"
       ) %>%
       gt::cols_label_with(
         columns = gt::starts_with("p_"),
-        fn = ~ "Tally"
+        fn = ~"Tally"
       ) %>%
       # Force text wrapping by constraining column widths
       gt::cols_width(
-        Attribute.Name ~ gt::px(220), 
+        Attribute.Name ~ gt::px(220),
         gt::starts_with("expert.scores") ~ gt::px(45),
         gt::starts_with("data_quality") ~ gt::px(45),
         gt::starts_with("p_") ~ gt::px(50) # Reduced from 90
@@ -350,17 +387,25 @@ make_exposure_table <- function(
       ) %>%
       # Add thin bottom border to stock spanners
       gt::tab_style(
-        style = gt::cell_borders(sides = "bottom", color = "black", weight = gt::px(1)),
+        style = gt::cell_borders(
+          sides = "bottom",
+          color = "black",
+          weight = gt::px(1)
+        ),
         locations = gt::cells_column_spanners()
       ) %>%
       # Add thick vertical borders to separate stocks
       gt::tab_style(
-        style = gt::cell_borders(sides = "left", color = "black", weight = gt::px(2)),
+        style = gt::cell_borders(
+          sides = "left",
+          color = "black",
+          weight = gt::px(2)
+        ),
         locations = gt::cells_body(columns = gt::starts_with("expert.scores"))
-      ) 
+      )
     # STOP HERE - NO PIPE (%>%) BEFORE THE FOR LOOP
-    
-    # Inject plots column by column 
+
+    # Inject plots column by column
     for (p_col in plot_cols) {
       summary.table <- local({
         col_name <- p_col
@@ -369,22 +414,27 @@ make_exposure_table <- function(
             locations = gt::cells_body(columns = dplyr::all_of(col_name)),
             fn = function(x) {
               purrr::map(plot_list_wide[[col_name]], function(p) {
-                
                 # Failsafe: If the plot is NA or missing, return a blank space instead of crashing
-                if (is.null(p) || (is.logical(p) && is.na(p[1]))) return("") 
-                
+                if (is.null(p) || (is.logical(p) && is.na(p[1]))) {
+                  return("")
+                }
+
                 gt::ggplot_image(p, height = gt::px(15), aspect_ratio = 3)
               })
             }
           )
       })
     }
-    
+
     # Resume the pipe chain for final table options
     summary.table <- summary.table %>%
       # 1. Add thick line to separate the main attributes from the total rows
       gt::tab_style(
-        style = gt::cell_borders(sides = "top", color = "black", weight = gt::px(2)),
+        style = gt::cell_borders(
+          sides = "top",
+          color = "black",
+          weight = gt::px(2)
+        ),
         locations = gt::cells_body(rows = nrow(tab_wide) - 1) # Targets the second-to-last row
       ) %>%
       # 2. Make BOTH total rows bold
@@ -404,8 +454,8 @@ make_exposure_table <- function(
       # Compress padding, center title, and set landscape layout
       gt::tab_options(
         heading.align = "center",
-        table.font.size = gt::px(10), 
-        data_row.padding = gt::px(2), 
+        table.font.size = gt::px(10),
+        data_row.padding = gt::px(2),
         heading.padding = gt::px(2),
         column_labels.padding = gt::px(2),
         row.striping.background_color = "#D3D3D3",
@@ -418,7 +468,7 @@ make_exposure_table <- function(
         table.additional_css = "@page { size: landscape; margin: 0.5in; }"
       ) %>%
       gt::opt_table_lines(extent = "none")
-    
+
     # 8. Save as a cropped, high-res image
     gt::gtsave(
       summary.table,

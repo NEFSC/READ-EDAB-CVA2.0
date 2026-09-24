@@ -37,16 +37,16 @@ make_sensitivity_table <- function(
 
   # Create a named vector to map raw names to clean names easily
   attr_map <- setNames(attribute_names_clean, attribute_names_raw)
-  
+
   for (x in species) {
     # 1. Subset each data.frame by species
-    spRaw <- raw_data[raw_data[, species_col] == x, ] 
-    spSens <- sensitivity[sensitivity[, species_col] == x, ] 
-    spDQ <- data_quality[data_quality[, species_col] == x, ] 
-    
+    spRaw <- raw_data[raw_data[, species_col] == x, ]
+    spSens <- sensitivity[sensitivity[, species_col] == x, ]
+    spDQ <- data_quality[data_quality[, species_col] == x, ]
+
     # Capture the unique stocks for dynamic table generation later
     stocks <- unique(spSens[[stock_col]])
-    
+
     # 3. Sum tallies and generate plot objects grouped by Attribute AND Stock
     tally.count <- spRaw %>%
       dplyr::group_by(Attribute.Name, !!rlang::sym(stock_col)) %>%
@@ -62,138 +62,177 @@ make_sensitivity_table <- function(
         p = list(
           data.frame(x = c("A", "B", "C", "D"), y = c(A, B, C, D)) %>%
             ggplot2::ggplot(ggplot2::aes(x, y, fill = x)) +
-            ggplot2::geom_col(show.legend = FALSE, width = 0.95, color = 'grey25', linewidth = 4) +
-            ggplot2::scale_fill_manual(values = c("green", "yellow", "orange", "red")) +
+            ggplot2::geom_col(
+              show.legend = FALSE,
+              width = 0.95,
+              color = 'grey25',
+              linewidth = 4
+            ) +
+            ggplot2::scale_fill_manual(
+              values = c("green", "yellow", "orange", "red")
+            ) +
             ggplot2::theme_void() +
             ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
         )
       ) %>%
       dplyr::ungroup()
-    
+
     # 4. Pivot Sensitivity and Data Quality to Long Format
     spSens_long <- spSens %>%
-      dplyr::select(!!rlang::sym(stock_col), dplyr::all_of(attribute_names_raw)) %>%
+      dplyr::select(
+        !!rlang::sym(stock_col),
+        dplyr::all_of(attribute_names_raw)
+      ) %>%
       tidyr::pivot_longer(
         cols = dplyr::all_of(attribute_names_raw),
         names_to = "Attribute.Raw",
         values_to = "expert.scores"
       ) %>%
       dplyr::mutate(expert.scores = round(as.numeric(expert.scores), 2))
-    
+
     spDQ_long <- spDQ %>%
-      dplyr::select(!!rlang::sym(stock_col), dplyr::all_of(attribute_names_raw)) %>%
+      dplyr::select(
+        !!rlang::sym(stock_col),
+        dplyr::all_of(attribute_names_raw)
+      ) %>%
       tidyr::pivot_longer(
         cols = dplyr::all_of(attribute_names_raw),
         names_to = "Attribute.Raw",
         values_to = "data_quality"
       ) %>%
       dplyr::mutate(data_quality = round(as.numeric(data_quality), 2))
-    
+
     # Standardize stock order: 'global' first, then set by provided order
     raw_stocks <- unique(spSens_long[[stock_col]])
     ordered_stocks <- stock_order[stock_order %in% raw_stocks]
-    
+
     # Failsafe: if the data contains a new stock not in your master list, append it to the end
     extra_stocks <- setdiff(raw_stocks, stock_order)
     ordered_stocks <- c(ordered_stocks, extra_stocks)
-    
+
     # 5. Join into Final Summary Table and Pivot WIDER
     tab_wide <- spSens_long %>%
       dplyr::left_join(spDQ_long, by = c(stock_col, "Attribute.Raw")) %>%
       dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw]) %>%
       dplyr::left_join(tally.count, by = c("Attribute.Name", stock_col)) %>%
       # Ensure rows are sorted by the intended attribute order
-      dplyr::mutate(Attribute.Name = factor(Attribute.Name, levels = attribute_names_clean)) %>%
-      dplyr::select(Attribute.Name, !!rlang::sym(stock_col), expert.scores, data_quality, p) %>%
+      dplyr::mutate(
+        Attribute.Name = factor(Attribute.Name, levels = attribute_names_clean)
+      ) %>%
+      dplyr::select(
+        Attribute.Name,
+        !!rlang::sym(stock_col),
+        expert.scores,
+        data_quality,
+        p
+      ) %>%
       # Lock the column order before pivoting
-      dplyr::mutate(!!rlang::sym(stock_col) := factor(!!rlang::sym(stock_col), levels = ordered_stocks)) %>%
+      dplyr::mutate(
+        !!rlang::sym(stock_col) := factor(
+          !!rlang::sym(stock_col),
+          levels = ordered_stocks
+        )
+      ) %>%
       tidyr::pivot_wider(
         names_from = dplyr::all_of(stock_col),
         values_from = c(expert.scores, data_quality, p),
         names_glue = paste0("{.value}_{", stock_col, "}")
       ) %>%
       dplyr::arrange(Attribute.Name)
-    
+
     # 5.5 Extract plot list-columns and add NULL for the upcoming summary row
     plot_cols <- grep("^p_", colnames(tab_wide), value = TRUE)
     plot_list_wide <- list()
     for (p_col in plot_cols) {
       plot_list_wide[[p_col]] <- c(tab_wide[[p_col]], list(NULL)) # Appends NULL for the final row
-      tab_wide[[p_col]] <- "" 
+      tab_wide[[p_col]] <- ""
     }
-    
-    # 5.6 Build and Append the Summary Row 
-    tab_wide <- tab_wide %>% dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
-    
+
+    # 5.6 Build and Append the Summary Row
+    tab_wide <- tab_wide %>%
+      dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
+
     summary_row <- data.frame(Attribute.Name = "Total Sensitivity | Certainty")
-    
-    for(s in ordered_stocks) {
+
+    for (s in ordered_stocks) {
       # Use %in% instead of == to safely match NA values if a species has no stocks
       s_sens <- spSens[[total_sens_col]][spSens[[stock_col]] %in% s][1]
       s_cert <- spSens[[certainty_col]][spSens[[stock_col]] %in% s][1]
-      
-      sens_word <- switch(as.character(s_sens), '1' = 'Low', '2' = 'Moderate', '3' = "High", '4' = "Very High", 'Unknown')
-      
+
+      sens_word <- switch(
+        as.character(s_sens),
+        '1' = 'Low',
+        '2' = 'Moderate',
+        '3' = "High",
+        '4' = "Very High",
+        'Unknown'
+      )
+
       # 140px wide div shifted left by 45px to perfectly span the columns
       summary_text <- paste0(
         "<div style='display: inline-block; width: 140px; margin-left: -45px; text-align: center; white-space: nowrap;'>",
-        sens_word, " (", s_sens, ") | ", round(s_cert, 2), 
+        sens_word,
+        " (",
+        s_sens,
+        ") | ",
+        round(s_cert, 2),
         "</div>"
       )
-      
+
       summary_row[[paste0("expert.scores_", s)]] <- ""
       summary_row[[paste0("data_quality_", s)]] <- summary_text
-      summary_row[[paste0("p_", s)]] <- "" 
+      summary_row[[paste0("p_", s)]] <- ""
     }
-    
+
     tab_wide <- dplyr::bind_rows(tab_wide, summary_row)
-    
+
     # ---------------------------------------------------------
     # FORCE EXACT COLUMN ORDER (North to South, Grouped by Stock)
     # ---------------------------------------------------------
     desired_cols <- "Attribute.Name"
     for (s in ordered_stocks) {
       desired_cols <- c(
-        desired_cols, 
-        paste0("expert.scores_", s), 
-        paste0("data_quality_", s), 
+        desired_cols,
+        paste0("expert.scores_", s),
+        paste0("data_quality_", s),
         paste0("p_", s)
       )
     }
-    
+
     # Reorder the dataframe columns to match the exact custom order
     tab_wide <- tab_wide %>% dplyr::select(dplyr::all_of(desired_cols))
     # ---------------------------------------------------------
-    
+
     # 6. Initialize gt table
     summary.table <- gt::gt(tab_wide) %>%
       gt::tab_header(title = 'Sensitivity') %>%
       gt::opt_row_striping() %>%
       gt::cols_align(align = "center", columns = gt::everything()) %>%
       gt::cols_align(align = "left", columns = c("Attribute.Name"))
-    
+
     # Dynamically add spanners for each stock present
     for (s in ordered_stocks) {
-      
       # If a species has no stocks (NA or empty string), skip the spanner entirely
-      if (is.na(s) || s == "" || s == "None") next 
-      
+      if (is.na(s) || s == "" || s == "None") {
+        next
+      }
+
       # Translate 'global' to 'Range', otherwise keep the original stock name
       display_name <- ifelse(s == "global", "Range", s)
-      
+
       wrapped_label <- stringr::str_replace_all(
-        stringr::str_wrap(display_name, width = 15), 
-        pattern = "\n", 
+        stringr::str_wrap(display_name, width = 15),
+        pattern = "\n",
         replacement = "  \n"
       )
-      
+
       summary.table <- summary.table %>%
         gt::tab_spanner(
           label = gt::md(wrapped_label),
           columns = gt::ends_with(as.character(s))
         )
     }
-    
+
     # 7. Apply styling, column renaming, and rendering
     summary.table <- summary.table %>%
       # Clean up the Attribute Name header
@@ -203,19 +242,19 @@ make_sensitivity_table <- function(
       # Rename grouped columns
       gt::cols_label_with(
         columns = gt::starts_with("expert.scores"),
-        fn = ~ "Score"
+        fn = ~"Score"
       ) %>%
       gt::cols_label_with(
         columns = gt::starts_with("data_quality"),
-        fn = ~ "DQ"
+        fn = ~"DQ"
       ) %>%
       gt::cols_label_with(
         columns = gt::starts_with("p_"),
-        fn = ~ "Tally"
+        fn = ~"Tally"
       ) %>%
       # Force text wrapping by constraining column widths
       gt::cols_width(
-        Attribute.Name ~ gt::px(220), 
+        Attribute.Name ~ gt::px(220),
         gt::starts_with("expert.scores") ~ gt::px(45),
         gt::starts_with("data_quality") ~ gt::px(45),
         gt::starts_with("p_") ~ gt::px(50) # Reduced from 90
@@ -230,17 +269,25 @@ make_sensitivity_table <- function(
       ) %>%
       # Add thin bottom border to stock spanners
       gt::tab_style(
-        style = gt::cell_borders(sides = "bottom", color = "black", weight = gt::px(1)),
+        style = gt::cell_borders(
+          sides = "bottom",
+          color = "black",
+          weight = gt::px(1)
+        ),
         locations = gt::cells_column_spanners()
       ) %>%
       # Add thick vertical borders to separate stocks
       gt::tab_style(
-        style = gt::cell_borders(sides = "left", color = "black", weight = gt::px(2)),
+        style = gt::cell_borders(
+          sides = "left",
+          color = "black",
+          weight = gt::px(2)
+        ),
         locations = gt::cells_body(columns = gt::starts_with("expert.scores"))
-      ) 
+      )
     # STOP HERE - NO PIPE (%>%) BEFORE THE FOR LOOP
-    
-    # Inject plots column by column 
+
+    # Inject plots column by column
     for (p_col in plot_cols) {
       summary.table <- local({
         col_name <- p_col
@@ -249,14 +296,16 @@ make_sensitivity_table <- function(
             locations = gt::cells_body(columns = dplyr::all_of(col_name)),
             fn = function(x) {
               purrr::map(plot_list_wide[[col_name]], function(p) {
-                if (is.null(p)) return("") # Renders a blank space for the summary row
+                if (is.null(p)) {
+                  return("")
+                } # Renders a blank space for the summary row
                 gt::ggplot_image(p, height = gt::px(15), aspect_ratio = 3)
               })
             }
           )
       })
     }
-    
+
     # Resume the pipe chain for final table options
     summary.table <- summary.table %>%
       # Tell gt to render our absolute positioned HTML div
@@ -275,8 +324,8 @@ make_sensitivity_table <- function(
       # Compress padding, center title, and set landscape layout
       gt::tab_options(
         heading.align = "center",
-        table.font.size = gt::px(10), 
-        data_row.padding = gt::px(2), 
+        table.font.size = gt::px(10),
+        data_row.padding = gt::px(2),
         heading.padding = gt::px(2),
         column_labels.padding = gt::px(2),
         row.striping.background_color = "#D3D3D3",
@@ -293,7 +342,7 @@ make_sensitivity_table <- function(
         "
       ) %>%
       gt::opt_table_lines(extent = "none")
-    
+
     # 8. Save as a cropped, high-res image
     gt::gtsave(
       summary.table,
