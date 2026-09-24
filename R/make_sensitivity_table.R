@@ -12,7 +12,7 @@
 #' @param sensitivity TRUE indicates sensitivity attribute scores should be plotted. FALSE indicates exposure factor scores should be plotted
 #' @param table_dir file path to folder to save tables in
 #'
-#' @return No returns. Saves pdf file containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
+#' @return No returns. Saves png containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
 #'
 #'@export
 
