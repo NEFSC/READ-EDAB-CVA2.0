@@ -15,7 +15,6 @@ sd_model_data <- function(raw, spatial_temporal) {
       fun = 'sd'
     )
     names(sds) <- month.abb
-
   } else {
     #calculate global average across layers and space
     gMean <- mean(terra::global(raw, 'mean', na.rm = T)$mean) #first calculate global mean

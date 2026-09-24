@@ -78,7 +78,6 @@ calculate_sdm_variable_importance <- function(
       seSub <- rbind(seSub, allSub)
     }
 
-
     # 1. Create a proper Date column by appending "01." (the 1st day of the month)
     seSub$true_date <- as.Date(
       paste0("01.", seSub$month.year),

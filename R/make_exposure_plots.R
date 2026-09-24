@@ -163,7 +163,6 @@ make_exposure_plots <- function(
       # 2. Draw the legend independently if it is the last panel
       if (draw_legend) {
         graphics::par(mgp = c(3, 0.1, 0))
-        
         terra::plot(
           varMaps[[y]],
           type = 'continuous',

@@ -156,5 +156,4 @@ pull_mom6_forecast <- function(
     average = rast_avg,
     raw = rast_raw
   ))
-
 }
