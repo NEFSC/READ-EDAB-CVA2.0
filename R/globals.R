@@ -41,6 +41,7 @@ utils::globalVariables(c(
   'mean_space',
   'sd_space',
   'dist_space',
+  'weights',
   # Operators from other packages
   ".",
   "%>%",

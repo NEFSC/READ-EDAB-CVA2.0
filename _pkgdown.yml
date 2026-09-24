@@ -12,6 +12,7 @@ reference:
   - build_sdm
   - starts_with("calculate_")
   - pseudo_r2_brt
+  - calculate_directionality
 - title: "Create Outputs"
   desc: "Functions used to create figures, tables and output files"
 - contents:
@@ -48,3 +49,9 @@ reference:
   - save_auc_brt
   - save_tss_brt
   - sd_model_data
+- title: "Helper Functions"
+  desc: "Functions used within other functions to help with mundane tasks"
+- contents:
+  - build_preds_df
+  - prep_time_step_df
+  - prep_time_step_stack
