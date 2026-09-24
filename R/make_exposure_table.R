@@ -25,9 +25,6 @@ make_exposure_table <- function(
   variable_df,
   stock_key,
   table_dir
-  #model_metrics,
- # auc_col,
-  #model_confidence
 ) {
   
   attribute_names_clean <- c(variable_df$Long.Name, 'Total Exposure - All Variables', "Total Exposure - Important Variables")
@@ -37,22 +34,6 @@ make_exposure_table <- function(
                       attribute_names_raw)
   
   for (s in species) {
-    
-    #### this section is currently untested
-    #pull metrics
-    #auc
-   # mod.auc <- model_metrics[which(model_metrics$Common.Name == s), auc_col]
-
-   # #model_confidence
-  #  mc.mean <- model_confidence[
-   #   which(model_confidence$Species == s),
-  #    'meanConfidence'
-   # ]
-  #mc.sd <- model_confidence[
-   #   which(model_confidence$Species == s),
-    #  'sdConfidence'
-  #  ]
-    ####
 
     ###load data for each species
     #load variable weights
