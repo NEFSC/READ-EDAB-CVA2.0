@@ -7,7 +7,7 @@
 #' @param stocks spatVector of stock polygons to add to plot. Defaults to NULL meaning no stocks are available. 
 #' @param stock_key named vector of stock long names and abbreviations. Used to label timeseries. 
 #' @param fig_name name to save figure as. Figure will save to current working directory if desired directory is not included in the figure name
-#' @param metric changes figure range depending on which metric is being plotted. Must be 'exposure', 'sensitivity', or 'vulnerability' 
+#' @param metric changes color pallete depending on which metric is being plotted. Must be 'exposure', 'sensitivity', or 'vulnerability' 
 #' @param coastline shapefile used to plot land in model prediction plots
 #' @param bathymetry spatRaster file of bathymetry data; used to plot bathymetry in stock boundary plots
 
@@ -34,34 +34,41 @@ plot_total_map_timeseries <- function(map,
   
   grDevices::pdf(
     fig_name,
-    width = ifelse(!is.null(timeseries), 11, 6),
-    height = ifelse(!is.null(timeseries), 6, 11)
+    width = ifelse(!is.null(timeseries), 11, 8),
+    height = ifelse(!is.null(timeseries), 8, 8)
   )
   
   #if multi-panel plot is desired
   if(!is.null(timeseries)){
     #dynamic layout 
     if(is.null(stocks)){
-      layout(matrix(c(1,1,2,2,1,1,3,3,1,1,3,3), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(2,2,2,2))
+      layout(matrix(c(1,1,2,2,1,1,3,3,1,1,3,3), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
     } else {
       if(nrow(timeseries) <= 3){
-        layout(matrix(c(1,1,2,2,1,1,3,3,1,1,4,4), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(2,2,2,2))
+        layout(matrix(c(1,1,2,2,1,1,3,3,1,1,4,4), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
       }
       if(nrow(timeseries) > 3){
-        layout(matrix(c(1,1,2,2,1,1,3,4,1,1,5,6), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(2,2,2,2))
+        layout(matrix(c(1,1,2,2,1,1,3,4,1,1,5,6), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
       }
     } #end if stocks 
   } #end if timeseries
   
-  #map
+  pal <- switch(metric,
+                'exposure' = 'dense',
+                'sensitivity' = 'amp',
+                'vulnerability' = 'matter')
+  
+  # 1. Hardcode the color mapping directly into the raster object
+  terra::coltab(map) <- data.frame(
+    value = 1:4,
+    col = cmocean::cmocean(pal)(4)
+  )
+  
+  # 2. Plot the map (remove col, breaks, range, and type arguments)
   terra::plot(
     map,
-    type = 'classes',
-    levels = c("1", "2", "3", "4"),
-    range = c(1, 4),
-    col = cmocean::cmocean('matter')(4),
     ylim = c(35, 45),
-    legend = F,
+    legend = FALSE, # coltab handles the map colors; we will build the legend separately
     pax = list(cex.axis = 1.5),
     cex.lab = 1.25,
     xlab = expression('Longitude (' * degree * ')'),
@@ -82,21 +89,14 @@ plot_total_map_timeseries <- function(map,
   }
   
   #legend
-  terra::plot(
-    map,
-    type = 'classes',
-    levels = c("1", "2", "3", "4"),
-    range = c(1, 4),
-    col = cmocean::cmocean('matter')(4),
-    legend.only = TRUE, # <-- Draws only the legend elements
-    plg = list(
-      title = "Vulnerability",
-      title.cex = 1.5,
-      cex = 1.5,
-      x = -68,
-      y = 38,
-      legend = c("Low", "Moderate", "High", "Very High")
-    )
+  legend(
+    x = -69,
+    y = 38,
+    title = "Vulnerability",
+    legend = c("Low", "Moderate", "High", "Very High"),
+    fill = cmocean::cmocean(pal)(4),
+    cex = 1.5,
+    bty = "n" # Removes the box around the legend (optional)
   )
   
   #timeseries
