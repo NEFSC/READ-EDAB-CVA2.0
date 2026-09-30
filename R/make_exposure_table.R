@@ -1,6 +1,6 @@
 #' @title Make Exposure Summary Table
 #' @description
-#' Generates the summary exposure table with final factor scores, standard deviations, and distribution of spatial and temporal for each species, as well as final exposure scores. One table is generated per species and saved in the species folder. Requires directory to be set up per directions in the package documentation/manual.
+#' Generates the summary exposure table with final factor scores, standard deviations, and distribution of spatial scores for each species, as well as final exposure scores. One table is generated per species and saved in the species folder. Requires directory to be set up per directions in the package documentation/manual.
 #'
 #' @param species names of the species to plot. Must match folder name to pull correct data.
 #' @param forecast_release,hindcast_release MOM6 release codes for the (f)orecast and (h)indcasts used. Used to pull correct variable exposures

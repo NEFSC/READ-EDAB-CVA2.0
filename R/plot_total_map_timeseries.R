@@ -139,7 +139,7 @@ plot_total_map_timeseries <- function(map,
           xlab = "Month",
           yaxt = 'n',
           xaxt = 'n',
-          main = stock_key[names(stock_key) %in% rownames(totV)[x]]
+          main = stock_key[names(stock_key) %in% rownames(timeseries)[x]]
         )
         
         graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
