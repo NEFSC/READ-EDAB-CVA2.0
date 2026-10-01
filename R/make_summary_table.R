@@ -263,11 +263,11 @@ make_summary_table <- function(species,
         'Unknown'
       )
       
-      # A zero-width wrapper prevents the 45px column from stretching, 
-      # while the inner div spans the full 140px across the 3 columns.
+      # A zero-width wrapper prevents the column from stretching, 
+      # while the inner div spans the full 195px (65px * 3) across the columns.
       summary_text <- paste0(
         "<div style='width: 0px; overflow: visible;'>",
-        "<div style='width: 140px; text-align: center; white-space: nowrap;'>",
+        "<div style='width: 175px; text-align: center; white-space: nowrap;'>",
         sens_word, " (", s_sens, ") | ", round(s_cert, 2),
         "</div>",
         "</div>"
@@ -280,6 +280,50 @@ make_summary_table <- function(species,
     }
     
     tab_wide <- dplyr::bind_rows(tab_wide, summary_row)
+  }
+  
+  # 5.7 Add Categorical Text to Total Rows for Exposure and Vulnerability
+  if (metric %in% c("exposure", "vulnerability")) {
+    # Find rows that contain the word "Total"
+    total_rows <- grep("Total", tab_wide$Attribute.Name)
+    
+    for (k in ordered_stocks) {
+      exp_col <- paste0("expert.scores_", k)
+      
+      if (exp_col %in% colnames(tab_wide)) {
+        curr_vals <- tab_wide[[exp_col]][total_rows]
+        num_vals <- as.numeric(curr_vals)
+        
+        # Apply different thresholds depending on the metric
+        if (metric == "exposure") {
+          cats <- dplyr::case_when(
+            is.na(num_vals) ~ "",
+            num_vals < 1.5 ~ "Low",
+            num_vals < 2.5 ~ "Moderate",
+            num_vals < 3.5 ~ "High",
+            num_vals >= 3.5 ~ "Very High",
+            TRUE ~ ""
+          )
+        } else if (metric == "vulnerability") {
+          # CHANGE THESE NUMBERS to your correct 1-16 scale cutoffs
+          cats <- dplyr::case_when(
+            is.na(num_vals) ~ "",
+            num_vals < 3.5 ~ "Low",
+            num_vals < 7.0 ~ "Moderate",
+            num_vals < 10.5 ~ "High",
+            num_vals >= 10.5 ~ "Very High", 
+            TRUE ~ ""
+          )
+        }
+        
+        # Use <br> to force a clean line break so words like 'Moderate' fit in the column
+        tab_wide[[exp_col]][total_rows] <- ifelse(
+          is.na(num_vals),
+          curr_vals,
+          paste0(cats, "<br>(", curr_vals, ")")
+        )
+      }
+    }
   }
   
   # ---------------------------------------------------------
@@ -311,6 +355,11 @@ make_summary_table <- function(species,
   for (k in ordered_stocks) {
     # If a species has no stocks (NA or empty string), skip the spanner entirely
     if (is.na(k) || k == "" || k == "None") {
+      next
+    }
+    
+    # SKIP SPANNER if only 1 stock is present and the metric is exposure/vulnerability
+    if (length(ordered_stocks) == 1 && metric %in% c("exposure", "vulnerability")) {
       next
     }
     
@@ -360,7 +409,7 @@ make_summary_table <- function(species,
     # Force text wrapping by constraining column widths
     gt::cols_width(
       Attribute.Name ~ gt::px(220),
-      gt::starts_with("expert.scores") ~ gt::px(55),
+      gt::starts_with("expert.scores") ~ gt::px(65),
       gt::starts_with("data_quality") ~ gt::px(55),
       gt::starts_with("p_") ~ gt::px(55) # Reduced from 90
     ) %>%
