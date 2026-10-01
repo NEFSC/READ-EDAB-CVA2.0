@@ -19,14 +19,20 @@ plot_variable_radars <- function(variable_importance, fig_name){
     add = TRUE
   )
   
+  if(is.null(dim(variable_importance))){
+    np = 1
+  } else {
+    np = nrow(variable_importance)
+  }
+  
   variable_importance <- rbind(rep(1, ifelse(is.null(dim(variable_importance)), length(variable_importance), ncol(variable_importance))), 
                                rep(0, ifelse(is.null(dim(variable_importance)), length(variable_importance), ncol(variable_importance))), 
                                variable_importance)
                                
-  if(nrow(variable_importance) == 3){
+  if(np == 1){
     col = 'grey'
   } else {
-    col = 
+    col = RColorBrewer::brewer.pal(n = np, 'Set1')
   }                  
   
   grDevices::pdf(
@@ -37,9 +43,24 @@ plot_variable_radars <- function(variable_importance, fig_name){
   
   fmsb::radarchart(
     as.data.frame(variable_importance),
-    pfcol = scales::alpha('grey', 0.5),
-    seg = 10
+    pfcol = scales::alpha(col,0.2),
+    seg = 10,
+    pty = 15:(15+(np-1)),
+    pcol = scales::alpha(col, 1),
+    plty = 1,
+    vlcex = 1.25
   )
+  
+  if(np > 1){
+    graphics::legend(
+      'bottomright',
+      legend = rownames(variable_importance)[3:nrow(variable_importance)],
+      lty = 1,
+      col = col,
+      pch = 15:(15+(np-1)),
+      bty = 'n'
+    )
+  }
   
   grDevices::dev.off()
 }
