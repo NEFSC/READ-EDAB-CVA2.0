@@ -1,4 +1,4 @@
-#' @title Make Vulnerability Plots
+#' @title Make Total Vulnerability Plots
 #' @description
 #' Produces total Vulnerability maps and time series 
 #'
