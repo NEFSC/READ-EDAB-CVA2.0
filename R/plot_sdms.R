@@ -18,6 +18,7 @@ plot_sdms <- function(sdm, obs = NULL,
                                       month_col = NULL,
                                       stocks = NULL,  
                                       fig_name,
+                                      hist_name,
                                       type,
                                       coastline, 
                                       bathymetry){
@@ -69,15 +70,50 @@ plot_sdms <- function(sdm, obs = NULL,
       #set color pallete & range
       pal = 'balance'
       rng = c(-1,1)
+      
+      ##bonus residual histogram
+      grDevices::pdf(
+        hist_name,
+        width = 6,
+        height = 6
+      )
+      graphics::hist(
+        preds$residuals,
+        main = '',
+        xlab = 'Residuals',
+        xlim = c(-1, 1)
+      )
+      graphics::abline(
+        v = mean(preds$residuals, na.rm = T),
+        lty = 2,
+        col = 'red4'
+      )
+      graphics::legend(
+        'topleft',
+        legend = paste0(
+          'Mean (+/- SD) =\n',
+          round(mean(preds$residuals, na.rm = T), 2),
+          ' +/- ',
+          round(stats::sd(preds$residuals, na.rm = T), 2)
+        ),
+        bty = 'n'
+      )
+      grDevices::dev.off()
     }
   }
   
   grDevices::pdf(
     fig_name,
-    width = 11,
-    height = 8
+    width = 8,
+    height = 11
   )
-  
+  # Save old par settings
+  oldpar <- graphics::par(no.readonly = TRUE)
+  graphics::par(
+    mfrow = c(4, 3),
+    mar = c(2.2, 2.2, 1, 0.5),
+    oma = c(0, 0, 0, 0)
+  )
   for (y in 1:terra::nlyr(rast)) {
     #get full name of variable
     
@@ -135,6 +171,6 @@ plot_sdms <- function(sdm, obs = NULL,
       )
     )
   }
-  
+  graphics::par(oldpar)
   grDevices::dev.off()
 }
