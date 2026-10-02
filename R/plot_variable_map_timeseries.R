@@ -110,6 +110,7 @@ plot_variable_map_timeseries <- function(data,
     }
     
   } else { #end if spatRaster
+    #if data is not a spatraster, then its a matrix or list of matrices
     message('Plotting Variable Exposure Timeseries')
     if (!inherits(data, 'list')) {
         #if vecExp is NOT a list and is just a single matrix, just plot a single line
@@ -120,6 +121,7 @@ plot_variable_map_timeseries <- function(data,
       } else {
         graphics::par(mfrow = c(3, 3), mar = c(4, 3, 2, 2))
       }
+    
     
     for (y in 1:nrow(data)) {
       #get full name of variable
@@ -139,10 +141,17 @@ plot_variable_map_timeseries <- function(data,
           xaxt = 'n',
           main = variable_df$Long.Name[i]
         )
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2, cex.lab = 0.5)
+        graphics::axis(
+          2,
+          at = 1:4,
+          labels = c('L', "M", "H", "VH"),
+          las = 2,
+          cex.lab = 1.25
+        )
       } 
       
     } else {
-        #if data is not a spatraster, then its a matrix or list of matrices
       #if it is a list, then exposure is calculated within multiple stocks
       
       #set up panels according to the number of variables
