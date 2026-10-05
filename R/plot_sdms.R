@@ -49,7 +49,7 @@ plot_sdms <- function(sdm, obs = NULL,
       #convert to spatRaster and average
       template_r <- sdm[[1]]
       #avg residuals
-      avgR <- vector(mode = 'list', length = unique(pres[,time_col])) #going by the number of unique values in the desired time_col
+      avgR <- vector(mode = 'list', length = length(unique(preds[,time_col]))) #going by the number of unique values in the desired time_col
       for (y in 1:length(avgR)) {
         sub <- preds[preds[,time_col] == y, ]
         pts <- terra::vect(
@@ -162,11 +162,11 @@ plot_sdms <- function(sdm, obs = NULL,
       legend.only = TRUE, # <-- Draws only the legend elements
       plg = list(
         title = ifelse(type == 'model', 'Mean Probability\nof Occurance', 'Mean Residuals'),
-        title.cex = 1.5,
-        cex = 1.5,
+        title.cex = 1.25,
+        cex = 1.25,
         horizontal = TRUE,
         x = -73.5,
-        y = 37,
+        y = 36.5,
         at = tks,
         n = 4,
         # 1. Scale the size of the color bar itself (width, height)
