@@ -15,10 +15,11 @@
 #'
 plot_sdms <- function(sdm, obs = NULL, 
                                       xy_col = NULL,
-                                      month_col = NULL,
+                                      time_col = NULL,
+                      panel_names = month.abb,
                                       stocks = NULL,  
                                       fig_name,
-                                      hist_name,
+                                      hist_name = NULL,
                                       type,
                                       coastline, 
                                       bathymetry){
@@ -35,6 +36,7 @@ plot_sdms <- function(sdm, obs = NULL,
     rast <- sdm
     pal = 'rain'
     rng = c(0,1)
+    tks = c(0, 0.25, 0.5, 0.75, 1)
   } else { #if type == 'residuals'
     if(inherits(obs, 'SpatRaster')){ #if obs is already a spatraster, just substract
       rast <- obs - sdm
@@ -47,9 +49,9 @@ plot_sdms <- function(sdm, obs = NULL,
       #convert to spatRaster and average
       template_r <- sdm[[1]]
       #avg residuals
-      avgR <- vector(mode = 'list', length = 12) #again assuming monthly timesteps here
-      for (y in 1:12) {
-        sub <- preds[preds[,month_col] == y, ]
+      avgR <- vector(mode = 'list', length = unique(pres[,time_col])) #going by the number of unique values in the desired time_col
+      for (y in 1:length(avgR)) {
+        sub <- preds[preds[,time_col] == y, ]
         pts <- terra::vect(
           sub,
           geom = xy_col,
@@ -63,13 +65,14 @@ plot_sdms <- function(sdm, obs = NULL,
         )
       } #end for
       avgR <- terra::rast(avgR)
-      names(avgR) <- month.abb
+      names(avgR) <- panel_names
       
       rast <- avgR
     
       #set color pallete & range
       pal = 'balance'
       rng = c(-1,1)
+      tks = c(-1, -0.5, 0, 0.5, 1)
       
       ##bonus residual histogram
       grDevices::pdf(
@@ -108,7 +111,7 @@ plot_sdms <- function(sdm, obs = NULL,
     height = 11
   )
   # Save old par settings
-  oldpar <- graphics::par(no.readonly = TRUE)
+ # oldpar <- graphics::par(no.readonly = TRUE)
   graphics::par(
     mfrow = c(4, 3),
     mar = c(2.2, 2.2, 1, 0.5),
@@ -130,7 +133,7 @@ plot_sdms <- function(sdm, obs = NULL,
       legend = FALSE,
       xlab = expression('Longitude (' * degree * ')'),
       ylab = expression('Latitude (' * degree * ')'),
-      main = month.abb[y],
+      main = panel_names[y],
       pax = list(cex.axis = 1.5, xat = seq(-80, -60, by = 2)),
       cex.lab = 1.25
     )
@@ -142,7 +145,7 @@ plot_sdms <- function(sdm, obs = NULL,
       levels = c(-1000, -100, -50),
       add = T
     )
-    plot(coastline['id'], col = 'grey', add = T)
+    terra::plot(coastline['id'], col = 'grey', add = T)
     if (!is.null(stocks)) {
       terra::plot(stocks, add = T, lwd = 2)
     }
@@ -164,13 +167,13 @@ plot_sdms <- function(sdm, obs = NULL,
         horizontal = TRUE,
         x = -73.5,
         y = 37,
-        at = 1:4,
+        at = tks,
         n = 4,
         # 1. Scale the size of the color bar itself (width, height)
         size = c(1, 2.5)
       )
     )
   }
-  graphics::par(oldpar)
+  #graphics::par(oldpar)
   grDevices::dev.off()
 }
