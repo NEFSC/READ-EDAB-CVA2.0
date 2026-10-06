@@ -34,18 +34,18 @@ get_kde <- function(r_single, level) {
   cum_sum[ord] <- cumsum(valid_vals[ord])
 
   # 5. Build cumulative raster initialized to NA
-  r_cum <- rast(r_single)
-  values(r_cum) <- NA
+  r_cum <- terra::rast(r_single)
+  terra::values(r_cum) <- NA
   r_cum[valid_idx] <- cum_sum
 
   # 6. Mask cells that fall within the threshold LEVEL
   r_mask <- r_cum <= level
 
   # CRITICAL: Mask out original NA regions (e.g. ocean) so they remain NA
-  r_mask <- mask(r_mask, r_single)
+  r_mask <- terra::mask(r_mask, r_single)
 
   # 7. Polygonize keeping ONLY the TRUE (1) foreground cells
-  poly <- as.polygons(r_mask, values = TRUE)
+  poly <- terra::as.polygons(r_mask, values = TRUE)
 
   # Keep only the true interior polygon region
   poly <- poly[!is.na(poly[[1]]) & poly[[1]] == 1, ]

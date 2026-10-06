@@ -12,16 +12,16 @@
 #'@export
 #'
 
-analyze_distribution_dynamics <- function(
+calculate_distribution_shift <- function(
   r_stack,
   trailing_p = 0.05,
   leading_p = 0.95,
   core_p = 0.5,
-  all_p = 0.95,
+  range_p = 0.95,
   poly_dir = NULL
 ) {
   # 1. Extract coordinates and cell density values
-  xy <- terra::xyFromCell(r_stack, 1:ncell(r_stack))
+  xy <- terra::xyFromCell(r_stack, 1:terra::ncell(r_stack))
   vals_mat <- terra::values(r_stack)
   vals_mat[is.na(vals_mat)] <- 0
 
@@ -58,11 +58,11 @@ analyze_distribution_dynamics <- function(
 
     # Calculate exact KDEs
     kde_core <- get_kde(r_single, level = core_p)
-    kde_all <- get_kde(r_single, level = all_p)
+    kde_all <- get_kde(r_single, level = range_p)
 
     #Calculate KDE areas
-    kde_core_area <- sum(expanse(kde_core, unit = 'km'))
-    kde_all_area <- sum(expanse(kde_all, unit = 'km'))
+    kde_core_area <- sum(terra::expanse(kde_core, unit = 'km'))
+    kde_all_area <- sum(terra::expanse(kde_all, unit = 'km'))
 
     results_list[[i]] <- data.frame(
       layer = layer_names[i],
@@ -88,15 +88,15 @@ analyze_distribution_dynamics <- function(
   df$centroid_dy <- c(diff(df$centroid_y), NA)
 
   # Convert coordinate centroids to a SpatVector point object
-  centroid_pts <- vect(
+  centroid_pts <- terra::vect(
     as.matrix(df[, c("centroid_x", "centroid_y")]),
     type = "points",
-    crs = crs(r_stack)
+    crs = terra::crs(r_stack)
   )
 
   # Calculate true geodesic distance (in meters) between consecutive points
   step_dists_m <- sapply(1:(nrow(df) - 1), function(i) {
-    distance(centroid_pts[i], centroid_pts[i + 1])
+    terra::distance(centroid_pts[i], centroid_pts[i + 1])
   })
 
   # Add to data frame in kilometers
@@ -108,7 +108,7 @@ analyze_distribution_dynamics <- function(
 
   # 4. Cumulative & Net Displacement relative to baseline (Time 1)
   total_dists_m <- sapply(1:(nrow(df) - 1), function(i) {
-    distance(centroid_pts[1], centroid_pts[i])
+    terra::distance(centroid_pts[1], centroid_pts[i])
   })
   df$total_displacement_km <- c(total_dists_m / 1000, NA)
 
@@ -129,7 +129,7 @@ analyze_distribution_dynamics <- function(
   if (!is.null(poly_dir) && !is.null(all_polygons)) {
     terra::writeVector(
       all_polygons,
-      filename = paste0(poly_dir, '/kde_all_', all_p * 100, '.gpkg'),
+      filename = paste0(poly_dir, '/kde_all_', range_p * 100, '.gpkg'),
       overwrite = TRUE
     )
     terra::writeVector(
