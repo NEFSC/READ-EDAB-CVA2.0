@@ -5,7 +5,7 @@
 #' @param r_stack a spatraster of sdm results
 #' @param trailing_p,leading_p probabilities for leading and trailing edges; defaults to 5% and 95%
 #' @param core_p,range_p probabilities associated with desired core and range KDEs; defaults to 50% and 95% respectively
-#' @param poly_dir location to save kde polygons
+#' @param poly_dir file path to save kde polygons as
 #'
 #' @return a list containing a data.frame of metrics where the number of rows is equal to the number of timestamps, the core kde polygons, and the range kde polygons
 #'
@@ -83,10 +83,6 @@ calculate_distribution_shift <- function(
 
   df <- do.call(rbind, results_list)
 
-  # 3. Calculate step-by-step centroid displacement (t to t+1)
-  df$centroid_dx <- c(diff(df$centroid_x), NA)
-  df$centroid_dy <- c(diff(df$centroid_y), NA)
-
   # Convert coordinate centroids to a SpatVector point object
   centroid_pts <- terra::vect(
     as.matrix(df[, c("centroid_x", "centroid_y")]),
@@ -100,53 +96,75 @@ calculate_distribution_shift <- function(
   })
 
   # Add to data frame in kilometers
-  df$centroid_step_dist_km <- c(step_dists_m / 1000, NA)
+  df$centroid_step_dist_km <- c(NA, step_dists_m / 1000)
 
   # Compass bearing (0° N, 90° E, 180° S, 270° W)
-  bearing_rad <- c(atan2(diff(df$centroid_x), diff(df$centroid_y)), NA)
+  bearing_rad <- c(NA, atan2(diff(df$centroid_x), diff(df$centroid_y)))
   df$centroid_bearing_deg <- (bearing_rad * 180 / pi) %% 360
 
   # 4. Cumulative & Net Displacement relative to baseline (Time 1)
   total_dists_m <- sapply(1:(nrow(df) - 1), function(i) {
     terra::distance(centroid_pts[1], centroid_pts[i])
   })
-  df$total_displacement_km <- c(total_dists_m / 1000, NA)
+  df$total_displacement_km <- c(NA, total_dists_m / 1000)
 
   step_dists <- df$centroid_step_dist_km[!is.na(df$centroid_step_dist_km)]
   df$cum_distance_traveled <- c(0, cumsum(step_dists_m / 1000))
 
   # 5. Boundary & Area shifts
-  df$leading_y_shift <- c(diff(df$leading_edge_y), NA)
-  df$trailing_y_shift <- c(diff(df$trailing_edge_y), NA)
-  df$area_core_change <- c(diff(df$kde_core_area), NA)
-  df$area_all_change <- c(diff(df$kde_all_area), NA)
+  df$range_y_deg <- df$leading_edge_y - df$trailing_edge_y
+  df$range_x_deg <- df$leading_edge_x - df$trailing_edge_x
+  
+  df$area_core_change <- c(NA, diff(df$kde_core_area))
+  df$area_all_change <- c(NA, diff(df$kde_all_area))
+
 
   # Combine polygons into a single SpatVector
   core_polygons <- do.call(rbind, core_poly_list)
   all_polygons <- do.call(rbind, all_poly_list)
-
+  
   # Save polygons to disk if path is provided
   if (!is.null(poly_dir) && !is.null(all_polygons)) {
-    terra::writeVector(
-      all_polygons,
-      filename = paste0(poly_dir, '/kde_all_', range_p * 100, '.gpkg'),
-      overwrite = TRUE
-    )
-    terra::writeVector(
-      core_polygons,
-      filename = paste0(poly_dir, '/kde_core_', core_p * 100, '.gpkg'),
-      overwrite = TRUE
-    )
-    cat(sprintf(
-      "Successfully saved 50%% and 95%% KDE polygons to: %s\n",
-      poly_dir
-    ))
+    
+    #check for poly_dir first 
+    if(!dir.exists(poly_dir)){
+      dir.create(poly_dir)
+    }
+    
+    # 1. Define final target network file paths
+    net_all_path  <- paste0(poly_dir, '/kde_all_', range_p*100, '.gpkg')
+    net_core_path <- paste0(poly_dir, '/kde_core_', core_p*100, '.gpkg')
+    
+    # 2. Define temporary file paths localized INSIDE the RStudio container
+    # tempfile() safely creates unique filenames with your exact required extension
+    temp_all_path  <- tempfile(pattern = "all_poly_", fileext = '.gpkg')
+    temp_core_path <- tempfile(pattern = "core_poly_", fileext = '.gpkg')
+    
+    # 3. Write locally to the container's fast disk to bypass network file locking
+    terra::writeVector(all_polygons, filename = temp_all_path, overwrite = TRUE)
+    terra::writeVector(core_polygons, filename = temp_core_path, overwrite = TRUE)
+    
+    # 4. Stream the finished, locked-in files over the network mount 
+    file.copy(from = temp_all_path, to = net_all_path, overwrite = TRUE)
+    file.copy(from = temp_core_path, to = net_core_path, overwrite = TRUE)
+    
+    # 5. Clean up the container's temporary space
+    file.remove(temp_all_path)
+    file.remove(temp_core_path)
+    
+    cat(sprintf("Successfully saved 50%% and 95%% KDE polygons to: %s\n", poly_dir))
   }
+  
 
   # Return BOTH the summary dataframe and the SpatVector polygon object
-  return(list(
+  return(
+    if(!is.null(poly_dir)){
+    list(
     metrics = df,
     core_polygons = core_polygons,
     all_polygons = all_polygons
-  ))
+  )
+      } else {
+        df
+      })
 }
