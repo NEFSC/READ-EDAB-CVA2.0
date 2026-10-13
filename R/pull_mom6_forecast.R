@@ -8,7 +8,8 @@
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
-#' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. For forecast only
+#' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. 
+#' @param chunk_size number of timestamps to pull at once to avoid OpenDap data limits
 #'
 #' @return a spatRaster of data associated with the requested variable, averaged across the 10 ensemble members
 #'
@@ -21,7 +22,8 @@ pull_mom6_forecast <- function(
   of = 'monthly',
   bounds = c(-78, -65, 35, 45),
   release,
-  init
+  init,
+  chunk_size = 50
 ) {
   vars <- jsonlite::fromJSON(var_url) #turn json file into a list
 
@@ -52,7 +54,7 @@ pull_mom6_forecast <- function(
   }
 
   #load url with netcdf to account for ensemble members
-  var <- NULL
+  
   r <- ncdf4::nc_open(url[ind])
   #get lon/lat first for subsetting
   lon <- ncdf4::ncvar_get(r, "lon")
@@ -63,18 +65,27 @@ pull_mom6_forecast <- function(
   latInd <- which(lat >= bounds[3] & lat <= bounds[4])
 
   tm <- ncdf4::ncvar_get(r, 'lead')
+  var <- NULL
+  
   for (m in 1:10) {
-    #vm <- NULL
-    # for (z in 1:length(tm)) {
-    v <- ncdf4::ncvar_get(
-      r,
-      names(r$var),
-      start = c(lonInd[1], latInd[1], 1, m),
-      count = c(length(lonInd), length(latInd), length(tm), 1)
-    )
-    #vm <- abind::abind(vm, v, along = 3)
-    #} #end z
-    var <- abind::abind(var, v, along = 4)
+    vm <- NULL
+    for (start_t in seq(1, length(tm), by = chunk_size)) {
+      # Calculate how many time steps to pull in this specific chunk
+      # (Prevents overshooting the end of the time series)
+      count_t <- min(chunk_size, length(tm) - start_t + 1)
+      
+      # Pull the chunk
+      v_chunk <- ncdf4::ncvar_get(
+        r,
+        names(r$var),
+        start = c(lonInd[1], latInd[1], start_t, m),
+        count = c(length(lonInd), length(latInd), count_t, 1)
+      )
+      
+      # Bind the chunk along the 3rd dimension (Time)
+      vm <- abind::abind(vm, v_chunk, along = 3)
+    }
+    var <- abind::abind(var, vm, along = 4)
   } #end m
   ncdf4::nc_close(r)
 
