@@ -8,6 +8,7 @@
 #' @param static_variables spatRaster containing the static variables used in model.
 #' @param xy_col a vector with a length of 2 indicating the longitude and latitude column names
 #' @param month_col,year_col column names for month and year columns respectively.
+#' @param threshold upper and lower bound limit to define "bad" data. Defaults to c(-9999, 9999).
 #'
 #' @return a spatRaster with a number of layers equal to the number of layers in \code{rasts} + number of layesr in \code{static_variables} + 4 (lon, lat, month, year)
 #'
@@ -22,7 +23,8 @@ prep_time_step_stack <- function(
   static_variables,
   month_col,
   year_col,
-  xy_col
+  xy_col,
+  threshold = c(-9999, 9999)
 ) {
   # 1. Get the month/year name of layer x
   lyr_name <- names(rasts[[1]])[x] # Cleaner: no nested [[1]] needed
@@ -35,8 +37,24 @@ prep_time_step_stack <- function(
   rYear <- terra::rast(template_r, vals = yr)
 
   # 3. Pull layer 'x' from every SpatRaster in your 'rasts' list
-  # This dynamically grabs the same month across all your predictor variables
   dynamic_lyrs <- lapply(rasts, function(r) r[[x]])
+  dynamic_stack <- terra::rast(dynamic_lyrs)
+  
+  # --- NEW QUALITY CHECK STEP ---
+  # Calculate min and max for all layers in this timestep
+  layer_ranges <- terra::minmax(dynamic_stack)
+  
+  # Check for Infinite values or values outside your acceptable threshold
+  is_infinite <- any(is.infinite(layer_ranges))
+  is_extreme <- any(layer_ranges["max", ] > threshold[2], na.rm = TRUE) | 
+    any(layer_ranges["min", ] < threshold[1], na.rm = TRUE)
+  
+  if (is_infinite | is_extreme) {
+    message(paste("Corrupted data detected at timestep", lyr_name, "- converting dynamic predictors to NA."))
+    # Replace the dynamic stack with an identically structured stack of NAs
+    dynamic_stack <- terra::init(dynamic_stack, NA)
+  }
+  # ------------------------------
 
   # 4. Force the static variables to align perfectly with your dynamic data grid
   # This matches extents, projections, and resolutions exactly
@@ -52,7 +70,7 @@ prep_time_step_stack <- function(
     rlat,
     rMonth,
     rYear,
-    terra::rast(dynamic_lyrs),
+    dynamic_stack,
     static_aligned
   )
   names(sr_terra)[1:4] <- c(xy_col, month_col, year_col)

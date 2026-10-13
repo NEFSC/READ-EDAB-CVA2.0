@@ -140,6 +140,7 @@ make_sdm_predictions <- function(
       year_col,
       xy_col
     )
+#if there is bad data, the dynamic variables in sr-terra will be NA; the function specific predict functions should be able to handle this
 
     # Model-specific executions
     if (model == 'gam') {
