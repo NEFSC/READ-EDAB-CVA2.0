@@ -40,22 +40,27 @@ prep_time_step_stack <- function(
   dynamic_lyrs <- lapply(rasts, function(r) r[[x]])
   dynamic_stack <- terra::rast(dynamic_lyrs)
   
-  # --- NEW QUALITY CHECK STEP ---
-  # Calculate min and max for all layers in this timestep
+  # 4. Layer-specific Data Quality Check
   layer_ranges <- terra::minmax(dynamic_stack)
   
-  # Check for Infinite values or values outside your acceptable threshold
-  is_infinite <- any(is.infinite(layer_ranges))
-  is_extreme <- any(layer_ranges["max", ] > threshold[2], na.rm = TRUE) | 
-    any(layer_ranges["min", ] < threshold[1], na.rm = TRUE)
+  # Evaluate conditions per layer
+  is_inf <- is.infinite(layer_ranges["min", ]) | is.infinite(layer_ranges["max", ])
+  is_extreme <- layer_ranges["max", ] > threshold[2] | layer_ranges["min", ] < threshold[1]
   
-  if (is_infinite | is_extreme) {
-    message(paste("Corrupted data detected at timestep", lyr_name, "- converting dynamic predictors to NA."))
-    # Replace the dynamic stack with an identically structured stack of NAs
-    dynamic_stack <- terra::init(dynamic_stack, NA)
+  # Identify indices of layers that fail the check (using which() safely handles NAs)
+  bad_idx <- which(is_inf | is_extreme)
+  
+  if (length(bad_idx) > 0) {
+    bad_names <- names(dynamic_stack)[bad_idx]
+    message(paste("Corrupted data detected in variable(s):", paste(bad_names, collapse = ", "), 
+                  "at timestep", lyr_name, "- converting only these layers to NA."))
+    
+    # Replace ONLY the corrupted layers with NA
+    for (i in bad_idx) {
+      dynamic_stack[[i]] <- terra::init(dynamic_stack[[i]], NA)
+    }
   }
-  # ------------------------------
-
+  
   # 4. Force the static variables to align perfectly with your dynamic data grid
   # This matches extents, projections, and resolutions exactly
   static_aligned <- terra::resample(
