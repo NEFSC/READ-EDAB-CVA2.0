@@ -62,7 +62,7 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                
                text(-76, 44, paste(month.abb[lubridate::month(metrics$timestamp[i])], lubridate::year(metrics$timestamp[i]), sep = ' '), cex = 4)
                
-               add_legend(x = -71, y = 39, pch = c(NA, NA, 18), lty = c(1,3,NA), col = c('black', 'black', 'green4'), legend = c("Core Habitat (50% KDE)", 'Total Range (95% KDE)', "Weighted Centroid"), bty = 'n', cex = 2.5)
+               terra::add_legend(x = -71, y = 39, pch = c(NA, NA, 18), lty = c(1,3,NA), col = c('black', 'black', 'green4'), legend = c("Core Habitat (50% KDE)", 'Total Range (95% KDE)', "Weighted Centroid"), bty = 'n', cex = 2.5)
                
                #change in leading edges
                #latitude

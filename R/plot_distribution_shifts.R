@@ -22,6 +22,14 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     tm_range <- range(hindcast_timeseries$timestamp,na.rm = T)
   }
   
+  # Failsafe: If the function crashes, forcefully close any open PDFs
+  on.exit(
+    while (grDevices::dev.cur() > 1) {
+      grDevices::dev.off()
+    },
+    add = TRUE
+  )
+  
   plot_shift <- function(){
     
     ###set up layout
@@ -75,7 +83,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     m <- lm(kde_core_area ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05){
+    if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
       lines(hindcast_timeseries$timestamp, y_pred/1000, col = "firebrick", lty = 2, lwd = 2)
     }
@@ -88,7 +96,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       m <- lm(kde_core_area ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-      if(p_val <= 0.05){
+      if(p_val <= 0.05 & !is.na(p_val)){
         y_pred <- predict(m)
         lines(forecast_timeseries$timestamp, y_pred/1000, col = "blue4", lty = 2, lwd = 2)
       }
@@ -107,7 +115,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     m <- lm(kde_all_area ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05){
+    if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
       lines(hindcast_timeseries$timestamp, y_pred/1000, col = "firebrick", lty = 2, lwd = 2)
     }
@@ -121,7 +129,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       m <- lm(kde_all_area ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-      if(p_val <= 0.05){
+      if(p_val <= 0.05 & !is.na(p_val)){
         y_pred <- predict(m)
         lines(forecast_timeseries$timestamp, y_pred/1000, col = "blue4", lty = 2, lwd = 2)
       }
@@ -141,7 +149,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     m <- lm(range_y_deg ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05){
+    if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
       lines(hindcast_timeseries$timestamp, y_pred, col = "firebrick", lty = 2, lwd = 2)
     }
@@ -171,7 +179,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     m <- lm(range_x_deg ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05){
+    if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
       lines(hindcast_timeseries$timestamp, y_pred, col = "firebrick", lty = 2, lwd = 2)
     }
@@ -183,7 +191,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       m <- lm(range_x_deg ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-      if(p_val <= 0.05){
+      if(p_val <= 0.05 & !is.na(p_val)){
         y_pred <- predict(m)
         lines(forecast_timeseries$timestamp, y_pred, col = "blue4", lty = 2, lwd = 2)
       }
