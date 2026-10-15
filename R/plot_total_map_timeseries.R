@@ -32,117 +32,88 @@ plot_total_map_timeseries <- function(map,
     add = TRUE
   )
   
-  grDevices::pdf(
-    fig_name,
-    width = ifelse(!is.null(timeseries), 11, 8),
-    height = ifelse(!is.null(timeseries), 8, 8)
-  )
-  
-  #if multi-panel plot is desired
-  if(!is.null(timeseries)){
-    #dynamic layout 
-    if(is.null(stocks)){
-      layout(matrix(c(1,1,2,2,1,1,3,3,1,1,3,3), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
-    } else {
-      if(nrow(timeseries) <= 3){
-        layout(matrix(c(1,1,2,2,1,1,3,3,1,1,4,4), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
-      }
-      if(nrow(timeseries) > 3){
-        layout(matrix(c(1,1,2,2,1,1,3,4,1,1,5,6), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
-      }
-    } #end if stocks 
-  } #end if timeseries
-  
-  pal <- switch(metric,
-                'exposure' = 'dense',
-                'sensitivity' = 'amp',
-                'vulnerability' = 'matter')
-  
-  # 1. Hardcode the color mapping directly into the raster object
-  terra::coltab(map) <- data.frame(
-    value = 1:4,
-    col = cmocean::cmocean(pal)(4)
-  )
-  
-  # 2. Plot the map (remove col, breaks, range, and type arguments)
-  terra::plot(
-    map,
-    ylim = c(35, 45),
-    legend = FALSE, # coltab handles the map colors; we will build the legend separately
-    pax = list(cex.axis = 1.5),
-    cex.lab = 1.25,
-    xlab = expression('Longitude (' * degree * ')'),
-    ylab = expression('Latitude (' * degree * ')'),
-    mar = c(3, 3, 1.5, 0.5)
-  )
-  
-  #add bathy contours, coastline, and stocks if necessary
-  terra::contour(
-    bathymetry,
-    filled = F,
-    levels = c(-1000, -100, -50),
-    add = T
-  )
-  terra::plot(coastline['id'], col = 'grey', add = T)
-  if (!is.null(stocks)) {
-    terra::plot(stocks, add = T, lwd = 2)
-  }
-  
-  #legend
-  legend(
-    x = -69,
-    y = 38,
-    title = switch(metric,
-                   'exposure' = 'Exposure',
-                   'sensitivity' = 'Sensitivity',
-                   'vulnerability' = 'Vulnerability'),
-    legend = c("Low", "Moderate", "High", "Very High"),
-    fill = cmocean::cmocean(pal)(4),
-    cex = 1.5,
-    bty = "n" # Removes the box around the legend (optional)
-  )
-  
-  #timeseries
-  if(!is.null(timeseries)){
-    if(is.null(stocks)){
-      #plot vector
-      plot(
-        timeseries,
-        t = 'b',
-        lty = 8,
-        lwd = 1.5,
-        pch = 19,
-        ylim = c(1, 4),
-        ylab = "",
-        xlab = "Month",
-        yaxt = 'n',
-        xaxt = 'n',
-        main = 'Range'
-      )
-      
-      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
-      graphics::axis(
-        2,
-        at = 1:4,
-        labels = c('Low', "Moderate", "High", "Very\nHigh"),
-        las = 2,
-        cex.lab = 0.75
-      )
-    } else {
-      for(x in 1:nrow(timeseries)){
+  plot_total <- function(){
+    
+    #if multi-panel plot is desired
+    if(!is.null(timeseries)){
+      #dynamic layout 
+      if(is.null(stocks)){
+        layout(matrix(c(1,1,2,2,1,1,3,3,1,1,3,3), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
+      } else {
+        if(nrow(timeseries) <= 3){
+          layout(matrix(c(1,1,2,2,1,1,3,3,1,1,4,4), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
+        }
+        if(nrow(timeseries) > 3){
+          layout(matrix(c(1,1,2,2,1,1,3,4,1,1,5,6), byrow = T, nrow = 3, ncol = 4), height = c(2,2,2), width = c(3,3,2,2))
+        }
+      } #end if stocks 
+    } #end if timeseries
+    
+    pal <- switch(metric,
+                  'exposure' = 'dense',
+                  'sensitivity' = 'amp',
+                  'vulnerability' = 'matter')
+    
+    # 1. Hardcode the color mapping directly into the raster object
+    terra::coltab(map) <- data.frame(
+      value = 1:4,
+      col = cmocean::cmocean(pal)(4)
+    )
+    
+    # 2. Plot the map (remove col, breaks, range, and type arguments)
+    terra::plot(
+      map,
+      ylim = c(35, 45),
+      legend = FALSE, # coltab handles the map colors; we will build the legend separately
+      pax = list(cex.axis = 1.5),
+      cex.lab = 1.25,
+      xlab = expression('Longitude (' * degree * ')'),
+      ylab = expression('Latitude (' * degree * ')'),
+      mar = c(3, 3, 1.5, 0.5)
+    )
+    
+    #add bathy contours, coastline, and stocks if necessary
+    terra::contour(
+      bathymetry,
+      filled = F,
+      levels = c(-1000, -100, -50),
+      add = T
+    )
+    terra::plot(coastline['id'], col = 'grey', add = T)
+    if (!is.null(stocks)) {
+      terra::plot(stocks, add = T, lwd = 2)
+    }
+    
+    #legend
+    legend(
+      x = -69,
+      y = 38,
+      title = switch(metric,
+                     'exposure' = 'Exposure',
+                     'sensitivity' = 'Sensitivity',
+                     'vulnerability' = 'Vulnerability'),
+      legend = c("Low", "Moderate", "High", "Very High"),
+      fill = cmocean::cmocean(pal)(4),
+      cex = 1.5,
+      bty = "n" # Removes the box around the legend (optional)
+    )
+    
+    #timeseries
+    if(!is.null(timeseries)){
+      if(is.null(stocks)){
         #plot vector
         plot(
-          timeseries[x,],
+          timeseries,
           t = 'b',
-          lty = 7+x,
+          lty = 8,
           lwd = 1.5,
-          pch = 18+x,
+          pch = 19,
           ylim = c(1, 4),
           ylab = "",
           xlab = "Month",
           yaxt = 'n',
           xaxt = 'n',
-          main = stock_key[names(stock_key) %in% rownames(timeseries)[x]]
+          main = 'Range'
         )
         
         graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
@@ -153,9 +124,52 @@ plot_total_map_timeseries <- function(map,
           las = 2,
           cex.lab = 0.75
         )
-      } #end x
-    } #end if stocks 
-  } #end if timeseries 
+      } else {
+        for(x in 1:nrow(timeseries)){
+          #plot vector
+          plot(
+            timeseries[x,],
+            t = 'b',
+            lty = 7+x,
+            lwd = 1.5,
+            pch = 18+x,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "Month",
+            yaxt = 'n',
+            xaxt = 'n',
+            main = stock_key[names(stock_key) %in% rownames(timeseries)[x]]
+          )
+          
+          graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+          graphics::axis(
+            2,
+            at = 1:4,
+            labels = c('Low', "Moderate", "High", "Very\nHigh"),
+            las = 2,
+            cex.lab = 0.75
+          )
+        } #end x
+      } #end if stocks 
+    } #end if timeseries 
+    
+  }
   
+  grDevices::pdf(
+    paste0(fig_name, '.pdf'),
+    width = ifelse(!is.null(timeseries), 11, 8),
+    height = ifelse(!is.null(timeseries), 8, 8)
+  )
+    plot_total()
+  grDevices::dev.off()
+  
+  grDevices::png(
+    paste0(fig_name, '.png'),
+    width = ifelse(!is.null(timeseries), 11, 8),
+    height = ifelse(!is.null(timeseries), 8, 8),
+    units = 'in', 
+    res = 300
+  )
+  plot_total()
   grDevices::dev.off()
 }

@@ -36,9 +36,39 @@ plot_variable_radars <- function(variable_importance, fig_name){
   }                  
   
   grDevices::pdf(
-    fig_name,
+    paste0(fig_name, ".pdf"),
     width = 8,
     height = 8
+  )     
+  
+  fmsb::radarchart(
+    as.data.frame(variable_importance),
+    pfcol = scales::alpha(col,0.2),
+    seg = 10,
+    pty = 15:(15+(np-1)),
+    pcol = scales::alpha(col, 1),
+    plty = 1,
+    vlcex = 1.25
+  )
+  
+  if(np > 1){
+    graphics::legend(
+      'bottomright',
+      legend = rownames(variable_importance)[3:nrow(variable_importance)],
+      lty = 1,
+      col = col,
+      pch = 15:(15+(np-1)),
+      bty = 'n'
+    )
+  }
+  
+  grDevices::dev.off()
+  
+  
+  grDevices::png(
+    paste0(fig_name, ".png"),
+    width = 8,
+    height = 8, units = 'in', res = 300
   )     
   
   fmsb::radarchart(
