@@ -32,42 +32,46 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
   
   plot_shift <- function(){
     
-    ###set up layout
-    layout(matrix(c(1,1,1,1,2,4,3,5), byrow=F, nrow = 2, ncol = 4), heights = c(3,3), widths = c(1,1,1,1))
-    par(mar=c(4,4,1,1), oma = c(0,0,3,0))
+    # Set global outer margin to zero out excess space
+    par(oma = c(0, 0, 0, 0))
+    
+    # ==========================================
+    # MAP 1 (Left Half: x = 0 to 0.5, y = 0 to 1)
+    # ==========================================
+    par(fig = c(0, 0.5, 0, 1)) 
+    # Update this for BOTH Map 1 and Map 2 sections:
+    par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
     
     #map of habitat shifts - using KDE polygons 
     #bathy contours as base layer
     terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), 
-                   cex.axis = 2, cex.lab = 1.25,
-                   xlab = '', 
-                   ylab = '')
+                   cex.axis = 1.2, cex.lab = 1.25,
+                   xlab = expression('Longitude (' * degree * ')'),
+                   ylab = expression('Latitude (' * degree * ')'),)
     # 1. Plot coastline first so habitat polygons overlay it 
     # (add = T is implied/not needed for terra::polys)
     terra::polys(coastline, col = 'grey25')
     
     # 2. Add habitat polygons using polys() instead of plot()
     for(x in 1:length(avg_core_polys)){
-      terra::polys(avg_core_polys[x], border = scales::alpha(poly_pals$core[x], 0.75), lwd = 3, col = NA)
-      terra::polys(avg_range_polys[x], border = scales::alpha(poly_pals$range[x], 0.5), lwd = 3, lty = 3, col = NA)
+      terra::polys(avg_core_polys[x], border = scales::alpha(poly_pals$core[x], 0.5), lwd = 3, col = scales::alpha(poly_pals$core[x], 0.1))
+      #terra::polys(avg_range_polys[x], border = scales::alpha(poly_pals$range[x], 0.5), lwd = 3, lty = 3, col = NA)
     }
     
     points(centroid_y ~ centroid_x, data = avg_metrics, pch = 21, bg = scales::alpha(poly_pals$core, 0.75), col = 'black', cex = 2)
     
-    terra::add_legend(x = -70, y = 39.5,  
+    #legend
+    terra::add_legend(x = -77.5, y = 44.5,    
                       fill = poly_pals$core,
                       legend = avg_metrics$timestep,
-                      cex = 1.5, bty = 'n')
+                      cex = 1, bty = 'o', bg = 'white', box.col = 'black')
     
-    terra::add_legend(x = -70.2, y = 38, 
-                      pch = c(NA, NA, 21),
-                      lty = c(1, 3, NA),
-                      lwd = c(2,2,NA),
-                      bg = c(NA, NA, 'grey90'),
-                      legend = c('Core Habitat', 'Species Range', 'Weighted Centroid'),
-                      cex = 1.5, bty = 'n')
+    #time series
+    # --- INSET 1 (Time Series inside Map 1) ---
+    # Bottom right corner of Map 1: x = 0.25 to 0.48, y = 0.05 to 0.40
+    par(fig = c(0.20, 0.48, 0.12, 0.45), new = TRUE) 
+    par(mar = c(2, 4.5, 1, 0.5), mgp = c(2.5, 0.5, 0)) # Widened left margin
     
-    #time series 
     #change in areas through time
     #core
     if(!is.null(forecast_timeseries)){
@@ -77,7 +81,16 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     }
     
     #annual hindcast 
-    plot(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.5, lwd = 1.5, col = 'black', ylab = 'Area (10^3 km2)', cex.axis = 1.25, xlab = '', main = 'Core Habitat Area', xlim = tm_range, ylim = y_range)
+    plot(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = 'Area\n(10^3 km2)', cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
+    
+    # 2. Add this to color the first 5 points (e.g., dodgerblue)
+    points(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries[1:5, ], 
+           pch = 19, cex = 1.5, col = poly_pals$range[1])
+    
+    # 3. Add this to color the last 5 points (e.g., firebrick1)
+    n <- nrow(hindcast_timeseries)
+    points(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries[(n-4):n, ], 
+           pch = 19, cex = 1.5, col = poly_pals$range[2])
     
     #linear model
     m <- lm(kde_core_area ~ timestep, data = hindcast_timeseries)
@@ -85,23 +98,62 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
     if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
-      lines(hindcast_timeseries$timestamp, y_pred/1000, col = "firebrick", lty = 2, lwd = 2)
+      lines(hindcast_timeseries$timestamp, y_pred/1000, col = "black", lty = 2, lwd = 2)
     }
     
     if(!is.null(forecast_timeseries)){
       #repeat for forecast
       #annual 
-      lines(kde_core_area/1000 ~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.5, lwd = 1.5, col = 'goldenrod4')
+      lines(kde_core_area/1000 ~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.25, lwd = 1.25, col = 'grey50')
+      n <- nrow(forecast_timeseries)
+      points(kde_core_area/1000 ~ timestamp, data = forecast_timeseries[(n-4):n, ], 
+             pch = 17, cex = 1.5, col = poly_pals$range[3])
       #linear model
       m <- lm(kde_core_area ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
       if(p_val <= 0.05 & !is.na(p_val)){
         y_pred <- predict(m)
-        lines(forecast_timeseries$timestamp, y_pred/1000, col = "blue4", lty = 2, lwd = 2)
+        lines(forecast_timeseries$timestamp, y_pred/1000, col = "black", lty = 2, lwd = 2)
       }
     }
     
+    
+    ## ==========================================
+    # MAP 2 (Right Half: x = 0.5 to 1, y = 0 to 1)
+    # ==========================================
+    par(fig = c(0.5, 1, 0, 1), new = TRUE) 
+    # Update this for BOTH Map 1 and Map 2 sections:
+    par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
+    #map of habitat shifts - using KDE polygons 
+    #bathy contours as base layer
+    terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), 
+                   cex.axis = 1.2, cex.lab = 1.25,
+                   xlab = expression('Longitude (' * degree * ')'),
+                   ylab = expression('Latitude (' * degree * ')'),)
+    # 1. Plot coastline first so habitat polygons overlay it 
+    # (add = T is implied/not needed for terra::polys)
+    terra::polys(coastline, col = 'grey25')
+    
+    # 2. Add habitat polygons using polys() instead of plot()
+    for(x in 1:length(avg_core_polys)){
+      #terra::polys(avg_core_polys[x], border = scales::alpha(poly_pals$core[x], 0.75), lwd = 3, col = NA)
+      terra::polys(avg_range_polys[x], border = scales::alpha(poly_pals$range[x], 0.5), lwd = 3, col = scales::alpha(poly_pals$core[x], 0.1))
+    }
+    
+    points(centroid_y ~ centroid_x, data = avg_metrics, pch = 21, bg = scales::alpha(poly_pals$core, 0.75), col = 'black', cex = 2)
+    
+    terra::add_legend(x = -77.5, y = 44.5,  
+                      pch = c(21),
+                      col = 'black',
+                      legend = c('Weighted Centroid'),
+                      cex = 1, bty = 'o', bg = 'white', box.col = 'black')
+    
+    
+    # --- INSET 2 (Time Series inside Map 2) ---
+    # Shifted left (0.68 to 0.95) to clear the right-side margin
+    par(fig = c(0.70, 0.98, 0.12, 0.45), new = TRUE)
+    par(mar = c(2, 4.5, 1, 0.5), mgp = c(2.5, 0.5, 0)) # Widened left margin
     #all (95% kde)  
     if(!is.null(forecast_timeseries)){
       y_range <- range(c(hindcast_timeseries$kde_all_area/1000, forecast_timeseries$kde_all_area/1000), na.rm = T)
@@ -109,7 +161,16 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       y_range <- range(hindcast_timeseries$kde_all_area/1000,na.rm = T)
     }
     #annual hindcast 
-    plot(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.5, lwd = 1.5, col = 'black', ylab = 'Area (10^3 km2)', cex.axis = 1.25, xlab = '', main = 'Habitat Range Area', xlim = tm_range, ylim = y_range)
+    plot(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = 'Area\n(10^3 km2)', cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
+    
+    # 2. Add this to color the first 5 points (e.g., dodgerblue)
+    points(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries[1:5, ], 
+           pch = 19, cex = 1.5, col = poly_pals$range[1])
+    
+    # 3. Add this to color the last 5 points (e.g., firebrick1)
+    n <- nrow(hindcast_timeseries)
+    points(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries[(n-4):n, ], 
+           pch = 19, cex = 1.5, col = poly_pals$range[2])
     
     #linear model
     m <- lm(kde_all_area ~ timestep, data = hindcast_timeseries)
@@ -117,13 +178,16 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
     if(p_val <= 0.05 & !is.na(p_val)){
       y_pred <- predict(m)
-      lines(hindcast_timeseries$timestamp, y_pred/1000, col = "firebrick", lty = 2, lwd = 2)
+      lines(hindcast_timeseries$timestamp, y_pred/1000, col = "black", lty = 2, lwd = 2)
     }
     
     if(!is.null(forecast_timeseries)){
       #repeat for forecast
       #annual 
-      lines(kde_all_area/1000 ~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.5, lwd = 1.5, col = 'goldenrod4', ylab = 'Area (10^3 km2)', cex.axis = 1.25, xlab = '')
+      lines(kde_all_area/1000 ~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.25, lwd = 1.25, col = 'grey50')
+      n <- nrow(forecast_timeseries)
+      points(kde_all_area/1000 ~ timestamp, data = forecast_timeseries[(n-4):n, ], 
+             pch = 17, cex = 1.5, col = poly_pals$range[3])
       
       #linear model
       m <- lm(kde_all_area ~ timestep, data = forecast_timeseries)
@@ -131,86 +195,25 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
       if(p_val <= 0.05 & !is.na(p_val)){
         y_pred <- predict(m)
-        lines(forecast_timeseries$timestamp, y_pred/1000, col = "blue4", lty = 2, lwd = 2)
+        lines(forecast_timeseries$timestamp, y_pred/1000, col = "black", lty = 2, lwd = 2)
       }
     }
     
-    #change in ranges
-    #latitude
-    if(!is.null(forecast_timeseries)){
-      y_range <- range(c(hindcast_timeseries$range_y_deg, forecast_timeseries$range_y_deg), na.rm = T)
-    } else {
-      y_range <- range(hindcast_timeseries$range_y_deg,na.rm = T)
-    }
-    #hindcast
-    plot(range_y_deg ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.5, lwd = 1.5, col = 'black', ylab = 'Degrees', cex.axis = 1.25, xlab = 'Year', main = 'Latitude Range', xlim = tm_range, ylim = y_range)
-    
-    #linear model
-    m <- lm(range_y_deg ~ timestep, data = hindcast_timeseries)
-    # Extract key statistics & plot if significant
-    p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05 & !is.na(p_val)){
-      y_pred <- predict(m)
-      lines(hindcast_timeseries$timestamp, y_pred, col = "firebrick", lty = 2, lwd = 2)
-    }
-    if(!is.null(forecast_timeseries)){
-      #repeat for forecast
-      #annual 
-      lines(range_y_deg~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.5, lwd = 1.5, col = 'goldenrod4', ylab = 'Degrees', cex.axis = 1.25, xlab = '')
-      #linear model
-      m <- lm(range_y_deg ~ timestep, data = forecast_timeseries)
-      # Extract key statistics & plot if significant
-      p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-      if(p_val <= 0.05){
-        y_pred <- predict(m)
-        lines(forecast_timeseries$timestamp, y_pred, col = "blue4", lty = 2, lwd = 2)
-      }
-    }
-    
-    #longitude
-    if(!is.null(forecast_timeseries)){
-      y_range <- range(c(hindcast_timeseries$range_x_deg, forecast_timeseries$range_x_deg), na.rm = T)
-    } else {
-      y_range <- range(hindcast_timeseries$range_x_deg,na.rm = T)
-    }
-    #hindcast
-    plot(range_x_deg ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.5, lwd = 1.5, col = 'black', ylab = '', cex.axis = 1.25, xlab = 'Year', main = 'Longitude Range', xlim = tm_range, ylim = y_range)
-    #linear model
-    m <- lm(range_x_deg ~ timestep, data = hindcast_timeseries)
-    # Extract key statistics & plot if significant
-    p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-    if(p_val <= 0.05 & !is.na(p_val)){
-      y_pred <- predict(m)
-      lines(hindcast_timeseries$timestamp, y_pred, col = "firebrick", lty = 2, lwd = 2)
-    }
-    if(!is.null(forecast_timeseries)){
-      #repeat for forecast
-      #annual 
-      lines(range_x_deg~ timestamp, data = forecast_timeseries, t = 'b', pch = 17, cex = 1.5, lwd = 1.5, col = 'goldenrod4', ylab = 'Degrees', cex.axis = 1.25, xlab = '')
-      #linear model
-      m <- lm(range_x_deg ~ timestep, data = forecast_timeseries)
-      # Extract key statistics & plot if significant
-      p_val     <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
-      if(p_val <= 0.05 & !is.na(p_val)){
-        y_pred <- predict(m)
-        lines(forecast_timeseries$timestamp, y_pred, col = "blue4", lty = 2, lwd = 2)
-      }
-    }
-  }
+  } #end function
   
   #plot static
   #pdf
   grDevices::pdf(paste0(plot_name, '.pdf'),
-  width = 12, 
-  height = 6)
+  width = 10, 
+  height = 5)
   
   plot_shift()
   
   grDevices::dev.off()
   
   grDevices::png(paste0(plot_name, '.png'),
-                 width = 12, 
-                 height = 6,
+                 width = 10, 
+                 height = 5,
                  units = 'in', 
                  res = 300)
   

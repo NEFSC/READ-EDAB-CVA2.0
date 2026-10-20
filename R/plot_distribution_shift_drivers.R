@@ -25,8 +25,8 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                                yat = seq(35,45,by=1),
                                retro = T),
                     mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
-                    xlab = '', 
-                    ylab = '',
+                    xlab = expression('Longitude (' * degree * ')'),
+                    ylab = expression('Latitude (' * degree * ')'),
                     col = cmocean::cmocean('rain')(30),
                     plg = list(
                       x = c(-73, -65.5, 35.25, 36),
@@ -56,7 +56,7 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                terra::polys(core_polys[i], border = 'black', lwd = 3)
                terra::polys(range_polys[i], border = 'black', lwd = 3, lty = 3)
                
-               points(centroid_y ~ centroid_x, data = metrics[i,], pch = 23, col = 'black', bg = 'green4', cex = 5)
+               points(centroid_y ~ centroid_x, data = metrics[i,], pch = 23, col = 'black', bg = 'red', cex = 5)
                
                terra::polys(coastline, col = 'grey25')
                
