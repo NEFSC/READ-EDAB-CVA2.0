@@ -70,7 +70,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     # --- INSET 1 (Time Series inside Map 1) ---
     # Bottom right corner of Map 1: x = 0.25 to 0.48, y = 0.05 to 0.40
     par(fig = c(0.20, 0.48, 0.12, 0.45), new = TRUE) 
-    par(mar = c(2, 4.5, 1, 0.5), mgp = c(2.5, 0.5, 0)) # Widened left margin
+    par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
     
     #change in areas through time
     #core
@@ -81,7 +81,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     }
     
     #annual hindcast 
-    plot(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = 'Area\n(10^3 km2)', cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
+    plot(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = expression("Area (10"^3*" km"^2*")"), cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
     
     # 2. Add this to color the first 5 points (e.g., dodgerblue)
     points(kde_core_area/1000 ~ timestamp, data = hindcast_timeseries[1:5, ], 
@@ -153,7 +153,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     # --- INSET 2 (Time Series inside Map 2) ---
     # Shifted left (0.68 to 0.95) to clear the right-side margin
     par(fig = c(0.70, 0.98, 0.12, 0.45), new = TRUE)
-    par(mar = c(2, 4.5, 1, 0.5), mgp = c(2.5, 0.5, 0)) # Widened left margin
+    par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
     #all (95% kde)  
     if(!is.null(forecast_timeseries)){
       y_range <- range(c(hindcast_timeseries$kde_all_area/1000, forecast_timeseries$kde_all_area/1000), na.rm = T)
@@ -161,7 +161,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
       y_range <- range(hindcast_timeseries$kde_all_area/1000,na.rm = T)
     }
     #annual hindcast 
-    plot(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = 'Area\n(10^3 km2)', cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
+    plot(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries, t = 'b', pch = 19, cex = 1.25, lwd = 1.25, col = 'grey50', ylab = expression("Area (10"^3*" km"^2*")"), cex.axis = 1, xlab = '', main = '', xlim = tm_range, ylim = y_range)
     
     # 2. Add this to color the first 5 points (e.g., dodgerblue)
     points(kde_all_area/1000 ~ timestamp, data = hindcast_timeseries[1:5, ], 
