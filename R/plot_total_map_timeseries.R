@@ -120,7 +120,7 @@ plot_total_map_timeseries <- function(map,
         graphics::axis(
           2,
           at = 1:4,
-          labels = c('Low', "Moderate", "High", "Very\nHigh"),
+          labels = c('L', "M", "H", "VH"),
           las = 2,
           cex.lab = 0.75
         )
@@ -145,7 +145,7 @@ plot_total_map_timeseries <- function(map,
           graphics::axis(
             2,
             at = 1:4,
-            labels = c('Low', "Moderate", "High", "Very\nHigh"),
+            labels = c('L', "M", "H", "VH"),
             las = 2,
             cex.lab = 0.75
           )

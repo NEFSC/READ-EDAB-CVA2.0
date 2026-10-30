@@ -33,22 +33,17 @@ plot_variable_map_timeseries <- function(data,
   plot_variable_exp <- function() { 
     if(inherits(data, 'SpatRaster')){
       message('Plotting Variable Exposure Maps')
-      #set up panels according to the number of variables
-      if (terra::nlyr(data) <= 6) {
-        graphics::par(
-          mfrow = c(2, 3)
-        )
-      } else {
-        graphics::par(
-          mfrow = c(3, 3)
-        )
-      }
+      # Use dynamic rows and set global outer margins (oma)
+      graphics::par(
+        mfrow = c(n_rows, 3),
+        oma = c(1, 1, 1, 1) 
+      )
       
       for (y in 1:terra::nlyr(data)) {
         #get full name of variable
         i <- variable_df$Short.Name %in% names(data)[y]
         
-        draw_legend <- y == terra::nlyr(data)
+        #draw_legend <- y == terra::nlyr(data)
         
         #map
         #graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
@@ -58,12 +53,24 @@ plot_variable_map_timeseries <- function(data,
           range = c(1, 4),
           col = cmocean::cmocean('deep')(64),
           mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
-          legend = FALSE,
+          legend = TRUE,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
           main = variable_df$Long.Name[i],
           pax = list(cex.axis = 1.5, xat = seq(-80, -60, by = 2)),
-          cex.lab = 1.25
+          cex.lab = 1.25,
+          plg = list(
+                     title = "Exposure",
+                    title.cex = 1.5,
+                   cex = 1.5,
+                  horizontal = TRUE,
+                 x = -73.5,
+                y = 37,
+               at = 1:4,
+              n = 4,
+            # 1. Scale the size of the color bar itself (width, height)
+              size = c(1, 2.5)
+            )
         )
         
         #add bathy contours, coastline, and stocks if necessary
@@ -79,29 +86,29 @@ plot_variable_map_timeseries <- function(data,
         }
       } #end y
       # 2. Draw the legend independently if it is the last panel
-      if (draw_legend) {
-        graphics::par(mgp = c(3, 0.1, 0))
-        terra::plot(
-          data[[y]],
-          type = 'continuous',
-          range = c(1, 4),
-          col = cmocean::cmocean('deep')(64),
-          mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
-          legend.only = TRUE, # <-- Draws only the legend elements
-          plg = list(
-            title = "Exposure",
-            title.cex = 1.5,
-            cex = 1.5,
-            horizontal = TRUE,
-            x = -73.5,
-            y = 37,
-            at = 1:4,
-            n = 4,
+   #   if (draw_legend) {
+   #     graphics::par(mgp = c(3, 0.1, 0))
+   #     terra::plot(
+    #      data[[y]],
+     #     type = 'continuous',
+      #    range = c(1, 4),
+       #   col = cmocean::cmocean('deep')(64),
+        #  mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
+         # legend.only = TRUE, # <-- Draws only the legend elements
+  #        plg = list(
+   #         title = "Exposure",
+    #        title.cex = 1.5,
+     #       cex = 1.5,
+      #      horizontal = TRUE,
+       #     x = -73.5,
+        #    y = 37,
+         #   at = 1:4,
+          #  n = 4,
             # 1. Scale the size of the color bar itself (width, height)
-            size = c(1, 2.5)
-          )
-        )
-      }
+          #  size = c(1, 2.5)
+          #)
+        #)
+      #}
       
     } else { #end if spatRaster
       #if data is not a spatraster, then its a matrix or list of matrices
@@ -209,18 +216,30 @@ plot_variable_map_timeseries <- function(data,
     }#end if not spatraster
   }
   
+  # Determine number of panels and rows
+  if (inherits(data, 'SpatRaster')) {
+    n_panels <- terra::nlyr(data)
+  } else {
+    n_panels <- if (inherits(data, 'list')) nrow(data[[1]]) else nrow(data)
+  }
+  
+  n_rows <- ceiling(n_panels / 3)
+  
+  # Calculate dynamic height (approx 3.5 inches per row to match width)
+  dynamic_height <- n_rows * 3.5
+  
   grDevices::pdf(
     paste0(fig_name, '.pdf'),
     width = 8,
-    height = 11
+    height = dynamic_height # Updated from 11
   )     
-    plot_variable_exp()
+  plot_variable_exp()
   grDevices::dev.off()
   
   grDevices::png(
     paste0(fig_name, '.png'),
     width = 8,
-    height = 11,
+    height = dynamic_height, # Updated from 11
     units = 'in', 
     res = 300
   )     

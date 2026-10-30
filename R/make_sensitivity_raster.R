@@ -20,6 +20,7 @@ make_sensitivity_raster <- function(
   sensitivity,
   species_col,
   stock_col,
+  stock_key,
   total_sens_col,
   r_template,
   bathymetry,
@@ -95,6 +96,9 @@ make_sensitivity_raster <- function(
     NA,
     sensRast
   )
+  
+  #mask  with template
+  sensRast <- terra::mask(sensRast, r_template)
 
   return(sensRast)
 }
