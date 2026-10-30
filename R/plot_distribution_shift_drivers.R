@@ -18,13 +18,13 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
   gifski::save_gif(expr = 
              for(i in 1:nrow(metrics)){
                layout(matrix(c(1,1,1,1,2,4,3,5), byrow=F, nrow = 2, ncol = 4), heights = c(3,3), widths = c(1,1,1,1))
-               par(mar=c(4,4,1,1), oma = c(0,0,3,0))
+               par(mar=c(5, 5, 3, 2), oma = c(0,0,0,0))
                #map of habitat shifts
                terra::plot(sdm[[i]], range = c(0,1),
-                    pax = list(cex.axis = 2, 
+                    pax = list(cex.axis = 2, cex.lab = 1.5,
                                yat = seq(35,45,by=1),
                                retro = T),
-                    mar = c(3.1, 3.1, 2.1, 2.1), # Remove outer right margin space
+                    mar = c(4, 5.5, 2.1, 2.1), # Remove outer right margin space
                     xlab = expression('Longitude (' * degree * ')'),
                     ylab = expression('Latitude (' * degree * ')'),
                     col = cmocean::cmocean('rain')(30),
@@ -62,7 +62,7 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                
                text(-76, 44, paste(month.abb[lubridate::month(metrics$timestamp[i])], lubridate::year(metrics$timestamp[i]), sep = ' '), cex = 4)
                
-               terra::add_legend(x = -71, y = 39, pch = c(NA, NA, 18), lty = c(1,3,NA), col = c('black', 'black', 'green4'), legend = c("Core Habitat (50% KDE)", 'Total Range (95% KDE)', "Weighted Centroid"), bty = 'n', cex = 2.5)
+               terra::add_legend(x = -71, y = 39, pch = c(NA, NA, 18), lty = c(1,3,NA), col = c('black', 'black', 'red'), legend = c("Core Habitat", 'Range', "Weighted Centroid"), bty = 'n', cex = 2.5)
                
                #change in leading edges
                #latitude

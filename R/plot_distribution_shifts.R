@@ -143,10 +143,10 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     
     points(centroid_y ~ centroid_x, data = avg_metrics, pch = 21, bg = scales::alpha(poly_pals$core, 0.75), col = 'black', cex = 2)
     
-    terra::add_legend(x = -77.5, y = 44.5,  
-                      pch = c(21),
-                      col = 'black',
-                      legend = c('Weighted Centroid'),
+    #legend
+    terra::add_legend(x = -77.5, y = 44.5,    
+                      fill = poly_pals$core,
+                      legend = avg_metrics$timestep,
                       cex = 1, bty = 'o', bg = 'white', box.col = 'black')
     
     
