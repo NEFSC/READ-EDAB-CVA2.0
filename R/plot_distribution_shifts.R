@@ -48,7 +48,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
                    cex.axis = 1.2, cex.lab = 1.25,
                    xlab = expression('Longitude (' * degree * ')'),
                    ylab = expression('Latitude (' * degree * ')'),
-                   xaxs = "i", yaxs = "i") # Removes the 4% whitespace buffer
+                   xaxs = "i", yaxs = "i", asp = NA) # Removes the 4% whitespace buffer
     # 1. Plot coastline first so habitat polygons overlay it 
     # (add = T is implied/not needed for terra::polys)
     terra::polys(coastline, col = 'grey25')
@@ -132,7 +132,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
                    cex.axis = 1.2, cex.lab = 1.25,
                    xlab = expression('Longitude (' * degree * ')'),
                    ylab = expression('Latitude (' * degree * ')'),
-                   xaxs = "i", yaxs = "i") # Removes the 4% whitespace buffer
+                   xaxs = "i", yaxs = "i", asp = NA) # Removes the 4% whitespace buffer
     # 1. Plot coastline first so habitat polygons overlay it 
     # (add = T is implied/not needed for terra::polys)
     terra::polys(coastline, col = 'grey25')
@@ -207,7 +207,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
   #pdf
   grDevices::pdf(paste0(plot_name, '.pdf'),
   width = 10, 
-  height = 5)
+  height = 4.8)
   
   plot_shift()
   
@@ -215,7 +215,7 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
   
   grDevices::png(paste0(plot_name, '.png'),
                  width = 10, 
-                 height = 5,
+                 height = 4.8,
                  units = 'in', 
                  res = 300)
   
