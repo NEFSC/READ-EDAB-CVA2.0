@@ -47,7 +47,8 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), 
                    cex.axis = 1.2, cex.lab = 1.25,
                    xlab = expression('Longitude (' * degree * ')'),
-                   ylab = expression('Latitude (' * degree * ')'),)
+                   ylab = expression('Latitude (' * degree * ')'),
+                   xaxs = "i", yaxs = "i") # Removes the 4% whitespace buffer
     # 1. Plot coastline first so habitat polygons overlay it 
     # (add = T is implied/not needed for terra::polys)
     terra::polys(coastline, col = 'grey25')
@@ -130,7 +131,8 @@ plot_distribution_shifts <- function(plot_name, avg_core_polys, avg_range_polys,
     terra::contour(bathymetry, filled = F, levels = c(-1000, -100, -50), 
                    cex.axis = 1.2, cex.lab = 1.25,
                    xlab = expression('Longitude (' * degree * ')'),
-                   ylab = expression('Latitude (' * degree * ')'),)
+                   ylab = expression('Latitude (' * degree * ')'),
+                   xaxs = "i", yaxs = "i") # Removes the 4% whitespace buffer
     # 1. Plot coastline first so habitat polygons overlay it 
     # (add = T is implied/not needed for terra::polys)
     terra::polys(coastline, col = 'grey25')

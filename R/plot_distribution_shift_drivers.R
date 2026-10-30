@@ -26,7 +26,7 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                                retro = T),
                     mar = c(4, 5.5, 2.1, 2.1), # Remove outer right margin space
                     xlab = expression('Longitude (' * degree * ')'),
-                    ylab = expression('Latitude (' * degree * ')'),
+                    ylab = '',
                     col = cmocean::cmocean('rain')(30),
                     plg = list(
                       x = c(-73, -65.5, 35.25, 36),
@@ -40,6 +40,8 @@ plot_distribution_shift_drivers <- function(plot_name, sdm, core_polys, range_po
                #add ticks/legend manually because terra is difficult
                tick_x <- seq(-73, -65.5, length.out = 5)
                segments(x0 = tick_x, y0 = 36, x1 = tick_x, y1 = 36 + 0.1, col = "black")
+               # Add the y-axis label manually on line 3.5
+               title(ylab = expression('Latitude (' * degree * ')'), line = 2.5, cex.lab = 1.5)
                
                #Add tick text on top of bar
                tick_vals <- seq(0,1, length.out = 5)
