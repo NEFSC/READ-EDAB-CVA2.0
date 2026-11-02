@@ -4,12 +4,13 @@
 #'
 #' @param variable_importance 
 #' @param fig_name name to save figure as. Figure will save to current working directory if desired directory is not included in the figure name
+#' @param variable_key a named character vector mapping column abbreviations to full names. Defaults to NULL.
 
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 #'
 #'@export
 #'
-plot_variable_radars <- function(variable_importance, fig_name){
+plot_variable_radars <- function(variable_importance, fig_name, variable_key = NULL){
   
   # Failsafe: If the function crashes, forcefully close any open PDFs
   on.exit(
@@ -18,6 +19,17 @@ plot_variable_radars <- function(variable_importance, fig_name){
     },
     add = TRUE
   )
+  
+  # Map abbreviated column names to full names using the key
+  if(!is.null(variable_key)){
+    current_cols <- colnames(variable_importance)
+    # Replaces matches with the full name, keeps the original if not found in the key
+    colnames(variable_importance) <- ifelse(
+      current_cols %in% names(variable_key), 
+      variable_key[current_cols], 
+      current_cols
+    )
+  }
   
   if(is.null(dim(variable_importance))){
     np = 1
