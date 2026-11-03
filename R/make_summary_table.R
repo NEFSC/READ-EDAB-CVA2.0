@@ -56,39 +56,70 @@ make_summary_table <- function(species,
   }
   
   # =========================================================================
-  # STEP 1.5: Failsafe Column Name Repair
+  # STEP 1.5: Aggressive Formatting to Wide Structure
   # =========================================================================
-  # 1. Standardize metric inputs to dataframes without mangling names
-  fix_metric_df <- function(df, sc, stocks_obj) {
-    if (is.numeric(df)) {
+  
+  repair_names <- function(nms, targets) {
+    res <- as.character(nms)
+    for (i in seq_along(res)) {
+      if (res[i] %in% targets) next
+      clean_target <- make.names(targets)
+      if (res[i] %in% clean_target) {
+        res[i] <- targets[clean_target == res[i]][1]
+      } else if (res[i] %in% gsub(" ", ".", targets)) {
+        res[i] <- targets[gsub(" ", ".", targets) == res[i]][1]
+      }
+    }
+    return(res)
+  }
+  
+  # Forces data into wide format no matter how it arrives (vertical, long, or named vector)
+  force_wide <- function(df, raw_nms, sc, stocks_obj) {
+    if (is.numeric(df) && !is.matrix(df)) {
       df <- as.data.frame(t(df), check.names = FALSE)
-    } else if (!is.data.frame(df)) {
-      df <- as.data.frame(df, check.names = FALSE)
+    }
+    df <- as.data.frame(df, check.names = FALSE)
+    
+    colnames(df) <- repair_names(colnames(df), raw_nms)
+    rownames(df) <- repair_names(rownames(df), raw_nms)
+    
+    # Case 1: Already Wide
+    if (any(raw_nms %in% colnames(df))) {
+      # Do nothing
+      
+      # Case 2: Vertical Format (terra::global drops variables into row names)
+    } else if (any(raw_nms %in% rownames(df))) {
+      df <- as.data.frame(t(df), check.names = FALSE)
+      
+      # Case 3: Long Format (variables are in a column)
+    } else {
+      name_col <- NULL
+      for (c in colnames(df)) {
+        if (is.character(df[[c]]) || is.factor(df[[c]])) {
+          if (any(raw_nms %in% as.character(df[[c]]))) {
+            name_col <- c
+            break
+          }
+        }
+      }
+      if (!is.null(name_col)) {
+        num_col <- names(which(sapply(df, is.numeric)))[1]
+        if (!is.null(num_col)) {
+          df <- tidyr::pivot_wider(df, names_from = dplyr::all_of(name_col), values_from = dplyr::all_of(num_col))
+        }
+      }
     }
     
+    # Inject missing stock columns
     if (!sc %in% colnames(df)) {
       df[[sc]] <- if (!is.null(stocks_obj) && !is.null(stocks_obj$stock_area)) stocks_obj$stock_area[1] else "global"
     }
     return(df)
   }
   
-  mean_metric <- fix_metric_df(mean_metric, stock_col, stocks)
-  certainty_metric <- fix_metric_df(certainty_metric, stock_col, stocks)
-  
-  # 2. Repair any spaces that R aggressively converted to dots 
-  repair_names <- function(df_names, targets) {
-    res <- df_names
-    for (i in seq_along(res)) {
-      if (res[i] %in% targets) next
-      dot_match <- targets[make.names(targets) == res[i] | gsub(" ", ".", targets) == res[i]]
-      if (length(dot_match) == 1) res[i] <- dot_match
-    }
-    return(res)
-  }
-  
+  mean_metric <- force_wide(mean_metric, raw_names, stock_col, stocks)
+  certainty_metric <- force_wide(certainty_metric, raw_names, stock_col, stocks)
   colnames(all_vals) <- repair_names(colnames(all_vals), raw_names)
-  colnames(mean_metric) <- repair_names(colnames(mean_metric), raw_names)
-  colnames(certainty_metric) <- repair_names(colnames(certainty_metric), raw_names)
   
   #PART 1
   # =========================================================================
@@ -106,7 +137,7 @@ make_summary_table <- function(species,
         cols = dplyr::any_of(val_cols),
         names_to = "Attribute.Raw",
         values_to = "value",
-        values_transform = list(value = as.numeric) # Safety cast
+        values_transform = list(value = as.numeric) 
       ) %>%
       dplyr::filter(!is.na(value)) %>%
       dplyr::mutate(
@@ -173,40 +204,23 @@ make_summary_table <- function(species,
     dplyr::ungroup()
   
   # =========================================================================
-  # STEP 4: Pivot Exposure Means and DQ to Long Format
+  # STEP 4: Pivot Exposure Means and DQ to Long Format safely
   # =========================================================================
   
-  # Identify ONLY the numeric attribute columns, ignoring 'Species' entirely
-  attr_cols <- intersect(colnames(mean_metric), raw_names)
-  if (length(attr_cols) == 0) {
-    attr_cols <- setdiff(
-      names(which(sapply(mean_metric, is.numeric))),
-      c("ID", "x", "y", "geometry", total_sens_col, certainty_col)
-    )
-  }
-  
   spMeans_long <- mean_metric %>%
-    dplyr::select(dplyr::any_of(c(stock_col, attr_cols))) %>%
+    dplyr::select(dplyr::any_of(c(stock_col, raw_names))) %>%
     tidyr::pivot_longer(
-      cols = dplyr::any_of(attr_cols),
+      cols = dplyr::any_of(raw_names),
       names_to = "Attribute.Raw",
       values_to = "expert.scores",
       values_transform = list(expert.scores = as.numeric)
     ) %>%
     dplyr::mutate(expert.scores = round(expert.scores, 2))
   
-  dq_cols <- intersect(colnames(certainty_metric), raw_names)
-  if (length(dq_cols) == 0) {
-    dq_cols <- setdiff(
-      names(which(sapply(certainty_metric, is.numeric))),
-      c("ID", "x", "y", "geometry", total_sens_col, certainty_col)
-    )
-  }
-  
   spDQ_long <- certainty_metric %>%
-    dplyr::select(dplyr::any_of(c(stock_col, dq_cols))) %>%
+    dplyr::select(dplyr::any_of(c(stock_col, raw_names))) %>%
     tidyr::pivot_longer(
-      cols = dplyr::any_of(dq_cols), 
+      cols = dplyr::any_of(raw_names), 
       names_to = "Attribute.Raw",
       values_to = "data_quality",
       values_transform = list(data_quality = as.numeric)
@@ -233,13 +247,11 @@ make_summary_table <- function(species,
   # 5. Join into Final Summary Table and Pivot WIDER
   tab_wide <- spMeans_long %>%
     dplyr::left_join(spDQ_long, by = c(stock_col, "Attribute.Raw")) %>%
-    # Safe mutate: maps what it can, keeps original text if it can't (avoids generating NAs)
     dplyr::mutate(Attribute.Name = unname(ifelse(is.na(attr_map[Attribute.Raw]), Attribute.Raw, attr_map[Attribute.Raw]))) %>%
     dplyr::left_join(
       plot_df,
       by = c("Attribute.Name", stock_col)
     ) %>%
-    # Safe arrange: aligns order with clean_names, throws unmatched items to the bottom instead of dropping them
     dplyr::mutate(
       sort_order = match(Attribute.Name, clean_names)
     ) %>%
