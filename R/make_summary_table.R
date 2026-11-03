@@ -15,23 +15,23 @@
 #'@export
 #'
 make_summary_table <- function(species,
-    metric,
-    mean_metric,
-    certainty_metric,
-    raw_data,
-    raw_names,
-    clean_names,
-    stocks,
-    stock_key,
-    stock_order,
-    stock_col,
-    certainty_col,
-    total_sens_col,
-    var_imp = NULL,
-    imp_threshold = 0.1,
-    save = T, 
-    table_dir
-    ) {
+                               metric,
+                               mean_metric,
+                               certainty_metric,
+                               raw_data,
+                               raw_names,
+                               clean_names,
+                               stocks,
+                               stock_key,
+                               stock_order,
+                               stock_col,
+                               certainty_col,
+                               total_sens_col,
+                               var_imp = NULL,
+                               imp_threshold = 0.1,
+                               save = T, 
+                               table_dir
+) {
   
   attr_map <- setNames(clean_names, raw_names)
   
@@ -39,147 +39,191 @@ make_summary_table <- function(species,
   if(metric != 'sensitivity'){
     # 1. Extract raster pixels within each stock polygon
     if (!is.null(stocks)) {
-      # This returns a dataframe with 'ID' (polygon index) and one column per raster layer
       ext_vals <- terra::extract(raw_data, stocks)
-      
-      # Map the polygon ID back to the actual stock names
-      ext_vals$stock <- stocks$stock_area[ext_vals$ID]
+      ext_vals[[stock_col]] <- stocks$stock_area[ext_vals$ID]
       ext_vals$ID <- NULL
       
-      #extract all pixels
-      global_vals <- as.data.frame(terra::values(raw_data))
-      global_vals$stock <- 'global'
+      global_vals <- as.data.frame(terra::values(raw_data), check.names = FALSE)
+      global_vals[[stock_col]] <- 'global'
       
       all_vals <- dplyr::bind_rows(ext_vals, global_vals)
     } else {
-      all_vals <- as.data.frame(terra::values(raw_data))
-      all_vals$stock <- 'global'
-      
-      #if stocks is null, this will also mean that means/certainty is missing a stocks column
-      mean_metric <- as.data.frame(mean_metric)
-      mean_metric$stock <- 'global'
-      certainty_metric <- as.data.frame(certainty_metric)
-      certainty_metric$stock <- 'global'
+      all_vals <- as.data.frame(terra::values(raw_data), check.names = FALSE)
+      all_vals[[stock_col]] <- 'global'
     }
   } else {
     all_vals <- raw_data
   }
-    #PART 1
-    # =========================================================================
-    # STEP 1: Harmonize Data (Get A, B, C, D counts for both formats)
-    # =========================================================================
-    if (metric != "sensitivity") {
-      # Pivot, bin, and count continuous values
-      summary_df <- all_vals %>%
-        tidyr::pivot_longer(
-          cols = dplyr::any_of(raw_names),
-          names_to = "Attribute.Raw",
-          values_to = "value"
-        ) %>%
-        dplyr::filter(!is.na(value)) %>%
-        dplyr::mutate(
-          cat = cut(
-            value, 
-            breaks = c(-Inf, 1.5, 2.5, 3.5, Inf), 
-            labels = c("A", "B", "C", "D")
-          )
-        ) %>%
-        dplyr::group_by(dplyr::across(dplyr::any_of(c("Attribute.Raw", stock_col)))) %>%
-        dplyr::summarise(
-          A = sum(cat == "A", na.rm = TRUE),
-          B = sum(cat == "B", na.rm = TRUE),
-          C = sum(cat == "C", na.rm = TRUE),
-          D = sum(cat == "D", na.rm = TRUE),
-          .groups = "drop"
-        )
-      
-    } else if (metric == "sensitivity") {
-      # Sum up existing tally columns
-      summary_df <- all_vals %>%
-        dplyr::group_by(dplyr::across(dplyr::any_of(c("Attribute.Name", stock_col)))) %>%
-        dplyr::summarise(
-          A = sum(.data[["Scoring.Rank1"]], na.rm = TRUE),
-          B = sum(.data[["Scoring.Rank2"]], na.rm = TRUE),
-          C = sum(.data[["Scoring.Rank3"]], na.rm = TRUE),
-          D = sum(.data[["Scoring.Rank4"]], na.rm = TRUE),
-          .groups = "drop"
-        )
+  
+  # =========================================================================
+  # STEP 1.5: Failsafe Column Name Repair
+  # =========================================================================
+  # 1. Standardize metric inputs to dataframes without mangling names
+  fix_metric_df <- function(df, sc, stocks_obj) {
+    if (is.numeric(df)) {
+      df <- as.data.frame(t(df), check.names = FALSE)
+    } else if (!is.data.frame(df)) {
+      df <- as.data.frame(df, check.names = FALSE)
     }
     
-    # =========================================================================
-    # STEP 2: Optional Attribute Mapping (mostly used for continuous)
-    # =========================================================================
-    if (!is.null(attr_map) && "Attribute.Raw" %in% names(summary_df)) {
-      summary_df <- summary_df %>%
-        dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw])
+    if (!sc %in% colnames(df)) {
+      df[[sc]] <- if (!is.null(stocks_obj) && !is.null(stocks_obj$stock_area)) stocks_obj$stock_area[1] else "global"
+    }
+    return(df)
+  }
+  
+  mean_metric <- fix_metric_df(mean_metric, stock_col, stocks)
+  certainty_metric <- fix_metric_df(certainty_metric, stock_col, stocks)
+  
+  # 2. Repair any spaces that R aggressively converted to dots 
+  repair_names <- function(df_names, targets) {
+    res <- df_names
+    for (i in seq_along(res)) {
+      if (res[i] %in% targets) next
+      dot_match <- targets[make.names(targets) == res[i] | gsub(" ", ".", targets) == res[i]]
+      if (length(dot_match) == 1) res[i] <- dot_match
+    }
+    return(res)
+  }
+  
+  colnames(all_vals) <- repair_names(colnames(all_vals), raw_names)
+  colnames(mean_metric) <- repair_names(colnames(mean_metric), raw_names)
+  colnames(certainty_metric) <- repair_names(colnames(certainty_metric), raw_names)
+  
+  #PART 1
+  # =========================================================================
+  # STEP 1: Harmonize Data (Get A, B, C, D counts for both formats)
+  # =========================================================================
+  if (metric != "sensitivity") {
+    
+    val_cols <- intersect(colnames(all_vals), raw_names)
+    if (length(val_cols) == 0) {
+      val_cols <- setdiff(colnames(all_vals), c(stock_col, "ID", "x", "y", "geometry", "Species", total_sens_col, certainty_col))
     }
     
-    # =========================================================================
-    # STEP 3: Unified Plot Generation
-    # =========================================================================
-    # Both formats now have explicit A, B, C, D counts, so we can use geom_col()
-    plot_df <- summary_df %>%
-      dplyr::rowwise() %>%
+    summary_df <- all_vals %>%
+      tidyr::pivot_longer(
+        cols = dplyr::any_of(val_cols),
+        names_to = "Attribute.Raw",
+        values_to = "value",
+        values_transform = list(value = as.numeric) # Safety cast
+      ) %>%
+      dplyr::filter(!is.na(value)) %>%
       dplyr::mutate(
-        p = list(
-          data.frame(x = c("A", "B", "C", "D"), y = c(A, B, C, D)) %>%
-            ggplot2::ggplot(ggplot2::aes(x = x, y = y, fill = x)) +
-            ggplot2::geom_col(
-              show.legend = FALSE,
-              width = 0.95,
-              color = 'grey25',
-              linewidth = 0.5 
-            ) +
-            ggplot2::scale_fill_manual(
-              values = c("A" = "#008000", "B" = "yellow", "C" = "orange", "D" = "red"),
-              drop = FALSE
-            ) +
-            ggplot2::scale_x_discrete(drop = FALSE) +
-            ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.05))) +
-            ggplot2::theme_void() +
-            ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
+        cat = cut(
+          value, 
+          breaks = c(-Inf, 1.5, 2.5, 3.5, Inf), 
+          labels = c("A", "B", "C", "D")
         )
       ) %>%
-      dplyr::ungroup()
+      dplyr::group_by(dplyr::across(dplyr::any_of(c("Attribute.Raw", stock_col)))) %>%
+      dplyr::summarise(
+        A = sum(cat == "A", na.rm = TRUE),
+        B = sum(cat == "B", na.rm = TRUE),
+        C = sum(cat == "C", na.rm = TRUE),
+        D = sum(cat == "D", na.rm = TRUE),
+        .groups = "drop"
+      )
+    
+  } else if (metric == "sensitivity") {
+    summary_df <- all_vals %>%
+      dplyr::group_by(dplyr::across(dplyr::any_of(c("Attribute.Name", stock_col)))) %>%
+      dplyr::summarise(
+        A = sum(.data[["Scoring.Rank1"]], na.rm = TRUE),
+        B = sum(.data[["Scoring.Rank2"]], na.rm = TRUE),
+        C = sum(.data[["Scoring.Rank3"]], na.rm = TRUE),
+        D = sum(.data[["Scoring.Rank4"]], na.rm = TRUE),
+        .groups = "drop"
+      )
+  }
   
-  # 4. Pivot Exposure Means and DQ to Long Format
-  spMeans_long <- mean_metric %>%
-    dplyr::select(
-      !!rlang::sym(stock_col),
-      dplyr::any_of(raw_names)
-    ) %>% # Changed
-    tidyr::pivot_longer(
-      cols = dplyr::any_of(raw_names), # Changed
-      names_to = "Attribute.Raw",
-      values_to = "expert.scores"
+  # =========================================================================
+  # STEP 2: Optional Attribute Mapping 
+  # =========================================================================
+  if (!is.null(attr_map) && "Attribute.Raw" %in% names(summary_df)) {
+    summary_df <- summary_df %>%
+      dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw])
+  }
+  
+  # =========================================================================
+  # STEP 3: Unified Plot Generation
+  # =========================================================================
+  plot_df <- summary_df %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      p = list(
+        data.frame(x = c("A", "B", "C", "D"), y = c(A, B, C, D)) %>%
+          ggplot2::ggplot(ggplot2::aes(x = x, y = y, fill = x)) +
+          ggplot2::geom_col(
+            show.legend = FALSE,
+            width = 0.95,
+            color = 'grey25',
+            linewidth = 0.5 
+          ) +
+          ggplot2::scale_fill_manual(
+            values = c("A" = "#008000", "B" = "yellow", "C" = "orange", "D" = "red"),
+            drop = FALSE
+          ) +
+          ggplot2::scale_x_discrete(drop = FALSE) +
+          ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.05))) +
+          ggplot2::theme_void() +
+          ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
+      )
     ) %>%
-    dplyr::mutate(expert.scores = round(as.numeric(expert.scores), 2))
+    dplyr::ungroup()
+  
+  # =========================================================================
+  # STEP 4: Pivot Exposure Means and DQ to Long Format
+  # =========================================================================
+  
+  # Identify ONLY the numeric attribute columns, ignoring 'Species' entirely
+  attr_cols <- intersect(colnames(mean_metric), raw_names)
+  if (length(attr_cols) == 0) {
+    attr_cols <- setdiff(
+      names(which(sapply(mean_metric, is.numeric))),
+      c("ID", "x", "y", "geometry", total_sens_col, certainty_col)
+    )
+  }
+  
+  spMeans_long <- mean_metric %>%
+    dplyr::select(dplyr::any_of(c(stock_col, attr_cols))) %>%
+    tidyr::pivot_longer(
+      cols = dplyr::any_of(attr_cols),
+      names_to = "Attribute.Raw",
+      values_to = "expert.scores",
+      values_transform = list(expert.scores = as.numeric)
+    ) %>%
+    dplyr::mutate(expert.scores = round(expert.scores, 2))
+  
+  dq_cols <- intersect(colnames(certainty_metric), raw_names)
+  if (length(dq_cols) == 0) {
+    dq_cols <- setdiff(
+      names(which(sapply(certainty_metric, is.numeric))),
+      c("ID", "x", "y", "geometry", total_sens_col, certainty_col)
+    )
+  }
   
   spDQ_long <- certainty_metric %>%
-    dplyr::select(
-      !!rlang::sym(stock_col),
-      dplyr::any_of(raw_names)
-    ) %>% # Changed
+    dplyr::select(dplyr::any_of(c(stock_col, dq_cols))) %>%
     tidyr::pivot_longer(
-      cols = dplyr::any_of(raw_names), # Changed
+      cols = dplyr::any_of(dq_cols), 
       names_to = "Attribute.Raw",
-      values_to = "data_quality"
+      values_to = "data_quality",
+      values_transform = list(data_quality = as.numeric)
     ) %>%
-    dplyr::mutate(data_quality = round(as.numeric(data_quality), 2))
+    dplyr::mutate(data_quality = round(data_quality, 2))
   
   # ---------------------------------------------------------
   # STANDARDIZE STOCK ORDER (Matches short data names to long order list)
   # ---------------------------------------------------------
-  raw_stocks <- unique(mean_metric[,stock_col])
+  raw_stocks <- unique(mean_metric[[stock_col]])
   
-  # Temporarily translate the short raw names into long names using your stock_key
   long_names_present <- ifelse(
     raw_stocks %in% names(stock_key),
     stock_key[raw_stocks],
     raw_stocks
   )
   
-  # Sort the short raw_stocks based on where their long names appear in your stock_order
   ordered_stocks <- raw_stocks[order(
     match(long_names_present, stock_order),
     na.last = TRUE
@@ -189,14 +233,18 @@ make_summary_table <- function(species,
   # 5. Join into Final Summary Table and Pivot WIDER
   tab_wide <- spMeans_long %>%
     dplyr::left_join(spDQ_long, by = c(stock_col, "Attribute.Raw")) %>%
-    dplyr::mutate(Attribute.Name = attr_map[Attribute.Raw]) %>%
+    # Safe mutate: maps what it can, keeps original text if it can't (avoids generating NAs)
+    dplyr::mutate(Attribute.Name = unname(ifelse(is.na(attr_map[Attribute.Raw]), Attribute.Raw, attr_map[Attribute.Raw]))) %>%
     dplyr::left_join(
       plot_df,
       by = c("Attribute.Name", stock_col)
     ) %>%
+    # Safe arrange: aligns order with clean_names, throws unmatched items to the bottom instead of dropping them
     dplyr::mutate(
-      Attribute.Name = factor(Attribute.Name, levels = clean_names)
+      sort_order = match(Attribute.Name, clean_names)
     ) %>%
+    dplyr::arrange(sort_order, Attribute.Name) %>%
+    dplyr::select(-sort_order) %>%
     dplyr::select(
       Attribute.Name,
       !!rlang::sym(stock_col),
@@ -204,7 +252,6 @@ make_summary_table <- function(species,
       data_quality,
       p
     ) %>%
-    # Lock the column order before pivoting
     dplyr::mutate(
       !!rlang::sym(stock_col) := factor(
         !!rlang::sym(stock_col),
@@ -216,27 +263,45 @@ make_summary_table <- function(species,
       values_from = c(expert.scores, data_quality, p),
       names_glue = paste0("{.value}_{", stock_col, "}")
     ) %>%
-    dplyr::arrange(Attribute.Name)
+    dplyr::mutate(Attribute.Name = as.character(Attribute.Name))
+  
+  # =========================================================================
+  # STEP 5.1: SUBSET TABLE IF VAR_IMP IS PROVIDED (EXPOSURE ONLY)
+  # =========================================================================
+  if (!is.null(var_imp) && metric == "exposure") {
+    var_imp_nms <- names(var_imp)[var_imp >= imp_threshold]
+    
+    important_raw_names <- raw_names[raw_names %in% var_imp_nms]
+    important_clean_names <- attr_map[important_raw_names]
+    
+    tab_wide <- tab_wide %>%
+      dplyr::filter(Attribute.Name %in% important_clean_names | grepl("Total", Attribute.Name, ignore.case = TRUE))
+  }
+  
+  # =========================================================================
+  # STEP 5.2: ENSURE EXPOSURE AND VULNERABILITY ONLY HAVE ONE TOTAL ROW
+  # =========================================================================
+  if (metric %in% c("exposure", "vulnerability")) {
+    total_idx <- grep("Total", tab_wide$Attribute.Name, ignore.case = TRUE)
+    if (length(total_idx) > 1) {
+      rows_to_drop <- total_idx[-length(total_idx)]
+      tab_wide <- tab_wide[-rows_to_drop, ]
+    }
+  }
   
   # 5.5 Extract plot list-columns SAFELY to avoid 'gt' conversion errors
   plot_cols <- grep("^p_", colnames(tab_wide), value = TRUE)
   
-  # Only attempt extraction if the columns are STILL lists 
-  # (This prevents the code from breaking if you run it twice)
   if (all(sapply(tab_wide[plot_cols], is.list))) {
-    
-    # Create an empty blank plot for any missing data
     empty_plot <- ggplot2::ggplot() + ggplot2::theme_void()
     
     plot_list_wide <- lapply(tab_wide[plot_cols], function(lst) {
-      # Loop through the list and replace NAs/NULLs with an empty plot
       lapply(lst, function(p) {
-        if (is.null(p) || (is.logical(p) && is.na(p))) empty_plot else p
+        if (is.null(p) || (is.logical(p) && is.na(p[1]))) empty_plot else p
       })
     })
   }
   
-  # Mutate the dataframe safely to replace plot columns with empty strings
   tab_wide <- tab_wide %>%
     dplyr::mutate(
       dplyr::across(dplyr::all_of(plot_cols), ~ "")
@@ -250,7 +315,8 @@ make_summary_table <- function(species,
     summary_row <- data.frame(Attribute.Name = "Total Sensitivity | Certainty")
     
     for (s in ordered_stocks) {
-      # Use %in% instead of == to safely match NA values if a species has no stocks
+      if (!paste0("expert.scores_", s) %in% colnames(tab_wide)) next
+      
       s_sens <- mean_metric[[total_sens_col]][mean_metric[[stock_col]] %in% s][1]
       s_cert <- mean_metric[[certainty_col]][mean_metric[[stock_col]] %in% s][1]
       
@@ -263,8 +329,6 @@ make_summary_table <- function(species,
         'Unknown'
       )
       
-      # A zero-width wrapper prevents the column from stretching, 
-      # while the inner div spans the full 195px (65px * 3) across the columns.
       summary_text <- paste0(
         "<div style='width: 0px; overflow: visible;'>",
         "<div style='width: 175px; text-align: center; white-space: nowrap;'>",
@@ -273,7 +337,6 @@ make_summary_table <- function(species,
         "</div>"
       )
       
-      # Place it in the FIRST column (expert.scores) so it spans to the right natively
       summary_row[[paste0("expert.scores_", s)]] <- summary_text
       summary_row[[paste0("data_quality_", s)]] <- ""
       summary_row[[paste0("p_", s)]] <- ""
@@ -284,7 +347,6 @@ make_summary_table <- function(species,
   
   # 5.7 Add Categorical Text to Total Rows for Exposure and Vulnerability
   if (metric %in% c("exposure", "vulnerability")) {
-    # Find rows that contain the word "Total"
     total_rows <- grep("Total", tab_wide$Attribute.Name)
     
     for (k in ordered_stocks) {
@@ -294,7 +356,6 @@ make_summary_table <- function(species,
         curr_vals <- tab_wide[[exp_col]][total_rows]
         num_vals <- as.numeric(curr_vals)
         
-        # Apply different thresholds depending on the metric
         if (metric == "exposure") {
           cats <- dplyr::case_when(
             is.na(num_vals) ~ "",
@@ -305,7 +366,6 @@ make_summary_table <- function(species,
             TRUE ~ ""
           )
         } else if (metric == "vulnerability") {
-          # CHANGE THESE NUMBERS to your correct 1-16 scale cutoffs
           cats <- dplyr::case_when(
             is.na(num_vals) ~ "",
             num_vals < 3.5 ~ "Low",
@@ -316,7 +376,6 @@ make_summary_table <- function(species,
           )
         }
         
-        # Use <br> to force a clean line break so words like 'Moderate' fit in the column
         tab_wide[[exp_col]][total_rows] <- ifelse(
           is.na(num_vals),
           curr_vals,
@@ -339,9 +398,7 @@ make_summary_table <- function(species,
     )
   }
   
-  # Reorder the dataframe columns to match the exact custom order
-  tab_wide <- tab_wide %>% dplyr::select(dplyr::all_of(desired_cols))
-  # ---------------------------------------------------------
+  tab_wide <- tab_wide %>% dplyr::select(dplyr::any_of(desired_cols))
   
   # 6. Initialize gt table
   summary.table <- gt::gt(tab_wide) %>%
@@ -350,20 +407,20 @@ make_summary_table <- function(species,
     gt::cols_align(align = "center", columns = gt::everything()) %>%
     gt::cols_align(align = "left", columns = c("Attribute.Name"))
   
-  # Dynamically add spanners for each stock present
-  stock_nms <- unique(mean_metric$stock)
+  stock_nms <- unique(mean_metric[[stock_col]])
   for (k in ordered_stocks) {
-    # If a species has no stocks (NA or empty string), skip the spanner entirely
     if (is.na(k) || k == "" || k == "None") {
       next
     }
     
-    # SKIP SPANNER if only 1 stock is present and the metric is exposure/vulnerability
     if (length(ordered_stocks) == 1 && metric %in% c("exposure", "vulnerability")) {
       next
     }
     
-    # Translate the abbreviation if it exists in the map; otherwise use the original string
+    if (!paste0("expert.scores_", k) %in% colnames(tab_wide)) {
+      next
+    }
+    
     display_name <- ifelse(k %in% names(stock_key), stock_key[[k]], k)
     
     wrapped_label <- stringr::str_replace_all(
@@ -384,36 +441,32 @@ make_summary_table <- function(species,
   } else if (metric == 'exposure') {
     nm <- "Exposure Factors"
   } else {
-    nm <- "Overall Vulnerability Rank"
+    nm <- "Vulnerability"
   }
   
   # 7. Apply styling, column renaming, and rendering
   summary.table <- summary.table %>%
-    # Clean up the Attribute Name header
     gt::cols_label(
       Attribute.Name = nm
     ) %>%
-    # Rename grouped columns
     gt::cols_label_with(
       columns = gt::starts_with("expert.scores"),
       fn = ~ ifelse(metric== 'sensitivity', 'Score', "Mean")
     ) %>%
     gt::cols_label_with(
       columns = gt::starts_with("data_quality"),
-      fn = ~ ifelse(metric== 'sensitivity', 'Data Quality', "SD")
+      fn = ~ ifelse(metric== 'sensitivity', 'LH DQ', "SD")
     ) %>%
     gt::cols_label_with(
       columns = gt::starts_with("p_"),
       fn = ~"Tally"
     ) %>%
-    # Force text wrapping by constraining column widths
     gt::cols_width(
       Attribute.Name ~ gt::px(220),
       gt::starts_with("expert.scores") ~ gt::px(65),
       gt::starts_with("data_quality") ~ gt::px(55),
-      gt::starts_with("p_") ~ gt::px(55) # Reduced from 90
+      gt::starts_with("p_") ~ gt::px(55) 
     ) %>%
-    # Make all column headers and spanners bold
     gt::tab_style(
       style = gt::cell_text(weight = "bold"),
       locations = list(
@@ -421,7 +474,6 @@ make_summary_table <- function(species,
         gt::cells_column_spanners()
       )
     ) %>%
-    # Add thin bottom border to stock spanners
     gt::tab_style(
       style = gt::cell_borders(
         sides = "bottom",
@@ -430,7 +482,6 @@ make_summary_table <- function(species,
       ),
       locations = gt::cells_column_spanners()
     ) %>%
-    # Add thick vertical borders to separate stocks
     gt::tab_style(
       style = gt::cell_borders(
         sides = "left",
@@ -439,41 +490,34 @@ make_summary_table <- function(species,
       ),
       locations = gt::cells_body(columns = gt::starts_with("expert.scores"))
     )
-  # STOP HERE - NO PIPE (%>%) BEFORE THE FOR LOOP
   
-  # Calculate exactly how many rows should receive plots
   num_plot_rows <- length(plot_list_wide[[plot_cols[1]]])
   
-  # Inject plots column by column
-  for (p_col in plot_cols) {
-    summary.table <- local({
-      col_name <- p_col
-      summary.table %>%
-        gt::text_transform(
-          locations = gt::cells_body(
-            columns = dplyr::all_of(col_name),
-            rows = 1:num_plot_rows # Restrict plotting to original rows
-          ),
-          fn = function(x) {
-            purrr::map(plot_list_wide[[col_name]], function(p) {
-              # Failsafe: If the plot is NA or missing, return a blank space instead of crashing
-              if (is.null(p) || (is.logical(p) && is.na(p[1]))) {
-                return("")
-              }
-              
-              gt::ggplot_image(p, height = gt::px(15), aspect_ratio = 3)
-            })
-          }
-        )
-    })
+  if (num_plot_rows > 0) {
+    for (p_col in plot_cols) {
+      summary.table <- local({
+        col_name <- p_col
+        summary.table %>%
+          gt::text_transform(
+            locations = gt::cells_body(
+              columns = dplyr::all_of(col_name),
+              rows = seq_len(num_plot_rows) 
+            ),
+            fn = function(x) {
+              purrr::map(plot_list_wide[[col_name]], function(p) {
+                if (is.null(p) || (is.logical(p) && is.na(p[1]))) {
+                  return("")
+                }
+                gt::ggplot_image(p, height = gt::px(15), aspect_ratio = 3)
+              })
+            }
+          )
+      })
+    }
   }
   
-  # Resume the pipe chain for final table options
   summary.table <- summary.table %>%
-    # Parse the custom div strings as HTML instead of raw text
     gt::fmt_markdown(columns = gt::starts_with("expert.scores")) %>%
-    
-    # 1. Horizontal borders for headers/spanners (Top and Bottom only to prevent doubling)
     gt::tab_style(
       style = gt::cell_borders(
         sides = c("top", "bottom"),
@@ -485,8 +529,6 @@ make_summary_table <- function(species,
         gt::cells_column_labels()
       )
     ) %>%
-    
-    # 2. Thick vertical borders (Left side of each stock group) for Body, Headers, & Spanners
     gt::tab_style(
       style = gt::cell_borders(
         sides = "left",
@@ -499,8 +541,6 @@ make_summary_table <- function(species,
         gt::cells_column_spanners() 
       )
     ) %>%
-    
-    # 3. Thin vertical borders (Right side of inner columns) for Body & Headers
     gt::tab_style(
       style = gt::cell_borders(
         sides = "right",
@@ -510,15 +550,13 @@ make_summary_table <- function(species,
       locations = list(
         gt::cells_body(
           columns = c(gt::starts_with("expert.scores"), gt::starts_with("data_quality")),
-          rows = if (metric == "sensitivity") 1:(nrow(tab_wide) - 1) else gt::everything()
+          rows = if (metric == "sensitivity") { if (nrow(tab_wide) > 1) seq_len(nrow(tab_wide) - 1) else integer(0) } else gt::everything()
         ),
         gt::cells_column_labels(
           columns = c(gt::starts_with("expert.scores"), gt::starts_with("data_quality"))
         )
       )
     ) %>%
-    
-    # (UPDATED) Thick top line placed above the total section
     gt::tab_style(
       style = gt::cell_borders(
         sides = "top",
@@ -526,30 +564,19 @@ make_summary_table <- function(species,
         weight = gt::px(2)
       ),
       locations = gt::cells_body(
-        rows = ifelse(metric == 'sensitivity', nrow(tab_wide), nrow(tab_wide) - 1)
+        rows = if (nrow(tab_wide) > 0) nrow(tab_wide) else integer(0)
       ) 
-    )  %>%
-    # ... [Keep your other v_align and tab_options here] ...
-    
-    # 4. Add thick horizontal line to separate the main attributes from the total rows
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "top",
-        color = "black",
-        weight = gt::px(2)
-      ),
-      locations = gt::cells_body(rows = ifelse(metric == 'sensitivity', nrow(tab_wide), nrow(tab_wide) - 1)) 
     )  %>%
     gt::tab_style(
       style = gt::cell_text(weight = "bold"),
-      locations = gt::cells_body(rows = nrow(tab_wide)) 
+      locations = gt::cells_body(
+        rows = if (nrow(tab_wide) > 0) nrow(tab_wide) else integer(0)
+      ) 
     ) %>%
-    # Anchor all cell content to the bottom of the row
     gt::tab_style(
       style = gt::cell_text(v_align = "bottom"),
       locations = gt::cells_body(columns = gt::starts_with("p_"))
     ) %>%
-    # Compress padding, center title, and set landscape layout
     gt::tab_options(
       heading.align = "center",
       table.font.size = gt::px(10),
@@ -563,70 +590,11 @@ make_summary_table <- function(species,
       table.border.bottom.style = "solid",
       table.border.bottom.width = gt::px(2),
       table.border.bottom.color = "black",
-      # APPEND the td overflow rule here:
       table.additional_css = "@page { size: landscape; margin: 0.5in; } td { overflow: visible !important; } img { vertical-align: bottom; margin-bottom: -2px; }"
     ) %>%
     gt::opt_table_lines(extent = "none") %>% gt::opt_table_outline(style = "solid", width = gt::px(2), color = "black")
   
-  if(metric == 'exposure'){
-    #create flag for which variables are important
-    var_imp_nms <- names(var_imp)[var_imp >= imp_threshold]
-    
-    # 1. Filter the exact list that aligns with your TRUE/FALSE vector
-    important_raw_names <- raw_names %in% var_imp_nms
-    
-    # 2. Translate those specific raw names into their clean display names
-    important_clean_names <- attr_map[important_raw_names]
-    
-    # 3. Append the exact string of your bottom row so it also becomes italic
-    important_clean_names <- c(
-      important_clean_names,
-      clean_names[length(clean_names)] #assumes the string to be italicized is the last clean name 
-    )
-    
-    # Italicize the important attribute names and the important total row
-    summary.table <- summary.table %>% 
-      gt::tab_style(
-        style = gt::cell_text(style = "italic"),
-        locations = gt::cells_body(
-          rows = Attribute.Name %in% important_clean_names
-        )
-      ) 
-    # (The rogue uppercase/gray styling block was completely removed from here)
-  }
-  
-  if(metric == 'vulnerability'){
-    # Italicize the important attribute names and the important total row
-    summary.table <- summary.table %>% 
-      gt::tab_style(
-        style = gt::cell_text(style = "italic"),
-        locations = gt::cells_body(
-          rows = Attribute.Name %in% clean_names[length(clean_names)] #assumes the string to be italicized is the last clean name
-        )
-      ) 
-  }
-  
-  if (metric != 'sensitivity') {
-    # Both Exposure and Vulnerability now have exactly 2 total rows at the bottom
-    bold_rows <- (nrow(tab_wide) - 1):nrow(tab_wide)
-    
-    summary.table <- summary.table %>%
-      # 1. Bold the last two rows entirely
-      gt::tab_style(
-        style = gt::cell_text(weight = "bold"),
-        locations = gt::cells_body(rows = bold_rows) 
-      ) %>%
-      # 2. Remove the horizontal line between them to fuse them into one block
-      gt::tab_style(
-        style = gt::cell_borders(sides = c("top", "bottom"), style = "hidden"),
-        locations = gt::cells_body(rows = nrow(tab_wide))
-      )
-    
-  }
-  
-  # Add a color legend to the bottom of the Vulnerability table
   if (metric == 'vulnerability') {
-    
     legend_html <- "
       <div style='text-align: center; padding-top: 5px; font-size: 12px;'>
         <span style='display: inline-block; width: 12px; height: 12px; background-color: green; border: 1px solid black; vertical-align: middle;'></span> <span style='vertical-align: middle;'>Low</span>
@@ -640,7 +608,6 @@ make_summary_table <- function(species,
       gt::tab_source_note(
         source_note = gt::html(legend_html)
       ) %>%
-      # Ensure the source note area integrates seamlessly into the table borders
       gt::tab_options(
         source_notes.background.color = "white",
         source_notes.border.bottom.style = "none",
@@ -649,15 +616,28 @@ make_summary_table <- function(species,
   }
   
   if(save){
-    # 8. Save as a cropped, high-res image
-    gt::gtsave(
-      summary.table,
-      paste0(table_dir, '/', metric, '_table_', gsub(' ', '', species), '.png'),
-      vwidth = 1500 # Gives it a wide, high-resolution rendering
-    )
+    if(metric == 'sensitivity'){
+      gt::gtsave(
+        summary.table,
+        paste0(table_dir, '/', metric, '_table_', gsub(' ', '', species), '.png'),
+        vwidth = 1500 
+      )
+    } else {
+      if(is.null(var_imp)){
+        gt::gtsave(
+          summary.table,
+          paste0(table_dir, '/', metric, '_table_allvar_', gsub(' ', '', species), '.png'),
+          vwidth = 1500 
+        )
+      } else {
+        gt::gtsave(
+          summary.table,
+          paste0(table_dir, '/', metric, '_table_impvar_', gsub(' ', '', species), '.png'),
+          vwidth = 1500 
+        )
+      }
+    }
   }
   
   return(summary.table)
-  
 }
-      
