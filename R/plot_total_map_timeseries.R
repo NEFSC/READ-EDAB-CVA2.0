@@ -2,7 +2,7 @@
 #' @description
 #' Produces total Vulnerability maps and time series 
 #'
-#' @param map spatRaster to plot. Can be NULL if plot_map is FALSE.
+#' @param map spatRaster to plot. Can be NULL.
 #' @param timeseries a vector or data.frame of timeseries data to plot if desired. Defaults to NULL.  
 #' @param stocks spatVector of stock polygons to add to plot. Defaults to NULL. 
 #' @param stock_key named vector of stock long names and abbreviations. Used to label timeseries. 
@@ -33,7 +33,7 @@ plot_total_map_timeseries <- function(map = NULL,
   )
   
   if (is.null(map) && is.null(timeseries)) {
-    stop("Both plot_map is FALSE and timeseries is NULL. Nothing to plot.")
+    stop("Both map and timeseries are NULL. Nothing to plot.")
   }
   
   plot_total <- function(){
@@ -127,7 +127,7 @@ plot_total_map_timeseries <- function(map = NULL,
           lwd = 1.5,
           pch = 19,
           ylim = c(1, 4),
-          ylab = ifelse(!plot_map, "Vulnerability", ""),
+          ylab = "Score",
           xlab = "Month",
           yaxt = 'n',
           xaxt = 'n',
@@ -155,7 +155,7 @@ plot_total_map_timeseries <- function(map = NULL,
             lwd = 1.5,
             pch = 18+x,
             ylim = c(1, 4),
-            ylab = ifelse(!plot_map, "Vulnerability", ""),
+            ylab = "Score",
             xlab = "Month",
             yaxt = 'n',
             xaxt = 'n',
