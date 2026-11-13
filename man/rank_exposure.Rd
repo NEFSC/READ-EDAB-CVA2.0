@@ -4,21 +4,15 @@
 \alias{rank_exposure}
 \title{Rank Raw Environmental Exposure}
 \usage{
-rank_exposure(
-  exposure,
-  flip = T,
-  no_flip_vars = c("bottomT", "surfaceT", "bottomArg", "MLD")
-)
+rank_exposure(exposure, flip = F)
 }
 \arguments{
 \item{exposure}{output from \code{calculate_raw_exposure}}
 
 \item{flip}{TRUE/FALSE option to multiply exposure by -1 to ensure that positive exposure values represent negative variable change (increasing temperatures, decreasing oxygen concentrations, etc).}
-
-\item{no_flip_vars}{character vector naming which vectors should NOT be flipped - counterintuitive, yes, but this list was actually shorter than the variables that needed to be flipped for NECVA2.0. Names should match the names in \code{exposure}}
 }
 \value{
-A list of rasterStacks with each layer containing ranked values between 1 - 4. The length of the list is equal to the length of the lists supplied as \code{exposure}
+A spatRaster with each layer containing ranked values between 1 - 4.
 }
 \description{
 Converts raw exposure from \code{calculate_raw_exposure} to a rank between 1-4 based on thresholds used in CVA1.0. This function also flips variables as needed such that positive exposure is always negative (i.e. both increasing temperature and decreasing oxygen concentrations result in positive exposure).

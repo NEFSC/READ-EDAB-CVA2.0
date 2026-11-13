@@ -28,7 +28,7 @@ reference:
   - merge_fisheries_rasters
   - merge_fisheries_dfs
   - normalize_model_data
-  - normalize_variable_weights
+  - normalize_variable_importance
   - predict_to_raster
   - starts_with("pull_")
   - rank_exposure

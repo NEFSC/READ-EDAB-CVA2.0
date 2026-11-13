@@ -4,13 +4,28 @@
 \alias{calculate_raw_exposure}
 \title{Calculate Raw Exposure from Environmental Data}
 \usage{
-calculate_raw_exposure(present_rasters, future_rasters)
+calculate_raw_exposure(
+  present,
+  future,
+  spatial_temporal,
+  mask_bathy,
+  bathy,
+  bathy_range
+)
 }
 \arguments{
-\item{present_rasters, future_rasters}{lists of rasterStacks, representing the present and future timeseries to calculate exposure with, with each item in the list corresponding to an environmental variable. Both lists need to have the same length (aka number of variables) but the lengths of the timeseries (equal to the number of layers in rasterStacks) can differ. Function assumes that the rasters are monthly timeseries and will average monthly.}
+\item{present, future}{spatRasters, representing the present and future timeseries to calculate exposure with. Function assumes that the rasters are monthly timeseries and will average monthly.}
+
+\item{spatial_temporal}{TRUE/FALSE to determine method for averaging present data ONLY. If TRUE, normalization is spatially and temporally explicit. If FALSE, normalization occurs using averages/standard deviations calculated across space and time. Future datasets are always averaged across time and space to ensure that exposure value is spatially explicit.}
+
+\item{mask_bathy}{TRUE/FALSE indicating whether or not to use bathymetry data as a mask for raw data}
+
+\item{bathy}{a spatRaster of bathymetry data. Must be same extent as results from pull_mom6_hindcast/forecast}
+
+\item{bathy_range}{a vector containing the minimum and maximum desired bathymetry values}
 }
 \value{
-a list of rasterStacks with each layer representing monthly raw exposure. The length of the list is equal to the length of the lists supplied as \code{present_rasters} and \code{future_rasters}
+a spatRaster of monthly raw exposure
 }
 \description{
 Calculates the raw variables exposure as the ratio of the difference between future and present conditions, divided by present standard deviations (a z-score).

@@ -163,7 +163,7 @@ make_stock_polygons <- function(
       terra::plot(
         bathymetry,
         ylim = c(35, 45),
-        legend = FALSE, # coltab handles the map colors; we will build the legend separately
+        legend = FALSE, 
         pax = list(cex.axis = 1.5),
         cex.lab = 1.25,
         xlab = expression('Longitude (' * degree * ')'),

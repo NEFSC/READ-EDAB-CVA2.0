@@ -3,10 +3,13 @@
 #' Produces exposure plots. Requires directory to be set up per directions in the package documentation/manual.
 #'
 #' @param species names of the species to plot. Must match folder name to pull correct data and save figures correctly.
-#' @param type at least one of the following: 'variable', 'total', 'important', 'radar. Used to determine what to plot. Defaults to all.
-#' @param present_time,future_time character strings indicating the present and future time series to compare. Example: '1993-2019'. Used to pull correct calculations and save the data properly
+#' @param type at least one of the following: 'variable', 'total', 'important', 'radar'. Used to determine what to plot. Defaults to all.
+#' @param forecast_release,hindcast_release MOM6 release codes for the (f)orecast and (h)indcasts used. Used to pull correct variable exposures
+#' @param forecast_init forecast_initialization code corresponding to the forecast_initalization date of the desired forecast data. Used to pull correct variable exposures
+#' @param hindcast_yr_range character string corresponding to the years in the hindcast data used. Used to pull correct data and save the data properly
 #' @param variable_df a data.frame containing all possible environmental variables, such as from the MOM6 model. Must contain columns \code{Long.Name} and \code{Short.Name}, containing the full names and abbreviated names of the variables. Abbreviated names should correspond to those in the weights vector produced by \code{combineWeights}
 #' @param coastline shapefile used to plot land in model prediction plots
+#' @param bathymetry spatRaster file of bathymetry data; used to plot bathymetry in stock boundary plots
 #'
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 #'
@@ -15,198 +18,275 @@
 make_exposure_plots <- function(
   species,
   type = c('variable', 'total', 'important', 'radar'),
-  present_time,
-  future_time,
+  forecast_release,
+  forecast_init,
+  hindcast_release,
+  hindcast_yr_range,
   variable_df,
-  coastline
+  coastline,
+  bathymetry
 ) {
+  # Failsafe: If the function crashes, forcefully close any open PDFs
+  on.exit(
+    while (grDevices::dev.cur() > 1) {
+      grDevices::dev.off()
+    },
+    add = TRUE
+  )
+
   #determine what to plot
   ind <- c('variable', 'total', 'important', 'radar') %in% type
 
   for (x in species) {
     message(paste0('Plotting ', x, ' Exposure...'))
 
+    if (file.exists(paste0('../shpfiles/species_stock_areas/', x, '.shp'))) {
+      stocks <- terra::vect(paste0(
+        '../shpfiles/species_stock_areas/',
+        x,
+        '.shp'
+      ))
+    } else {
+      stocks <- NULL
+    }
+
     if (ind[1]) {
       message(paste("Plotting Variable-Specific Exposure..."))
       ###VARIABLE-LEVEL EXPOSURE
-      #load variable weights
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/combined_variable_weights.RData'
-      )) #cW
 
       #load maps
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/variable_exposure_maps.RData'
-      )) #mapExp
-      #subset timeseries matrix by rownames
-      i <- names(mapExp) %in% names(cW)
-      mapSub <- raster::subset(mapExp, which(i == T))
+      varMaps <- terra::rast(file.path(
+        getwd(),
+        x,
+        'Data',
+        paste0(
+          'variable_exposure_maps_',
+          forecast_release,
+          '_',
+          forecast_init,
+          '_',
+          hindcast_release,
+          '_',
+          hindcast_yr_range,
+          '.tif'
+        )
+      ))
 
       #load timeseries
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/variable_exposure_timeseries.RData'
-      )) #vecExp
-      #subset timeseries matrix by rownames
-      i <- rownames(vecExp) %in% names(cW)
-      vecSub <- vecExp[i, ]
+      vecExp <- readRDS(
+        file.path(
+          getwd(),
+          x,
+          'Data',
+          paste0(
+            'variable_exposure_timeseries_',
+            forecast_release,
+            '_',
+            forecast_init,
+            '_',
+            hindcast_release,
+            '_',
+            hindcast_yr_range,
+            '.rds'
+          )
+        )
+      )
 
-      #plot
+      #plot maps
       grDevices::pdf(
         paste0(
-          file.path(getwd(), x, 'Figures'),
-          '/',
-          present_time,
-          ' vs ',
-          future_time,
-          '/variable_exposure_maps_inset_timeseries.pdf'
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'variable_exposure_maps_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
         ),
         width = 8,
         height = 11
       )
       #set up panels according to the number of variables
-      if (raster::nlayers(mapSub) < 6) {
-        graphics::par(mfrow = c(2, 3))
+      if (terra::nlyr(varMaps) <= 6) {
+        graphics::par(
+          mfrow = c(2, 3)
+        )
       } else {
-        graphics::par(mfrow = c(3, 3))
+        graphics::par(
+          mfrow = c(3, 3)
+        )
       }
 
-      for (y in 1:raster::nlayers(mapSub)) {
+      for (y in 1:terra::nlyr(varMaps)) {
         #get full name of variable
-        i <- variable_df$Short.Name %in% names(mapSub)[y]
+        i <- variable_df$Short.Name %in% names(varMaps)[y]
+
+        draw_legend <- y == terra::nlyr(varMaps)
 
         #map
-        graphics::par(plt = c(0.2, 0.9, 0.15, 0.875))
-        plot(
-          raster::subset(mapSub, y),
-          zlim = c(1, 4),
-          col = cmocean::cmocean('matter')(4),
-          legend = F,
-          legend.mar = 0,
+        #graphics::par(plt = c(0.1, 0.98, 0.1, 0.95))
+        terra::plot(
+          varMaps[[y]],
+          type = 'continuous',
+          range = c(1, 4),
+          col = cmocean::cmocean('matter')(64),
+          mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
+          legend = FALSE,
           xlab = expression('Longitude (' * degree * ')'),
           ylab = expression('Latitude (' * degree * ')'),
-          xaxt = 'n',
-          yaxt = 'n',
-          main = variable_df$Long.Name[i]
+          main = variable_df$Long.Name[i],
+          pax = list(cex.axis = 1.5, xat = seq(-80, -60, by = 2)),
+          cex.lab = 1.25
         )
-        graphics::axis(
-          2,
-          at = seq(30, 50, by = 1),
-          labels = seq(30, 50, by = 1),
-          las = 2
-        )
-        graphics::axis(
-          1,
-          at = seq(-85, -65, by = 1),
-          labels = seq(-85, -65, by = 1)
+
+        #add bathy contours, coastline, and stocks if necessary
+        terra::contour(
+          bathymetry,
+          filled = F,
+          levels = c(-1000, -100, -50),
+          add = T
         )
         plot(coastline['id'], col = 'grey', add = T)
-
-        #inset timeseries
-        graphics::par(plt = c(0.55, 0.9, 0.25, 0.45), new = TRUE)
-        plot(
-          vecSub[y, ],
-          t = 'b',
-          lty = 8,
-          lwd = 0.8,
-          cex = 0.8,
-          pch = y,
-          ylim = c(1, 4),
-          ylab = "",
-          xlab = "",
-          yaxt = 'n',
-          xaxt = 'n'
+        if (!is.null(stocks)) {
+          terra::plot(stocks, add = T, lwd = 2)
+        }
+      } #end y
+      # 2. Draw the legend independently if it is the last panel
+      if (draw_legend) {
+        graphics::par(mgp = c(3, 0.1, 0))
+        terra::plot(
+          varMaps[[y]],
+          type = 'continuous',
+          range = c(1, 4),
+          col = cmocean::cmocean('matter')(64),
+          mar = c(2.5, 2.5, 1.5, 0.5), # Explicitly set margins inside terra::plot
+          legend.only = TRUE, # <-- Draws only the legend elements
+          plg = list(
+            title = "Exposure",
+            title.cex = 1.5,
+            cex = 1.5,
+            horizontal = TRUE,
+            x = -73.5,
+            y = 37,
+            at = 1:4,
+            n = 4,
+            # 1. Scale the size of the color bar itself (width, height)
+            size = c(1, 2.5)
+          )
         )
-        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+      }
+
+      grDevices::dev.off()
+
+      #timeseries
+      grDevices::pdf(
+        paste0(
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'variable_exposure_timeseries_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
+        ),
+        width = 8,
+        height = 11
+      )
+      #set up panels according to the number of variables
+      if (terra::nlyr(varMaps) <= 6) {
+        graphics::par(mfrow = c(2, 3), mar = c(4, 3, 2, 2))
+      } else {
+        graphics::par(mfrow = c(3, 3), mar = c(4, 3, 2, 2))
+      }
+
+      for (y in 1:terra::nlyr(varMaps)) {
+        #get full name of variable
+        i <- variable_df$Short.Name %in% names(varMaps)[y]
+
+        if (!inherits(vecExp, 'list')) {
+          #if vecExp is NOT a list and is just a single matrix, just plot a single line
+          plot(
+            vecExp[y, ],
+            t = 'b',
+            lty = 1,
+            lwd = 1,
+            cex = 1,
+            pch = 1,
+            ylim = c(1, 4),
+            ylab = "Exposure",
+            xlab = "Month",
+            yaxt = 'n',
+            xaxt = 'n',
+            main = variable_df$Long.Name[i]
+          )
+        } else {
+          #if vecExp is a list, then exposure is calculated within multiple stocks
+          vecSub <- do.call(rbind, lapply(vecExp, function(s) s[y, ]))
+          plot(
+            #explicitly call the first row, which is the global value and then add the additional ones
+            vecSub[1, ],
+            t = 'b',
+            lty = 1,
+            lwd = 1,
+            cex = 1,
+            pch = 1,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "",
+            yaxt = 'n',
+            xaxt = 'n',
+            main = variable_df$Long.Name[i]
+          )
+          for (m in 2:nrow(vecSub)) {
+            graphics::lines(
+              vecSub[m, ],
+              t = 'b',
+              lty = m,
+              lwd = 1,
+              cex = 1,
+              pch = m
+            )
+          } #end m
+        } #end if vecExp is a list
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2, cex.lab = 0.5)
         graphics::axis(
           2,
           at = 1:4,
           labels = c('L', "M", "H", "VH"),
           las = 2,
-          cex.lab = 0.75
+          cex.lab = 1.25
         )
       }
 
-      if (raster::nlayers(mapSub) != 6) {
-        #add legend on the last one if the number of variables is not 6
-        plot(
-          1:10,
-          t = 'n',
-          axes = F,
-          xaxt = 'n',
-          yaxt = 'n',
-          xlab = '',
-          ylab = ''
-        )
-        fields::image.plot(
-          matrix(seq(1, 4, length.out = 16), 4, 4),
-          legend.only = T,
-          horizontal = F,
-          legend.shrink = 0.7,
-          smallplot = c(0.4, 0.6, 0.2, 0.8),
-          legend.args = list(
-            text = 'Exposure',
-            cex = 1.25,
-            side = 3,
-            line = 0.1
-          ),
-          axis.args = list(
-            cex.axis = 1,
-            at = 1:4,
-            labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"),
-            mgp = c(3, 0.5, 0)
-          ),
-          col = cmocean::cmocean('matter')(4)
-        )
-      } else {
-        #if the number of variables is 6, it will still be a 3x3 grid, so put legend in the middle by adding an extra plot
-        plot(
-          1:10,
-          t = 'n',
-          axes = F,
-          xaxt = 'n',
-          yaxt = 'n',
-          xlab = '',
-          ylab = ''
-        )
-        plot(
-          1:10,
-          t = 'n',
-          axes = F,
-          xaxt = 'n',
-          yaxt = 'n',
-          xlab = '',
-          ylab = ''
-        )
-        fields::image.plot(
-          matrix(seq(1, 4, length.out = 16), 4, 4),
-          legend.only = T,
-          horizontal = F,
-          legend.shrink = 0.7,
-          smallplot = c(0.4, 0.6, 0.2, 0.8),
-          legend.args = list(
-            text = 'Exposure',
-            cex = 1.25,
-            side = 3,
-            line = 0.1
-          ),
-          axis.args = list(
-            cex.axis = 1,
-            at = 1:4,
-            labels = c('Low (L)', "Moderate (M)", "High (H)", "Very High (VH)"),
-            mgp = c(3, 0.5, 0)
-          ),
-          col = cmocean::cmocean('matter')(4)
+      if (inherits(vecExp, 'list')) {
+        #add legend if necessary
+        graphics::legend(
+          'top',
+          bty = 'n',
+          legend = c('All', names(vecExp)[-1]),
+          pch = 1:length(vecExp),
+          lty = 1:length(vecExp),
+          cex = 1,
+          title = 'Stocks',
+          ncol = 2
         )
       }
 
@@ -216,215 +296,416 @@ make_exposure_plots <- function(
     if (ind[2]) {
       message(paste("Plotting Total Exposure with All Variables..."))
       ##TOTAL EXPOSURE - ALL VARIABLES
-      #load total map
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/total_exposure_maps_all.RData'
-      )) #totalM
+      #load maps
+      varMaps <- terra::rast(file.path(
+        getwd(),
+        x,
+        'Data',
+        paste0(
+          'total_exposure_map_all_var_',
+          forecast_release,
+          '_',
+          forecast_init,
+          '_',
+          hindcast_release,
+          '_',
+          hindcast_yr_range,
+          '.tif'
+        )
+      ))
 
-      #load total timeseries
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/total_exposure_timeseries_all.RData'
-      )) #totalT
+      #load timeseries
+      vecExp <- readRDS(
+        file.path(
+          getwd(),
+          x,
+          'Data',
+          paste0(
+            'total_exposure_timeseries_all_var_',
+            forecast_release,
+            '_',
+            forecast_init,
+            '_',
+            hindcast_release,
+            '_',
+            hindcast_yr_range,
+            '.rds'
+          )
+        )
+      )
+      if (!is.null(nrow(vecExp))) {
+        rownames(vecExp)[1] <- 'All Stocks'
+      }
 
-      #plot
+      #plot map
       grDevices::pdf(
         paste0(
-          file.path(getwd(), x, 'Figures'),
-          '/',
-          present_time,
-          ' vs ',
-          future_time,
-          '/total_exposure_maps_inset_timeseries_allvars.pdf'
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'total_exposure_all_var_map_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
         ),
         width = 8,
-        height = 11
+        height = 8
       )
       #map
-      graphics::par(fig = c(0, 1, 0, 1))
-      plot(
-        totalM,
-        zlim = c(1, 4),
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
+        pax = list(cex.axis = 1.5),
+        cex.lab = 1.25,
         xlab = expression('Longitude (' * degree * ')'),
         ylab = expression('Latitude (' * degree * ')'),
-        xaxt = 'n',
-        yaxt = 'n',
-        legend.mar = 0
-      )
-      graphics::axis(
-        2,
-        at = seq(30, 50, by = 1),
-        labels = seq(30, 50, by = 1),
-        las = 2
-      )
-      graphics::axis(
-        1,
-        at = seq(-85, -65, by = 1),
-        labels = seq(-85, -65, by = 1)
-      )
-      plot(coastline['id'], col = 'grey', add = T)
-      fields::image.plot(
-        matrix(seq(1, 4, length.out = 16), 4, 4),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.5, 0.9, 0.15, 0.2),
-        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-        axis.args = list(
-          cex.axis = 1,
-          at = 1:4,
-          labels = c('Low', "Moderate", "High", "Very High"),
-          mgp = c(3, 0.5, 0)
-        ),
-        col = cmocean::cmocean('matter')(4)
+        mar = c(3, 3, 1.5, 0.5)
       )
 
-      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
-      plot(
-        totalT,
-        t = 'b',
-        lty = 8,
-        lwd = 1.5,
-        pch = 19,
-        ylim = c(1, 4),
-        ylab = "",
-        xlab = "Month",
-        yaxt = 'n',
-        xaxt = 'n'
+      #add bathy contours, coastline, and stocks if necessary
+      terra::contour(
+        bathymetry,
+        filled = F,
+        levels = c(-1000, -100, -50),
+        add = T
       )
-      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
-      graphics::axis(
-        2,
-        at = 1:4,
-        labels = c('Low', "Moderate", "High", "Very High"),
-        las = 2,
-        cex.lab = 0.75
+      terra::plot(coastline['id'], col = 'grey', add = T)
+      if (!is.null(stocks)) {
+        terra::plot(stocks, add = T, lwd = 2)
+      }
+
+      #legend
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        legend.only = TRUE, # <-- Draws only the legend elements
+        plg = list(
+          title = "Exposure",
+          title.cex = 1.5,
+          cex = 1.5,
+          x = -68,
+          y = 38,
+          legend = c("Low", "Moderate", "High", "Very High")
+        )
       )
+      grDevices::dev.off()
+
+      #plot timeseries
+      grDevices::pdf(
+        paste0(
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'total_exposure_all_vars_timeseries_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
+        ),
+        width = 11,
+        height = 8
+      )
+      graphics::par(mar = c(5, 5, 2, 2))
+
+      if (!inherits(vecExp, 'matrix')) {
+        plot(
+          vecExp,
+          t = 'b',
+          lty = 8,
+          lwd = 1.5,
+          pch = 19,
+          ylim = c(1, 4),
+          ylab = "",
+          xlab = "Month",
+          yaxt = 'n',
+          xaxt = 'n'
+        )
+
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+        graphics::axis(
+          2,
+          at = 1:4,
+          labels = c('Low', "Moderate", "High", "Very\nHigh"),
+          las = 2,
+          cex.lab = 0.75
+        )
+      } else {
+        if (nrow(vecExp) == 3) {
+          graphics::par(mfrow = c(2, 2))
+        }
+        if (nrow(vecExp) <= 6 & nrow(vecExp) >= 4) {
+          graphics::par(mfrow = c(2, 3))
+        }
+        if (nrow(vecExp) > 6) {
+          graphics::par(mfrow = c(3, 3))
+        }
+        for (s in 1:nrow(vecExp)) {
+          plot(
+            vecExp[s, ],
+            t = 'b',
+            lty = s,
+            lwd = 1.5,
+            pch = s,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "Month",
+            yaxt = 'n',
+            xaxt = 'n',
+            main = rownames(vecExp)[s]
+          )
+
+          graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+          graphics::axis(
+            2,
+            at = 1:4,
+            labels = c('Low', "Moderate", "High", "Very\nHigh"),
+            las = 2,
+            cex.lab = 0.75
+          )
+        }
+      }
+
       grDevices::dev.off()
     }
 
     if (ind[3]) {
       message(paste("Plotting Total Exposure with Important Variables..."))
       ### ONLY IMPORTANT VARS
-      #load total map
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/total_exposure_maps_subset.RData'
-      )) #totalM
+      #load maps
+      varMaps <- terra::rast(file.path(
+        getwd(),
+        x,
+        'Data',
+        paste0(
+          'total_exposure_map_imp_var_',
+          forecast_release,
+          '_',
+          forecast_init,
+          '_',
+          hindcast_release,
+          '_',
+          hindcast_yr_range,
+          '.tif'
+        )
+      ))
 
-      #load total timeseries
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/',
-        present_time,
-        ' vs ',
-        future_time,
-        '/total_exposure_timeseries_subset.RData'
-      )) #totalT
+      #load timeseries
+      vecExp <- readRDS(
+        file.path(
+          getwd(),
+          x,
+          'Data',
+          paste0(
+            'total_exposure_timeseries_imp_var_',
+            forecast_release,
+            '_',
+            forecast_init,
+            '_',
+            hindcast_release,
+            '_',
+            hindcast_yr_range,
+            '.rds'
+          )
+        )
+      )
+      if (!is.null(nrow(vecExp))) {
+        rownames(vecExp)[1] <- 'All Stocks'
+      }
 
-      #plot
+      #plot map
       grDevices::pdf(
         paste0(
-          file.path(getwd(), x, 'Figures'),
-          '/',
-          present_time,
-          ' vs ',
-          future_time,
-          '/total_exposure_maps_inset_timeseries_impvars.pdf'
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'total_exposure_imp_var_map_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
         ),
         width = 8,
-        height = 11
+        height = 8
       )
+      #graphics::par(mar = c(5, 5, 1.5, 0.5))
       #map
-      graphics::par(fig = c(0, 1, 0, 1))
-      plot(
-        totalM,
-        zlim = c(1, 4),
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
         col = cmocean::cmocean('matter')(4),
         ylim = c(35, 45),
         legend = F,
         xlab = expression('Longitude (' * degree * ')'),
         ylab = expression('Latitude (' * degree * ')'),
-        xaxt = 'n',
-        yaxt = 'n',
-        legend.mar = 0
-      )
-      graphics::axis(
-        2,
-        at = seq(30, 50, by = 1),
-        labels = seq(30, 50, by = 1),
-        las = 2
-      )
-      graphics::axis(
-        1,
-        at = seq(-85, -65, by = 1),
-        labels = seq(-85, -65, by = 1)
-      )
-      plot(coastline['id'], col = 'grey', add = T)
-      fields::image.plot(
-        matrix(seq(1, 4, length.out = 16), 4, 4),
-        legend.only = T,
-        horizontal = T,
-        legend.shrink = 0.7,
-        smallplot = c(0.5, 0.9, 0.15, 0.2),
-        legend.args = list(text = 'Exposure', cex = 1.5, side = 3, line = 0.1),
-        axis.args = list(
-          cex.axis = 1,
-          at = 1:4,
-          labels = c('Low', "Moderate", "High", "Very High"),
-          mgp = c(3, 0.5, 0)
-        ),
-        col = cmocean::cmocean('matter')(4)
+        pax = list(cex.axis = 1.5),
+        cex.lab = 1.25,
+        mar = c(3, 3, 1.5, 0.5)
       )
 
-      graphics::par(fig = c(0.125, 0.6, 0.65, 0.95), new = TRUE)
-      plot(
-        totalT,
-        t = 'b',
-        lty = 8,
-        lwd = 1.5,
-        pch = 19,
-        ylim = c(1, 4),
-        ylab = "",
-        xlab = "Month",
-        yaxt = 'n',
-        xaxt = 'n'
+      #add bathy contours, coastline, and stocks if necessary
+      terra::contour(
+        bathymetry,
+        filled = F,
+        levels = c(-1000, -100, -50),
+        add = T
       )
-      graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
-      graphics::axis(
-        2,
-        at = 1:4,
-        labels = c('Low', "Moderate", "High", "Very High"),
-        las = 2,
-        cex.lab = 0.75
+      plot(coastline['id'], col = 'grey', add = T)
+      if (!is.null(stocks)) {
+        terra::plot(stocks, add = T, lwd = 2)
+      }
+
+      #legend
+      terra::plot(
+        varMaps,
+        type = 'classes',
+        levels = c("1", "2", "3", "4"),
+        range = c(1, 4),
+        col = cmocean::cmocean('matter')(4),
+        legend.only = TRUE, # <-- Draws only the legend elements
+        plg = list(
+          title = "Exposure",
+          title.cex = 1.5,
+          cex = 1.5,
+          x = -68,
+          y = 38,
+          legend = c("Low", "Moderate", "High", "Very High")
+        )
       )
+      grDevices::dev.off()
+
+      #plot timeseries
+      grDevices::pdf(
+        paste0(
+          file.path(
+            getwd(),
+            x,
+            'Figures',
+            paste0(
+              'total_exposure_imp_vars_timeseries_',
+              forecast_release,
+              '_',
+              forecast_init,
+              '_',
+              hindcast_release,
+              '_',
+              hindcast_yr_range,
+              '.pdf'
+            )
+          )
+        ),
+        width = 11,
+        height = 8
+      )
+      graphics::par(mar = c(5, 5, 2, 2))
+
+      if (!inherits(vecExp, 'matrix')) {
+        plot(
+          vecExp,
+          t = 'b',
+          lty = 8,
+          lwd = 1.5,
+          pch = 19,
+          ylim = c(1, 4),
+          ylab = "",
+          xlab = "Month",
+          yaxt = 'n',
+          xaxt = 'n'
+        )
+
+        graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+        graphics::axis(
+          2,
+          at = 1:4,
+          labels = c('Low', "Moderate", "High", "Very\nHigh"),
+          las = 2,
+          cex.lab = 0.75
+        )
+      } else {
+        if (nrow(vecExp) == 3) {
+          graphics::par(mfrow = c(2, 2))
+        }
+        if (nrow(vecExp) <= 6 & nrow(vecExp) >= 4) {
+          graphics::par(mfrow = c(2, 3))
+        }
+        if (nrow(vecExp) > 6) {
+          graphics::par(mfrow = c(3, 3))
+        }
+        for (s in 1:nrow(vecExp)) {
+          plot(
+            vecExp[s, ],
+            t = 'b',
+            lty = s,
+            lwd = 1.5,
+            pch = s,
+            ylim = c(1, 4),
+            ylab = "",
+            xlab = "Month",
+            yaxt = 'n',
+            xaxt = 'n',
+            main = rownames(vecExp)[s]
+          )
+
+          graphics::axis(1, at = 1:12, labels = month.abb, las = 2)
+          graphics::axis(
+            2,
+            at = 1:4,
+            labels = c('Low', "Moderate", "High", "Very\nHigh"),
+            las = 2,
+            cex.lab = 0.75
+          )
+        }
+      }
+
       grDevices::dev.off()
     }
 
     if (ind[4]) {
       message(paste("Plotting Radar Plot of Relative Variable Importance..."))
       #load variable weights
-      load(paste0(
-        file.path(getwd(), x, 'Data'),
-        '/combined_variable_weights.RData'
-      )) #cW
-
+      imp <- readRDS(
+        file.path(
+          getwd(),
+          x,
+          'Data',
+          'normalized_dynamic_variable_importance.rds'
+        )
+      )
+      cW <- imp[nrow(imp), ]
       cW <- rbind(rep(1, length(cW)), rep(0, length(cW)), cW)
 
       #plot
@@ -436,7 +717,11 @@ make_exposure_plots <- function(
         width = 8,
         height = 8
       )
-      fmsb::radarchart(as.data.frame(cW), pfcol = scales::alpha('grey', 0.5))
+      fmsb::radarchart(
+        as.data.frame(cW),
+        pfcol = scales::alpha('grey', 0.5),
+        seg = 10
+      )
       grDevices::dev.off()
     }
   } #end x

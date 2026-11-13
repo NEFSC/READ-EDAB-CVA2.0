@@ -10,7 +10,8 @@ pull_mom6_hindcast(
   gt = "regrid",
   of = "monthly",
   bounds = c(-78, -65, 35, 45),
-  release
+  release,
+  chunk_size = 50
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ pull_mom6_hindcast(
 \item{bounds}{xmin, xmax, ymin, ymax of desired output raster}
 
 \item{release}{release code. Must match one of the options in the 'cefi_release' column in provided JSON table}
+
+\item{chunk_size}{number of timestamps to pull at once to avoid OpenDap data limits}
 }
 \value{
 a spatRaster of data associated with the requested variable

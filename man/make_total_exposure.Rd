@@ -8,23 +8,23 @@ make_total_exposure(
   type,
   variable_exposure,
   count_all,
-  weights,
+  variable_weights,
   weight_threshold
 )
 }
 \arguments{
 \item{type}{designates desired output, must equal 'map' or 'timeseries'}
 
-\item{variable_exposure}{If \code{type == 'map'}, a rasterStack output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix output from \code{make_variable_exposure(type == 'timeseries')}.}
+\item{variable_exposure}{If \code{type == 'map'}, a spatRaster output from \code{make_variable_exposure(type == 'map')}. If \code{type == 'timeseries'}, the matrix or list output from \code{make_variable_exposure(type == 'timeseries')}.}
 
-\item{count_all}{TRUE/FALSE to use \code{weights} and \code{wThreshold} to subset variables to only important variables}
+\item{count_all}{TRUE/FALSE to use \code{variable_weights} and \code{weight_threshold} to subset variables to only important variables}
 
-\item{weights}{output from \code{combine_weights} - a vector of variable weights in ensemble SDM}
+\item{variable_weights}{output from \code{normalize_variable_weights} - a vector of variable weights in ensemble SDM}
 
 \item{weight_threshold}{numeric value used to subset weights, variables with weights less to or equal to this value will be excluded from total exposure calculation}
 }
 \value{
-If \code{type == 'map'}, the output is a raster representing total exposure across space. If \code{type == 'timeseries'}, the output is a vector representing total exposure across time.
+If \code{type == 'map'}, the output is a raster representing total exposure across space. If \code{type == 'timeseries'}, the output is a vector representing total exposure across time if a single matrix is supplied in variable_exposure, or a matrix with a number of rows equal to the length of the list supplied in variable_exposure.
 }
 \description{
 Uses the logic rule from CVA1.0 to combine variable-specific exposures to create a total exposure map or timeseries

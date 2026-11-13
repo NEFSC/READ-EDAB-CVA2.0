@@ -24,7 +24,7 @@ calculate_model_confidence <- function(species) {
   meanConf <- mean(species$Score, na.rm = T)
   sdConf <- stats::sd(species$Score, na.rm = T)
   #format data to fit into eventual csv
-  cn <- as.data.frame(
+  cn <- data.frame(
     Species = species$Species[1],
     meanConfidence = meanConf,
     sdConfidence = sdConf
