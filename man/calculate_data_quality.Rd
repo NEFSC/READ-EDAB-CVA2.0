@@ -4,10 +4,12 @@
 \alias{calculate_data_quality}
 \title{Calculate Data Quality Scores for each Attribute & Species}
 \usage{
-calculate_data_quality(species_attributes)
+calculate_data_quality(species_attributes, id_col = "Stock.Name")
 }
 \arguments{
 \item{species_attributes}{a data frame containing all of the expert scores for one species. See example for how to generate this list from the FCVA output.}
+
+\item{id_col}{column name to use as unique identifier for row names. Defaults to Stock.Name}
 }
 \value{
 a vector of mean data quality scores for each attribute with the length of the number of attributes.

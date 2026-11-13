@@ -42,9 +42,17 @@ utils::globalVariables(c(
   'sd_space',
   'dist_space',
   'weights',
+  'expert.scores',
+  'data_quality',
+  '.data',
+  'Attribute.Raw',
+  'value',
+  'x',
+  'sort_order',
   # Operators from other packages
   ".",
   "%>%",
   "%do%",
-  "%dopar%"
+  "%dopar%",
+  ":="
 ))
