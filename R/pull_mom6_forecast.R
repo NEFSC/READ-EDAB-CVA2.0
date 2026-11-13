@@ -8,7 +8,7 @@
 #' @param of desired output frequency. Must match one of the options in the 'cefi_output_frequency' column in provided JSON table
 #' @param bounds xmin, xmax, ymin, ymax of desired output raster
 #' @param release release code. Must match one of the options in the 'cefi_release' column in provided JSON table
-#' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table. 
+#' @param init initialization code. Must match one of the options in the 'cefi_init_date' column in provided JSON table.
 #' @param chunk_size number of timestamps to pull at once to avoid OpenDap data limits
 #'
 #' @return a spatRaster of data associated with the requested variable, averaged across the 10 ensemble members
@@ -54,7 +54,7 @@ pull_mom6_forecast <- function(
   }
 
   #load url with netcdf to account for ensemble members
-  
+
   r <- ncdf4::nc_open(url[ind])
   #get lon/lat first for subsetting
   lon <- ncdf4::ncvar_get(r, "lon")
@@ -66,14 +66,14 @@ pull_mom6_forecast <- function(
 
   tm <- ncdf4::ncvar_get(r, 'lead')
   var <- NULL
-  
+
   for (m in 1:10) {
     vm <- NULL
     for (start_t in seq(1, length(tm), by = chunk_size)) {
       # Calculate how many time steps to pull in this specific chunk
       # (Prevents overshooting the end of the time series)
       count_t <- min(chunk_size, length(tm) - start_t + 1)
-      
+
       # Pull the chunk
       v_chunk <- ncdf4::ncvar_get(
         r,
@@ -81,7 +81,7 @@ pull_mom6_forecast <- function(
         start = c(lonInd[1], latInd[1], start_t, m),
         count = c(length(lonInd), length(latInd), count_t, 1)
       )
-      
+
       # Bind the chunk along the 3rd dimension (Time)
       vm <- abind::abind(vm, v_chunk, along = 3)
     }

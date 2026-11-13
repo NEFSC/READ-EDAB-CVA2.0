@@ -114,57 +114,62 @@ calculate_distribution_shift <- function(
   # 5. Boundary & Area shifts
   df$range_y_deg <- df$leading_edge_y - df$trailing_edge_y
   df$range_x_deg <- df$leading_edge_x - df$trailing_edge_x
-  
+
   df$area_core_change <- c(NA, diff(df$kde_core_area))
   df$area_all_change <- c(NA, diff(df$kde_all_area))
-
 
   # Combine polygons into a single SpatVector
   core_polygons <- do.call(rbind, core_poly_list)
   all_polygons <- do.call(rbind, all_poly_list)
-  
+
   # Save polygons to disk if path is provided
   if (!is.null(poly_dir) && !is.null(all_polygons)) {
-    
-    #check for poly_dir first 
-    if(!dir.exists(poly_dir)){
+    #check for poly_dir first
+    if (!dir.exists(poly_dir)) {
       dir.create(poly_dir)
     }
-    
+
     # 1. Define final target network file paths
-    net_all_path  <- paste0(poly_dir, '/kde_all_', range_p*100, '.gpkg')
-    net_core_path <- paste0(poly_dir, '/kde_core_', core_p*100, '.gpkg')
-    
+    net_all_path <- paste0(poly_dir, '/kde_all_', range_p * 100, '.gpkg')
+    net_core_path <- paste0(poly_dir, '/kde_core_', core_p * 100, '.gpkg')
+
     # 2. Define temporary file paths localized INSIDE the RStudio container
     # tempfile() safely creates unique filenames with your exact required extension
-    temp_all_path  <- tempfile(pattern = "all_poly_", fileext = '.gpkg')
+    temp_all_path <- tempfile(pattern = "all_poly_", fileext = '.gpkg')
     temp_core_path <- tempfile(pattern = "core_poly_", fileext = '.gpkg')
-    
+
     # 3. Write locally to the container's fast disk to bypass network file locking
     terra::writeVector(all_polygons, filename = temp_all_path, overwrite = TRUE)
-    terra::writeVector(core_polygons, filename = temp_core_path, overwrite = TRUE)
-    
-    # 4. Stream the finished, locked-in files over the network mount 
+    terra::writeVector(
+      core_polygons,
+      filename = temp_core_path,
+      overwrite = TRUE
+    )
+
+    # 4. Stream the finished, locked-in files over the network mount
     file.copy(from = temp_all_path, to = net_all_path, overwrite = TRUE)
     file.copy(from = temp_core_path, to = net_core_path, overwrite = TRUE)
-    
+
     # 5. Clean up the container's temporary space
     file.remove(temp_all_path)
     file.remove(temp_core_path)
-    
-    cat(sprintf("Successfully saved 50%% and 95%% KDE polygons to: %s\n", poly_dir))
+
+    cat(sprintf(
+      "Successfully saved 50%% and 95%% KDE polygons to: %s\n",
+      poly_dir
+    ))
   }
-  
 
   # Return BOTH the summary dataframe and the SpatVector polygon object
   return(
-    if(!is.null(poly_dir)){
-    list(
-    metrics = df,
-    core_polygons = core_polygons,
-    all_polygons = all_polygons
+    if (!is.null(poly_dir)) {
+      list(
+        metrics = df,
+        core_polygons = core_polygons,
+        all_polygons = all_polygons
+      )
+    } else {
+      df
+    }
   )
-      } else {
-        df
-      })
 }

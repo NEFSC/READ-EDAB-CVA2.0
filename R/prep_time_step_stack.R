@@ -39,28 +39,35 @@ prep_time_step_stack <- function(
   # 3. Pull layer 'x' from every SpatRaster in your 'rasts' list
   dynamic_lyrs <- lapply(rasts, function(r) r[[x]])
   dynamic_stack <- terra::rast(dynamic_lyrs)
-  
+
   # 4. Layer-specific Data Quality Check
   layer_ranges <- terra::minmax(dynamic_stack)
-  
+
   # Evaluate conditions per layer
-  is_inf <- is.infinite(layer_ranges["min", ]) | is.infinite(layer_ranges["max", ])
-  is_extreme <- layer_ranges["max", ] > threshold[2] | layer_ranges["min", ] < threshold[1]
-  
+  is_inf <- is.infinite(layer_ranges["min", ]) |
+    is.infinite(layer_ranges["max", ])
+  is_extreme <- layer_ranges["max", ] > threshold[2] |
+    layer_ranges["min", ] < threshold[1]
+
   # Identify indices of layers that fail the check (using which() safely handles NAs)
   bad_idx <- which(is_inf | is_extreme)
-  
+
   if (length(bad_idx) > 0) {
     bad_names <- names(dynamic_stack)[bad_idx]
-    message(paste("Corrupted data detected in variable(s):", paste(bad_names, collapse = ", "), 
-                  "at timestep", lyr_name, "- converting only these layers to NA."))
-    
+    message(paste(
+      "Corrupted data detected in variable(s):",
+      paste(bad_names, collapse = ", "),
+      "at timestep",
+      lyr_name,
+      "- converting only these layers to NA."
+    ))
+
     # Replace ONLY the corrupted layers with NA
     for (i in bad_idx) {
       dynamic_stack[[i]] <- terra::init(dynamic_stack[[i]], NA)
     }
   }
-  
+
   # 4. Force the static variables to align perfectly with your dynamic data grid
   # This matches extents, projections, and resolutions exactly
   static_aligned <- terra::resample(
