@@ -7,8 +7,10 @@
 make_sensitivity_table(
   species,
   species_col,
+  stock_col,
   attribute_names_raw,
   attribute_names_clean,
+  stock_order,
   total_sens_col,
   certainty_col,
   raw_data,
@@ -20,9 +22,11 @@ make_sensitivity_table(
 \arguments{
 \item{species}{names of species to produce table for. Must match \code{Stock.Name} in \code{raw_data}}
 
-\item{species_col}{name of column with species names to help subset data. Should be the same across \code{raw_data}, \code{sensitivity}, and \code{data_quality}}
+\item{species_col, stock_col}{name of column with species and stock names to help subset data. Should be the same across \code{raw_data}, \code{sensitivity}, and \code{data_quality}}
 
 \item{attribute_names_raw, attribute_names_clean}{vectors of raw attribute names to help subset \code{sensitivity} and \code{data_quality}, and cleaned up names to use in table}
+
+\item{stock_order}{stock names in desired order for them to appear in the table. Provide all possible stock names. Need to match names in \code{raw_data[,stock_col]}}
 
 \item{total_sens_col, certainty_col}{names of column containing total sensitivity scores and associated certainty in \code{sensitivity}}
 
@@ -35,7 +39,7 @@ make_sensitivity_table(
 \item{table_dir}{file path to folder to save tables in}
 }
 \value{
-No returns. Saves pdf file containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
+No returns. Saves png containing the sensitivity table containing the expert scores, data quality, and overall sensitivity score, with certainty.
 }
 \description{
 Generates the sensitivity table with final attribute scores, data quality, and distribution of tallies for each species. One table is generated per species and saved in the designated directory. Requires directory to be set up per directions in the package documentation/manual.

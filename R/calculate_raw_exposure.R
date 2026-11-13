@@ -37,14 +37,14 @@ calculate_raw_exposure <- function(present_rasters, future_rasters) {
           present_rasters[[v]][[1]],
           seq(x, raster::nlayers(present_rasters[[v]][[1]]), by = 12)
         ),
-        sd
+        stats::sd
       )
       sdFut <- raster::calc(
         raster::subset(
           future_rasters[[v]][[1]],
           seq(x, raster::nlayers(future_rasters[[v]][[1]]), by = 12)
         ),
-        sd
+        stats::sd
       )
 
       #calculate exposure

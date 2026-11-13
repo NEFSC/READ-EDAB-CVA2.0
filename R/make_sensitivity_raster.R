@@ -3,24 +3,28 @@
 #' Map sensitivity scores to a raster
 #'
 #' @param species name of the species to plot. Must match folder name to pull correct data.
-#' #' @param sensitivity data.frame with attribute scores and final sensitivity and certainty. Generated from \code{calculate.sensitivity} and \code{sensitivity.bootstrap}. Must include the column \code{Stock.Name} to subset data to correct species
+#' @param sensitivity data.frame with attribute scores and final sensitivity and certainty. Generated from \code{calculate.sensitivity} and \code{sensitivity.bootstrap}. Must include the column \code{Stock.Name} to subset data to correct species
+#' @param stocks a shapefile containing the stocks to use; if NULL, the same value is applied to the entire raster
 #' @param species_col,stock_col name of column with species and stock names to help subset data in \code{sensitivity}
-#' #' @param total_sens_col name of column containing total sensitivity scores in \code{sensitivity}
 #' @param stock_key a named vector containing the abbreviations and long names of stocks to use as labels
 #' @param stock_order a vector containing the long stock names in the desired order
-#' @param bathymetry a spatRaster of bathymetry data. Must be same extent as results from pull_mom6_hindcast/forecast
+#' @param total_sens_col name of column containing total sensitivity scores in \code{sensitivity}
+#' @param r_template a spatRaster of species distribution. Used as a template for the sensitivity raster and as a mask to set unoccupied spaces to NA
+#' @param bathymetry a spatRaster of bathymetry data. Must be same extent as r_template
 #' @param bathymetry_range a vector containing the minimum and maximum desired bathymetry values
 #'
-#' @return Function does not return anything. The table is saved as a png to the \code{table_dir} folder.
+#' @return returns a spatraster of sensitivity scores mapped to species distribution
 #'
 #'@export
 #'
 make_sensitivity_raster <- function(
   species,
   sensitivity,
+  stocks,
   species_col,
   stock_col,
   stock_key,
+  stock_order,
   total_sens_col,
   r_template,
   bathymetry,
@@ -29,23 +33,6 @@ make_sensitivity_raster <- function(
   #build sensitivity raster
   #isolate sensitivity data
   spSens <- sensitivity[sensitivity[, species_col] == species, ] #this will be a vector if there are no stocks, but a data.frame if there are
-
-  #load stocks if available
-  if (
-    file.exists(paste0(
-      '../shpfiles/species_stock_areas/',
-      gsub(' ', '', species),
-      '.shp'
-    ))
-  ) {
-    stocks <- terra::vect(paste0(
-      '../shpfiles/species_stock_areas/',
-      gsub(' ', '', species),
-      '.shp'
-    ))
-  } else {
-    stocks <- NULL
-  }
 
   #failsafe in case the shape files don't exist but spSens has multiple rows
   if (nrow(spSens) > 1 & is.null(stocks)) {
@@ -70,7 +57,7 @@ make_sensitivity_raster <- function(
       stock_full_name <- stock_key[
         names(stock_key) %in% stocks_proj$stock_area[x]
       ]
-      sensRast <- mask(
+      sensRast <- terra::mask(
         sensRast,
         stocks_proj[x],
         inverse = TRUE,
@@ -85,7 +72,7 @@ make_sensitivity_raster <- function(
   }
 
   #mask with bathy object
-  if (inherits(bathy, "PackedSpatRaster")) {
+  if (inherits(bathymetry, "PackedSpatRaster")) {
     bathymetry <- terra::unwrap(bathymetry)
   }
   #reproject because there are slight differences in resolution/extent for some reason, especially with the forecasts
@@ -96,7 +83,7 @@ make_sensitivity_raster <- function(
     NA,
     sensRast
   )
-  
+
   #mask  with template
   sensRast <- terra::mask(sensRast, r_template)
 

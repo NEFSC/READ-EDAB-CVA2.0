@@ -17,31 +17,31 @@
 #'
 
 make_stock_polygons <- function(
-    key,
-    species_col,
-    stock_col,
-    id_col,
-    polygons,
-    poly_id,
-    plot = T,
-    bathymetry,
-    coastline
+  key,
+  species_col,
+  stock_col,
+  id_col,
+  polygons,
+  poly_id,
+  plot = T,
+  bathymetry,
+  coastline
 ) {
   names <- unique(key[, species_col])
-  
+
   log <- NULL
   for (x in names) {
     spp <- key[key[, species_col] == x, ] #subset key to desired species
-    
+
     stocks <- unique(spp[, stock_col]) #find unique stocks
     stock.polys <- NULL
     for (s in stocks) {
       spp.stock <- spp[spp[, stock_col] == s, ] #subset to stocks
-      
+
       spp.stock.shp <- polygons[
         polygons[[poly_id]][, 1] %in% spp.stock[, id_col],
       ] #subset geometry
-      
+
       # --- NEW SAFETY CATCH ---
       if (nrow(spp.stock.shp) == 0) {
         warning(paste(
@@ -52,23 +52,23 @@ make_stock_polygons <- function(
         next
       }
       # ------------------------
-      
+
       # Project to EPSG:5070 before processing
       spp.stock.proj <- terra::project(spp.stock.shp, "EPSG:5070")
-      
+
       # Buffer by 100 meters instead of degreesk
       spp.stock.agg <- spp.stock.proj |>
         terra::buffer(width = 100) |>
         terra::aggregate() |>
         terra::fillHoles() |>
         terra::buffer(width = -100)
-      
+
       # Project back to original CRS if necessary
       spp.stock.agg <- terra::project(spp.stock.agg, terra::crs(polygons))
-      
+
       # Assign the stock name as a new attribute column
       spp.stock.agg$stock_area <- s
-      
+
       # Combine into a single multi-row SpatVector
       if (is.null(stock.polys)) {
         stock.polys <- spp.stock.agg
@@ -78,15 +78,15 @@ make_stock_polygons <- function(
     } #end s
     names(stock.polys) <- stocks
     stock.polys <- terra::vect(stock.polys)
-    
+
     terra::writeVector(
       stock.polys,
       filename = paste0(gsub(' ', '', x), '.shp'),
       overwrite = TRUE
     )
-    
+
     log <- rbind(log, c(x, paste(stocks, ' ', collapse = ' ')))
-    
+
     if (plot) {
       #pdf
       grDevices::pdf(
@@ -100,7 +100,7 @@ make_stock_polygons <- function(
         width = 8,
         height = 8
       )
-      
+
       # 2. Plot the map (remove col, breaks, range, and type arguments)
       terra::plot(
         bathymetry,
@@ -112,11 +112,17 @@ make_stock_polygons <- function(
         ylab = expression('Latitude (' * degree * ')'),
         mar = c(3, 3, 1.5, 0.5),
         col = NA,
-      xaxs = "i", yaxs = "i", asp = NA
+        xaxs = "i",
+        yaxs = "i",
+        asp = NA
       )
-      
-      terra::polys(stock.polys, lwd = 2, col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75))
-      
+
+      terra::polys(
+        stock.polys,
+        lwd = 2,
+        col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75)
+      )
+
       #add bathy contours, coastline, and stocks if necessary
       terra::contour(
         bathymetry,
@@ -125,7 +131,7 @@ make_stock_polygons <- function(
         add = T
       )
       terra::polys(coastline['id'], col = 'grey', add = T)
-      
+
       #legend
       graphics::legend(
         'bottomright',
@@ -136,9 +142,9 @@ make_stock_polygons <- function(
         bty = 'o',
         bg = 'white'
       )
-      
+
       grDevices::dev.off()
-      
+
       #png
       grDevices::png(
         paste0(
@@ -150,7 +156,7 @@ make_stock_polygons <- function(
         ),
         width = 8,
         height = 8,
-        units = 'in', 
+        units = 'in',
         res = 300
       )
       # 2. Plot the map (remove col, breaks, range, and type arguments)
@@ -164,11 +170,17 @@ make_stock_polygons <- function(
         ylab = expression('Latitude (' * degree * ')'),
         mar = c(3, 3, 1.5, 0.5),
         col = NA,
-        xaxs = "i", yaxs = "i", asp = NA
+        xaxs = "i",
+        yaxs = "i",
+        asp = NA
       )
-      
-      terra::polys(stock.polys, lwd = 2, col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75))
-      
+
+      terra::polys(
+        stock.polys,
+        lwd = 2,
+        col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75)
+      )
+
       #add bathy contours, coastline, and stocks if necessary
       terra::contour(
         bathymetry,
@@ -177,7 +189,7 @@ make_stock_polygons <- function(
         add = T
       )
       terra::polys(coastline['id'], col = 'grey', add = T)
-      
+
       #legend
       graphics::legend(
         'bottomright',
@@ -188,10 +200,10 @@ make_stock_polygons <- function(
         bty = 'o',
         bg = 'white'
       )
-      
+
       grDevices::dev.off()
     }
   } #end x
-  
+
   return(log)
 } #end function

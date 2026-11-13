@@ -1,17 +1,20 @@
 #' @title Make Variable Importance Radars
 #' @description
-#' Produces radar plots of variable importance 
+#' Produces radar plots of variable importance
 #'
-#' @param variable_importance 
+#' @param variable_importance matrix of values to plot. Rows should represent different models if desired, and columns should indicate variables.
 #' @param fig_name name to save figure as. Figure will save to current working directory if desired directory is not included in the figure name
-#' @param variable_key a named character vector mapping column abbreviations to full names. Defaults to NULL.
+#' @param variable_key a named character vector mapping column abbreviations (names) to full names. Defaults to NULL.
 
 #' @return Function does not return anything. Figures are saved to species-specific \code{figures} folder.
 #'
 #'@export
 #'
-plot_variable_radars <- function(variable_importance, fig_name, variable_key = NULL){
-  
+plot_variable_radars <- function(
+  variable_importance,
+  fig_name,
+  variable_key = NULL
+) {
   # Failsafe: If the function crashes, forcefully close any open PDFs
   on.exit(
     while (grDevices::dev.cur() > 1) {
@@ -19,90 +22,107 @@ plot_variable_radars <- function(variable_importance, fig_name, variable_key = N
     },
     add = TRUE
   )
-  
+
   # Map abbreviated column names to full names using the key
-  if(!is.null(variable_key)){
+  if (!is.null(variable_key)) {
     current_cols <- colnames(variable_importance)
     # Replaces matches with the full name, keeps the original if not found in the key
     colnames(variable_importance) <- ifelse(
-      current_cols %in% names(variable_key), 
-      variable_key[current_cols], 
+      current_cols %in% names(variable_key),
+      variable_key[current_cols],
       current_cols
     )
   }
-  
-  if(is.null(dim(variable_importance))){
-    np = 1
+
+  if (is.null(dim(variable_importance))) {
+    np <- 1
   } else {
-    np = nrow(variable_importance)
+    np <- nrow(variable_importance)
   }
-  
-  variable_importance <- rbind(rep(1, ifelse(is.null(dim(variable_importance)), length(variable_importance), ncol(variable_importance))), 
-                               rep(0, ifelse(is.null(dim(variable_importance)), length(variable_importance), ncol(variable_importance))), 
-                               variable_importance)
-                               
-  if(np == 1){
-    col = 'grey'
+
+  variable_importance <- rbind(
+    rep(
+      1,
+      ifelse(
+        is.null(dim(variable_importance)),
+        length(variable_importance),
+        ncol(variable_importance)
+      )
+    ),
+    rep(
+      0,
+      ifelse(
+        is.null(dim(variable_importance)),
+        length(variable_importance),
+        ncol(variable_importance)
+      )
+    ),
+    variable_importance
+  )
+
+  if (np == 1) {
+    col <- 'grey'
   } else {
-    col = RColorBrewer::brewer.pal(n = np, 'Set1')
-  }                  
-  
+    col <- RColorBrewer::brewer.pal(n = np, 'Set1')
+  }
+
   grDevices::pdf(
     paste0(fig_name, ".pdf"),
     width = 8,
     height = 8
-  )     
-  
+  )
+
   fmsb::radarchart(
     as.data.frame(variable_importance),
-    pfcol = scales::alpha(col,0.2),
+    pfcol = scales::alpha(col, 0.2),
     seg = 10,
-    pty = 15:(15+(np-1)),
+    pty = 15:(15 + (np - 1)),
     pcol = scales::alpha(col, 1),
     plty = 1,
     vlcex = 1.25
   )
-  
-  if(np > 1){
+
+  if (np > 1) {
     graphics::legend(
       'bottomright',
       legend = rownames(variable_importance)[3:nrow(variable_importance)],
       lty = 1,
       col = col,
-      pch = 15:(15+(np-1)),
+      pch = 15:(15 + (np - 1)),
       bty = 'n'
     )
   }
-  
+
   grDevices::dev.off()
-  
-  
+
   grDevices::png(
     paste0(fig_name, ".png"),
     width = 8,
-    height = 8, units = 'in', res = 300
-  )     
-  
+    height = 8,
+    units = 'in',
+    res = 300
+  )
+
   fmsb::radarchart(
     as.data.frame(variable_importance),
-    pfcol = scales::alpha(col,0.2),
+    pfcol = scales::alpha(col, 0.2),
     seg = 10,
-    pty = 15:(15+(np-1)),
+    pty = 15:(15 + (np - 1)),
     pcol = scales::alpha(col, 1),
     plty = 1,
     vlcex = 1.25
   )
-  
-  if(np > 1){
+
+  if (np > 1) {
     graphics::legend(
       'bottomright',
       legend = rownames(variable_importance)[3:nrow(variable_importance)],
       lty = 1,
       col = col,
-      pch = 15:(15+(np-1)),
+      pch = 15:(15 + (np - 1)),
       bty = 'n'
     )
   }
-  
+
   grDevices::dev.off()
 }
