@@ -17,6 +17,7 @@ reference:
   desc: "Functions used to create figures, tables and output files"
 - contents:
   - starts_with("make_")
+  - starts_with("plot_")
 - title: "Data Processing"
   desc: "Functions used to pull and process data"
 - contents:
@@ -55,3 +56,4 @@ reference:
   - build_preds_df
   - prep_time_step_df
   - prep_time_step_stack
+  - split_species_stocks

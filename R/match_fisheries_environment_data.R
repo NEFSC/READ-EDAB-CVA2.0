@@ -49,12 +49,12 @@ match_fisheries_environment_data <- function(
 
   #remove any grid cells with NAs - meaning that they were over land - to help speed up reshape
   extracted_wide_meta <- extracted_wide_meta[
-    complete.cases(extracted_wide_meta),
+    stats::complete.cases(extracted_wide_meta),
   ]
 
   # 4. Reshape from wide to long format using base R's reshape()
   # This looks for the "_" delimiter we created in step 1
-  extracted_long <- reshape(
+  extracted_long <- stats::reshape(
     extracted_wide_meta,
     idvar = c("gridID", "grid.lon", "grid.lat", "ID"), # Columns that uniquely identify the location
     varying = 5:ncol(extracted_wide_meta), # The columns containing the extracted raster data
@@ -76,7 +76,7 @@ match_fisheries_environment_data <- function(
   )
 
   #remove any grid cells with NAs - meaning that they were over land - again because we've matched to all the observations in species_df
-  fish_env_df <- fish_env_df[complete.cases(fish_env_df), ]
+  fish_env_df <- fish_env_df[stats::complete.cases(fish_env_df), ]
 
   #add static variables - this one is simpler because the variables don't change through time
   if (add_static) {

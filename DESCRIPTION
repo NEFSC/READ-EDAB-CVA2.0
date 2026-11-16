@@ -20,16 +20,21 @@ Imports:
     meteo,
     dismo,
     gbm,
-    sftime,
     gstat,
     graphics,
     utils,
     dplyr,
     PredictABEL,
     grDevices,
-    gt, ggplot2, purrr, broom, pROC, maxnet
+    gt, 
+    ggplot2, 
+    purrr, 
+    broom, 
+    pROC, 
+    maxnet
 Suggests: 
     DBI,
+    sftime,
     raster,
     survdat,
     ROCR,
@@ -47,7 +52,8 @@ Suggests:
     quarto,
     scales,
     knitr,
-    rmarkdown
+    rmarkdown,
+    here, rlang, stringr, tidyr
 Remotes:
     NOAA-EDAB/survdat,
     EFHSDM=noaa-akro/alaska-efh-ensemble-sdm
@@ -55,3 +61,5 @@ URL: https://nefsc.github.io/READ-EDAB-CVA2.0/, https://github.com/NEFSC/READ-ED
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0
 RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1)

@@ -35,15 +35,15 @@ calculate_raw_exposure <- function(
     ##calculate SD
     sdPres <- raster::calc(
       raster::subset(
-        present_rasters[[v]][[1]],
-        seq(x, raster::nlayers(present_rasters[[v]][[1]]), by = 12)
+        present[[v]][[1]],
+        seq(x, raster::nlayers(present[[v]][[1]]), by = 12)
       ),
       stats::sd
     )
     sdFut <- raster::calc(
       raster::subset(
-        future_rasters[[v]][[1]],
-        seq(x, raster::nlayers(future_rasters[[v]][[1]]), by = 12)
+        future[[v]][[1]],
+        seq(x, raster::nlayers(future[[v]][[1]]), by = 12)
       ),
       stats::sd
     )
