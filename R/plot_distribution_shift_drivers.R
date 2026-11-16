@@ -3,13 +3,12 @@
 #' make gif of maps of species distribution and timeseries of range edges
 #'
 #' @param plot_name full file path to save gif to
-#' @param avg_core_polys,avg_range_polys polygons representing the core and range distributions to map; output from \code{calculate_distribution_shift}.
-#' @param poly_pals a two column data.frame of colors to plot for core and range polygons
-#' @param avg_metrics data.frame output from \code{calculate_distribution_shift} containing x/y coordinates of the weighted centroids to add to the plot. should contain columns \code{centroid_x/y} and \code{timestamp}, which should match the desired legend names
-#' @param hindcast_timeseries,forecast_timeseries data.frame output from \code{calculate_distribution_shift} at the desired timestamps for timeseries plots of core and total range area and latitude/longitude ranges. \code{forecast_timeseries} is optional.
+#' @param sdm spatRaster of species distribution model results to plot across time. Should have teh samme timestamp as \code{metrics}
+#' @param core_polys,range_polys polygons representing the core and range distributions to map; output from \code{calculate_distribution_shift}.
+#' @param metrics data.frame output from \code{calculate_distribution_shift} containing x/y coordinates of the weighted centroids to add to the plot. should contain columns \code{centroid_x/y} and \code{timestamp}, which should match the desired legend names
 #' @param bathymetry,coastline spatRaster objects to add to maps
 #'
-#' @return a list containing a data.frame of metrics where the number of rows is equal to the number of timestamps, the core kde polygons, and the range kde polygons
+#' @return a gif is saved at file path provided in \code{plot_name}. If no path is provided, it is saved in the working directory
 #'
 #'@export
 #'
@@ -25,12 +24,12 @@ plot_distribution_shift_drivers <- function(
 ) {
   gifski::save_gif(
     expr = for (i in 1:nrow(metrics)) {
-      layout(
+      graphics::layout(
         matrix(c(1, 1, 1, 1, 2, 4, 3, 5), byrow = F, nrow = 2, ncol = 4),
         heights = c(3, 3),
         widths = c(1, 1, 1, 1)
       )
-      par(mar = c(5, 5, 3, 2), oma = c(0, 0, 0, 0))
+      graphics::par(mar = c(5, 5, 3, 2), oma = c(0, 0, 0, 0))
       #map of habitat shifts
       terra::plot(
         sdm[[i]],
@@ -57,9 +56,9 @@ plot_distribution_shift_drivers <- function(
       )
       #add ticks/legend manually because terra is difficult
       tick_x <- seq(-73, -65.5, length.out = 5)
-      segments(x0 = tick_x, y0 = 36, x1 = tick_x, y1 = 36 + 0.1, col = "black")
+      graphics::segments(x0 = tick_x, y0 = 36, x1 = tick_x, y1 = 36 + 0.1, col = "black")
       # Add the y-axis label manually on line 3.5
-      title(
+      graphics::title(
         ylab = expression('Latitude (' * degree * ')'),
         line = 2.5,
         cex.lab = 1.5
@@ -67,10 +66,10 @@ plot_distribution_shift_drivers <- function(
 
       #Add tick text on top of bar
       tick_vals <- seq(0, 1, length.out = 5)
-      text(x = tick_x, y = 36 + 0.25, labels = tick_vals, cex = 2)
+      graphics::text(x = tick_x, y = 36 + 0.25, labels = tick_vals, cex = 2)
 
       #Add title above tick text
-      text(
+      graphics::text(
         x = mean(c(-73, -65.5)),
         y = 36 + 0.5,
         labels = "Probability of Occurrence",
@@ -84,7 +83,7 @@ plot_distribution_shift_drivers <- function(
       terra::polys(core_polys[i], border = 'black', lwd = 3)
       terra::polys(range_polys[i], border = 'black', lwd = 3, lty = 3)
 
-      points(
+      graphics::points(
         centroid_y ~ centroid_x,
         data = metrics[i, ],
         pch = 23,
@@ -95,7 +94,7 @@ plot_distribution_shift_drivers <- function(
 
       terra::polys(coastline, col = 'grey25')
 
-      text(
+      graphics::text(
         -76,
         44,
         paste(
@@ -131,14 +130,14 @@ plot_distribution_shift_drivers <- function(
         main = 'Northern Edge',
         cex.main = 1.75
       )
-      lines(
+      graphics::lines(
         leading_edge_y ~ timestamp,
         data = metrics[1:i, ],
         t = 'b',
         pch = 19,
         col = 'grey'
       )
-      points(
+      graphics::points(
         leading_edge_y ~ timestamp,
         data = metrics[i, ],
         pch = 19,
@@ -159,14 +158,14 @@ plot_distribution_shift_drivers <- function(
         main = 'Eastern Edge',
         cex.main = 1.75
       )
-      lines(
+      graphics::lines(
         leading_edge_x ~ timestamp,
         data = metrics[1:i, ],
         t = 'b',
         pch = 19,
         col = 'grey'
       )
-      points(
+      graphics::points(
         leading_edge_x ~ timestamp,
         data = metrics[i, ],
         pch = 19,
@@ -188,14 +187,14 @@ plot_distribution_shift_drivers <- function(
         main = 'Southern Edge',
         cex.main = 1.75
       )
-      lines(
+      graphics::lines(
         trailing_edge_y ~ timestamp,
         data = metrics[1:i, ],
         t = 'b',
         pch = 19,
         col = 'grey'
       )
-      points(
+      graphics::points(
         trailing_edge_y ~ timestamp,
         data = metrics[i, ],
         pch = 19,
@@ -216,14 +215,14 @@ plot_distribution_shift_drivers <- function(
         main = 'Western Edge',
         cex.main = 1.75
       )
-      lines(
+      graphics::lines(
         trailing_edge_x ~ timestamp,
         data = metrics[1:i, ],
         t = 'b',
         pch = 19,
         col = 'grey'
       )
-      points(
+      graphics::points(
         trailing_edge_x ~ timestamp,
         data = metrics[i, ],
         pch = 19,

@@ -17,18 +17,16 @@ plot_distribution_shift_drivers(
 \arguments{
 \item{plot_name}{full file path to save gif to}
 
+\item{sdm}{spatRaster of species distribution model results to plot across time. Should have teh samme timestamp as \code{metrics}}
+
+\item{core_polys, range_polys}{polygons representing the core and range distributions to map; output from \code{calculate_distribution_shift}.}
+
+\item{metrics}{data.frame output from \code{calculate_distribution_shift} containing x/y coordinates of the weighted centroids to add to the plot. should contain columns \code{centroid_x/y} and \code{timestamp}, which should match the desired legend names}
+
 \item{bathymetry, coastline}{spatRaster objects to add to maps}
-
-\item{avg_core_polys, avg_range_polys}{polygons representing the core and range distributions to map; output from \code{calculate_distribution_shift}.}
-
-\item{poly_pals}{a two column data.frame of colors to plot for core and range polygons}
-
-\item{avg_metrics}{data.frame output from \code{calculate_distribution_shift} containing x/y coordinates of the weighted centroids to add to the plot. should contain columns \code{centroid_x/y} and \code{timestamp}, which should match the desired legend names}
-
-\item{hindcast_timeseries, forecast_timeseries}{data.frame output from \code{calculate_distribution_shift} at the desired timestamps for timeseries plots of core and total range area and latitude/longitude ranges. \code{forecast_timeseries} is optional.}
 }
 \value{
-a list containing a data.frame of metrics where the number of rows is equal to the number of timestamps, the core kde polygons, and the range kde polygons
+a gif is saved at file path provided in \code{plot_name}. If no path is provided, it is saved in the working directory
 }
 \description{
 make gif of maps of species distribution and timeseries of range edges

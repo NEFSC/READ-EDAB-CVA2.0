@@ -13,10 +13,13 @@ reference:
   - starts_with("calculate_")
   - pseudo_r2_brt
   - calculate_directionality
+  - get_edges
+  - get_kde
 - title: "Create Outputs"
   desc: "Functions used to create figures, tables and output files"
 - contents:
   - starts_with("make_")
+  - starts_with("plot_")
 - title: "Data Processing"
   desc: "Functions used to pull and process data"
 - contents:

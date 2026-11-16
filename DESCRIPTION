@@ -27,9 +27,9 @@ Imports:
     dplyr,
     PredictABEL,
     grDevices,
-    gt, ggplot2, purrr, broom, pROC, maxnet
+     broom, pROC, maxnet
 Suggests: 
-    DBI,
+    DBI, gt, ggplot2, purrr,
     raster,
     survdat,
     ROCR,
@@ -47,7 +47,7 @@ Suggests:
     quarto,
     scales,
     knitr,
-    rmarkdown
+    rmarkdown, gifski
 Remotes:
     NOAA-EDAB/survdat,
     EFHSDM=noaa-akro/alaska-efh-ensemble-sdm

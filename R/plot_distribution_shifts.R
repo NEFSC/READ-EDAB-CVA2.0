@@ -44,14 +44,14 @@ plot_distribution_shifts <- function(
 
   plot_shift <- function() {
     # Set global outer margin to zero out excess space
-    par(oma = c(0, 0, 0, 0))
+    graphics::par(oma = c(0, 0, 0, 0))
 
     # ==========================================
     # MAP 1 (Left Half: x = 0 to 0.5, y = 0 to 1)
     # ==========================================
-    par(fig = c(0, 0.5, 0, 1))
+    graphics::par(fig = c(0, 0.5, 0, 1))
     # Update this for BOTH Map 1 and Map 2 sections:
-    par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
+    graphics::par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
 
     #map of habitat shifts - using KDE polygons
     #bathy contours as base layer
@@ -82,7 +82,7 @@ plot_distribution_shifts <- function(
       #terra::polys(avg_range_polys[x], border = scales::alpha(poly_pals$range[x], 0.5), lwd = 3, lty = 3, col = NA)
     }
 
-    points(
+    graphics::points(
       centroid_y ~ centroid_x,
       data = avg_metrics,
       pch = 21,
@@ -106,8 +106,8 @@ plot_distribution_shifts <- function(
     #time series
     # --- INSET 1 (Time Series inside Map 1) ---
     # Bottom right corner of Map 1: x = 0.25 to 0.48, y = 0.05 to 0.40
-    par(fig = c(0.20, 0.48, 0.12, 0.45), new = TRUE)
-    par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
+    graphics::par(fig = c(0.20, 0.48, 0.12, 0.45), new = TRUE)
+    graphics::par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
 
     #change in areas through time
     #core
@@ -141,7 +141,7 @@ plot_distribution_shifts <- function(
     )
 
     # 2. Add this to color the first 5 points (e.g., dodgerblue)
-    points(
+    graphics::points(
       kde_core_area / 1000 ~ timestamp,
       data = hindcast_timeseries[1:5, ],
       pch = 19,
@@ -151,7 +151,7 @@ plot_distribution_shifts <- function(
 
     # 3. Add this to color the last 5 points (e.g., firebrick1)
     n <- nrow(hindcast_timeseries)
-    points(
+    graphics::points(
       kde_core_area / 1000 ~ timestamp,
       data = hindcast_timeseries[(n - 4):n, ],
       pch = 19,
@@ -160,12 +160,12 @@ plot_distribution_shifts <- function(
     )
 
     #linear model
-    m <- lm(kde_core_area ~ timestep, data = hindcast_timeseries)
+    m <- stats::lm(kde_core_area ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
     if (p_val <= 0.05 & !is.na(p_val)) {
-      y_pred <- predict(m)
-      lines(
+      y_pred <- stats::predict(m)
+      graphics::lines(
         hindcast_timeseries$timestamp,
         y_pred / 1000,
         col = "black",
@@ -177,7 +177,7 @@ plot_distribution_shifts <- function(
     if (!is.null(forecast_timeseries)) {
       #repeat for forecast
       #annual
-      lines(
+      graphics::lines(
         kde_core_area / 1000 ~ timestamp,
         data = forecast_timeseries,
         t = 'b',
@@ -187,7 +187,7 @@ plot_distribution_shifts <- function(
         col = 'grey50'
       )
       n <- nrow(forecast_timeseries)
-      points(
+      graphics::points(
         kde_core_area / 1000 ~ timestamp,
         data = forecast_timeseries[(n - 4):n, ],
         pch = 17,
@@ -195,12 +195,12 @@ plot_distribution_shifts <- function(
         col = poly_pals$range[3]
       )
       #linear model
-      m <- lm(kde_core_area ~ timestep, data = forecast_timeseries)
+      m <- stats::lm(kde_core_area ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
       if (p_val <= 0.05 & !is.na(p_val)) {
-        y_pred <- predict(m)
-        lines(
+        y_pred <- stats::predict(m)
+        graphics::lines(
           forecast_timeseries$timestamp,
           y_pred / 1000,
           col = "black",
@@ -213,9 +213,9 @@ plot_distribution_shifts <- function(
     ## ==========================================
     # MAP 2 (Right Half: x = 0.5 to 1, y = 0 to 1)
     # ==========================================
-    par(fig = c(0.5, 1, 0, 1), new = TRUE)
+    graphics::par(fig = c(0.5, 1, 0, 1), new = TRUE)
     # Update this for BOTH Map 1 and Map 2 sections:
-    par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
+    graphics::par(mar = c(3.5, 4.5, 1.5, 1), mgp = c(2.5, 0.75, 0))
     #map of habitat shifts - using KDE polygons
     #bathy contours as base layer
     terra::contour(
@@ -245,7 +245,7 @@ plot_distribution_shifts <- function(
       )
     }
 
-    points(
+    graphics::points(
       centroid_y ~ centroid_x,
       data = avg_metrics,
       pch = 21,
@@ -268,8 +268,8 @@ plot_distribution_shifts <- function(
 
     # --- INSET 2 (Time Series inside Map 2) ---
     # Shifted left (0.68 to 0.95) to clear the right-side margin
-    par(fig = c(0.70, 0.98, 0.12, 0.45), new = TRUE)
-    par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
+    graphics::par(fig = c(0.70, 0.98, 0.12, 0.45), new = TRUE)
+    graphics::par(mar = c(2, 4.5, 1, 0.5), mgp = c(1.5, 0.5, 0)) # Widened left margin
     #all (95% kde)
     if (!is.null(forecast_timeseries)) {
       y_range <- range(
@@ -300,7 +300,7 @@ plot_distribution_shifts <- function(
     )
 
     # 2. Add this to color the first 5 points (e.g., dodgerblue)
-    points(
+    graphics::points(
       kde_all_area / 1000 ~ timestamp,
       data = hindcast_timeseries[1:5, ],
       pch = 19,
@@ -310,7 +310,7 @@ plot_distribution_shifts <- function(
 
     # 3. Add this to color the last 5 points (e.g., firebrick1)
     n <- nrow(hindcast_timeseries)
-    points(
+    graphics::points(
       kde_all_area / 1000 ~ timestamp,
       data = hindcast_timeseries[(n - 4):n, ],
       pch = 19,
@@ -319,12 +319,12 @@ plot_distribution_shifts <- function(
     )
 
     #linear model
-    m <- lm(kde_all_area ~ timestep, data = hindcast_timeseries)
+    m <- stats::lm(kde_all_area ~ timestep, data = hindcast_timeseries)
     # Extract key statistics & plot if significant
     p_val <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
     if (p_val <= 0.05 & !is.na(p_val)) {
-      y_pred <- predict(m)
-      lines(
+      y_pred <- stats::predict(m)
+      graphics::lines(
         hindcast_timeseries$timestamp,
         y_pred / 1000,
         col = "black",
@@ -336,7 +336,7 @@ plot_distribution_shifts <- function(
     if (!is.null(forecast_timeseries)) {
       #repeat for forecast
       #annual
-      lines(
+      graphics::lines(
         kde_all_area / 1000 ~ timestamp,
         data = forecast_timeseries,
         t = 'b',
@@ -346,7 +346,7 @@ plot_distribution_shifts <- function(
         col = 'grey50'
       )
       n <- nrow(forecast_timeseries)
-      points(
+      graphics::points(
         kde_all_area / 1000 ~ timestamp,
         data = forecast_timeseries[(n - 4):n, ],
         pch = 17,
@@ -355,12 +355,12 @@ plot_distribution_shifts <- function(
       )
 
       #linear model
-      m <- lm(kde_all_area ~ timestep, data = forecast_timeseries)
+      m <- stats::lm(kde_all_area ~ timestep, data = forecast_timeseries)
       # Extract key statistics & plot if significant
       p_val <- summary(m)$coefficients["timestep", "Pr(>|t|)"]
       if (p_val <= 0.05 & !is.na(p_val)) {
-        y_pred <- predict(m)
-        lines(
+        y_pred <- stats::predict(m)
+        graphics::lines(
           forecast_timeseries$timestamp,
           y_pred / 1000,
           col = "black",

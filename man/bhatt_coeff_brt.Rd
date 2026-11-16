@@ -7,7 +7,7 @@
 From Camrin Brawn (WHOI): https://zenodo.org/records/7971532.
 }
 \usage{
-bhatt_coeff_brt(x, y, bw = bw.nrd0, ...)
+bhatt_coeff_brt(x, y, bw = stats::bw.nrd0, ...)
 }
 \arguments{
 \item{x}{a numeric vector of length >= 2.}
