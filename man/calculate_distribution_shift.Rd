@@ -20,7 +20,7 @@ calculate_distribution_shift(
 
 \item{core_p, range_p}{probabilities associated with desired core and range KDEs; defaults to 50\% and 95\% respectively}
 
-\item{poly_dir}{location to save kde polygons}
+\item{poly_dir}{file path to save kde polygons as}
 }
 \value{
 a list containing a data.frame of metrics where the number of rows is equal to the number of timestamps, the core kde polygons, and the range kde polygons
