@@ -2,7 +2,7 @@
 #' @description
 #' Ensure column names are formatted correctly
 #'
-#' @param nms a vector of character strings to convert 
+#' @param nms a vector of character strings to convert
 #' @param targets a vector of desired names
 #'
 #' @return a character vector of corrected names

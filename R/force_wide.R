@@ -18,17 +18,17 @@ force_wide <- function(df, raw_nms, sc, stocks_obj) {
     df <- as.data.frame(t(df), check.names = FALSE)
   }
   df <- as.data.frame(df, check.names = FALSE)
-  
+
   colnames(df) <- repair_names(colnames(df), raw_nms)
   rownames(df) <- repair_names(rownames(df), raw_nms)
-  
+
   # Case 1: Already Wide
   if (any(raw_nms %in% colnames(df))) {
     # Do nothing
     # Case 2: Vertical Format (terra::global drops variables into row names)
   } else if (any(raw_nms %in% rownames(df))) {
     df <- as.data.frame(t(df), check.names = FALSE)
-    
+
     # Case 3: Long Format (variables are in a column)
   } else {
     name_col <- NULL
@@ -51,7 +51,7 @@ force_wide <- function(df, raw_nms, sc, stocks_obj) {
       }
     }
   }
-  
+
   # Inject missing stock columns
   if (!sc %in% colnames(df)) {
     df[[sc]] <- if (!is.null(stocks_obj) && !is.null(stocks_obj$stock_area)) {
