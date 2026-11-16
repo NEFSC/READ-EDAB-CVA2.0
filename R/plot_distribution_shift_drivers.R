@@ -56,7 +56,13 @@ plot_distribution_shift_drivers <- function(
       )
       #add ticks/legend manually because terra is difficult
       tick_x <- seq(-73, -65.5, length.out = 5)
-      graphics::segments(x0 = tick_x, y0 = 36, x1 = tick_x, y1 = 36 + 0.1, col = "black")
+      graphics::segments(
+        x0 = tick_x,
+        y0 = 36,
+        x1 = tick_x,
+        y1 = 36 + 0.1,
+        col = "black"
+      )
       # Add the y-axis label manually on line 3.5
       graphics::title(
         ylab = expression('Latitude (' * degree * ')'),
