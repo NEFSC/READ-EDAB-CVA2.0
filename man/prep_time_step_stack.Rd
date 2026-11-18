@@ -13,7 +13,8 @@ prep_time_step_stack(
   static_variables,
   month_col,
   year_col,
-  xy_col
+  xy_col,
+  threshold = c(-9999, 9999)
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ prep_time_step_stack(
 \item{month_col, year_col}{column names for month and year columns respectively.}
 
 \item{xy_col}{a vector with a length of 2 indicating the longitude and latitude column names}
+
+\item{threshold}{upper and lower bound limit to define "bad" data. Defaults to c(-9999, 9999).}
 }
 \value{
 a spatRaster with a number of layers equal to the number of layers in \code{rasts} + number of layesr in \code{static_variables} + 4 (lon, lat, month, year)

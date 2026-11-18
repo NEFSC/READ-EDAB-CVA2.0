@@ -52,7 +52,7 @@ Suggests:
     quarto,
     scales,
     knitr,
-    rmarkdown,
+    rmarkdown, gifski
     here, rlang, stringr, tidyr
 Remotes:
     NOAA-EDAB/survdat,
