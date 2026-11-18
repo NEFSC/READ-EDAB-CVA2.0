@@ -17,7 +17,7 @@ merge_fisheries_dfs <- function(df_dir) {
 
   data <- NULL
   for (x in 1:length(flist)) {
-    d <- read.csv(flist[x])
+    d <- utils::read.csv(flist[x])
     d$source <- flist[x]
     data <- rbind(data, d)
   }

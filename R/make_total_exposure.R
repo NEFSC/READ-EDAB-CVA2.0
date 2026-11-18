@@ -33,10 +33,10 @@ make_total_exposure <- function(
     md <- sum(mapSub >= 2.5)
 
     #apply logic rule from Hare et al 2015
-    expL <- ifel(!is.na(hr), 1, NA) #everything starts as 1 (low)
-    expL <- ifel(md >= 2, 2, expL) #set to 2 if moderate threshold met, max now = 2
-    expL <- ifel(hh >= 2, 3, expL) #set to 3 if high threshold met, max now = 3
-    expL <- ifel(hr >= 3, 4, expL) #set to 4 if very high threshold met, max now = 4
+    expL <- terra::ifel(!is.na(hr), 1, NA) #everything starts as 1 (low)
+    expL <- terra::ifel(md >= 2, 2, expL) #set to 2 if moderate threshold met, max now = 2
+    expL <- terra::ifel(hh >= 2, 3, expL) #set to 3 if high threshold met, max now = 3
+    expL <- terra::ifel(hr >= 3, 4, expL) #set to 4 if very high threshold met, max now = 4
 
     return(expL)
   }
