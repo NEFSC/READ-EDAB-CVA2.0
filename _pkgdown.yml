@@ -58,3 +58,6 @@ reference:
   - build_preds_df
   - prep_time_step_df
   - prep_time_step_stack
+  - split_species_stocks
+  - force_wide
+  - repair_names

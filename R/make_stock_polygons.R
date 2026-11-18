@@ -88,6 +88,7 @@ make_stock_polygons <- function(
     log <- rbind(log, c(x, paste(stocks, ' ', collapse = ' ')))
 
     if (plot) {
+      #pdf
       grDevices::pdf(
         paste0(
           file.path(
@@ -100,32 +101,98 @@ make_stock_polygons <- function(
         height = 8
       )
 
-      #add bathy contours, coastline, and stocks if necessary
+      # 2. Plot the map (remove col, breaks, range, and type arguments)
       terra::plot(
-        stock.polys,
-        lwd = 2,
-        col = cmocean::cmocean('rain')(length(stock.polys)),
+        bathymetry,
+        ylim = c(35, 45),
+        legend = FALSE, # coltab handles the map colors; we will build the legend separately
         pax = list(cex.axis = 1.5),
         cex.lab = 1.25,
         xlab = expression('Longitude (' * degree * ')'),
         ylab = expression('Latitude (' * degree * ')'),
         mar = c(3, 3, 1.5, 0.5),
-        ylim = c(35, 45),
-        xlim = c(-78, -65),
-        legend = F
+        col = NA,
+        xaxs = "i",
+        yaxs = "i",
+        asp = NA
       )
+
+      terra::polys(
+        stock.polys,
+        lwd = 2,
+        col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75)
+      )
+
+      #add bathy contours, coastline, and stocks if necessary
       terra::contour(
         bathymetry,
         filled = F,
         levels = c(-1000, -100, -50),
         add = T
       )
-      terra::plot(coastline['id'], col = 'grey', add = T)
+      terra::polys(coastline['id'], col = 'grey', add = T)
 
       #legend
       graphics::legend(
-        x = -68,
-        y = 38,
+        'bottomright',
+        legend = stock.polys$stock_area,
+        fill = cmocean::cmocean('rain')(length(stock.polys)),
+        title = "Stocks",
+        cex = 1.5,
+        bty = 'o',
+        bg = 'white'
+      )
+
+      grDevices::dev.off()
+
+      #png
+      grDevices::png(
+        paste0(
+          file.path(
+            getwd(),
+            'maps',
+            paste0('stock_map_', gsub(' ', '', x), '.png')
+          )
+        ),
+        width = 8,
+        height = 8,
+        units = 'in',
+        res = 300
+      )
+      # 2. Plot the map (remove col, breaks, range, and type arguments)
+      terra::plot(
+        bathymetry,
+        ylim = c(35, 45),
+        legend = FALSE,
+        pax = list(cex.axis = 1.5),
+        cex.lab = 1.25,
+        xlab = expression('Longitude (' * degree * ')'),
+        ylab = expression('Latitude (' * degree * ')'),
+        mar = c(3, 3, 1.5, 0.5),
+        col = NA,
+        xaxs = "i",
+        yaxs = "i",
+        asp = NA
+      )
+
+      terra::polys(
+        stock.polys,
+        lwd = 2,
+        col = scales::alpha(cmocean::cmocean('rain')(length(stock.polys)), 0.75)
+      )
+
+      #add bathy contours, coastline, and stocks if necessary
+      terra::contour(
+        bathymetry,
+        filled = F,
+        levels = c(-1000, -100, -50),
+        add = T
+      )
+      terra::polys(coastline['id'], col = 'grey', add = T)
+
+      #legend
+      graphics::legend(
+        'bottomright',
         legend = stock.polys$stock_area,
         fill = cmocean::cmocean('rain')(length(stock.polys)),
         title = "Stocks",

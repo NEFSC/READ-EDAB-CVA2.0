@@ -32,6 +32,21 @@ calculate_raw_exposure <- function(
       present
     )
 
+    ##calculate SD
+    sdPres <- raster::calc(
+      raster::subset(
+        present[[v]][[1]],
+        seq(x, raster::nlayers(present[[v]][[1]]), by = 12)
+      ),
+      stats::sd
+    )
+    sdFut <- raster::calc(
+      raster::subset(
+        future[[v]][[1]],
+        seq(x, raster::nlayers(future[[v]][[1]]), by = 12)
+      ),
+      stats::sd
+    )
     bathy_aligned <- terra::resample(bathy, future, method = "bilinear")
     future <- terra::ifel(
       bathy_aligned <= bathy_range[1] | bathy_aligned > bathy_range[2],
